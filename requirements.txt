@@ -1,0 +1,7 @@
+click==8.1.7
+sqlalchemy==2.0.25
+alembic==1.13.1
+python-dotenv==1.0.0
+psycopg2-binary==2.9.9  # For PostgreSQL
+# sqlite3 is built into Python
+# pymysql==1.1.0  # Uncomment for MySQL
