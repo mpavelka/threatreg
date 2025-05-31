@@ -51,21 +51,6 @@ func initStatusCmd() {
 			
 			fmt.Println("✅ Connected")
 			
-			// Get database statistics
-			userCount, err := database.GetUserCount()
-			if err != nil {
-				fmt.Printf("Users: ❌ Error getting count (%v)\n", err)
-			} else {
-				fmt.Printf("Users: %d\n", userCount)
-			}
-			
-			postCount, err := database.GetPostCount()
-			if err != nil {
-				fmt.Printf("Posts: ❌ Error getting count (%v)\n", err)
-			} else {
-				fmt.Printf("Posts: %d\n", postCount)
-			}
-			
 			fmt.Println("\n🚀 Application is running successfully!")
 		},
 	}

@@ -21,7 +21,7 @@ func initDBCmd() {
 		Short: "Create database tables (development only)",
 		Long:  "Creates the database tables directly without migrations (for development only)",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("🔧 Setting up database tables...")
+			fmt.Println("🔧 Initializing database...")
 
 			// Connect to database
 			if err := database.Connect(); err != nil {
@@ -30,14 +30,9 @@ func initDBCmd() {
 			}
 			defer database.Close()
 
-			// Create tables
-			if err := database.CreateTables(); err != nil {
-				fmt.Printf("❌ Failed to create tables: %v\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Println("✅ Database tables created successfully!")
-			fmt.Println("📝 For production, use migrations with the 'migrate' CLI tool")
+			// TODO: initialize database (this should be done via migrations)
+			fmt.Println("✅ Database connection verified!")
+			fmt.Println("📝 Use migrations with the 'migrate' CLI tool to create tables")
 		},
 	}
 

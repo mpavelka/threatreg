@@ -87,7 +87,7 @@ func TestConnect(t *testing.T) {
 	config.AppConfig = originalConfig
 }
 
-func TestDatabaseOperationsWithSQLite(t *testing.T) {
+func TestDatabaseConnectionWithSQLite(t *testing.T) {
 	// Set up in-memory SQLite for testing
 	originalConfig := config.AppConfig
 	config.AppConfig = config.Config{
@@ -105,102 +105,15 @@ func TestDatabaseOperationsWithSQLite(t *testing.T) {
 		config.AppConfig = originalConfig
 	}()
 
-	// Create tables for testing
-	err = CreateTables()
-	if err != nil {
-		t.Fatalf("Failed to create tables: %v", err)
-	}
-
-	t.Run("Create and retrieve user", func(t *testing.T) {
-		// Create a user
-		user, err := CreateUser("testuser", "test@example.com")
-		if err != nil {
-			t.Fatalf("CreateUser() error = %v", err)
+	t.Run("Database connection is established", func(t *testing.T) {
+		dbInstance := GetDB()
+		if dbInstance == nil {
+			t.Error("GetDB() returned nil after successful connection")
 		}
 
-		if user.Username != "testuser" {
-			t.Errorf("CreateUser() username = %v, want testuser", user.Username)
-		}
-		if user.Email != "test@example.com" {
-			t.Errorf("CreateUser() email = %v, want test@example.com", user.Email)
-		}
-
-		// Retrieve the user
-		retrievedUser, err := GetUserByID(user.ID)
-		if err != nil {
-			t.Fatalf("GetUserByID() error = %v", err)
-		}
-
-		if retrievedUser.Username != user.Username {
-			t.Errorf("GetUserByID() username = %v, want %v", retrievedUser.Username, user.Username)
-		}
-	})
-
-	t.Run("Get all users", func(t *testing.T) {
-		users, err := GetAllUsers()
-		if err != nil {
-			t.Fatalf("GetAllUsers() error = %v", err)
-		}
-
-		if len(users) == 0 {
-			t.Error("GetAllUsers() returned empty slice, expected at least one user")
-		}
-	})
-
-	t.Run("Get user count", func(t *testing.T) {
-		count, err := GetUserCount()
-		if err != nil {
-			t.Fatalf("GetUserCount() error = %v", err)
-		}
-
-		if count == 0 {
-			t.Error("GetUserCount() returned 0, expected at least 1")
-		}
-	})
-
-	t.Run("Get post count", func(t *testing.T) {
-		count, err := GetPostCount()
-		if err != nil {
-			t.Fatalf("GetPostCount() error = %v", err)
-		}
-
-		// Post count should be 0 initially
-		if count != 0 {
-			t.Errorf("GetPostCount() = %v, want 0", count)
-		}
-	})
-
-	t.Run("Delete user", func(t *testing.T) {
-		// Create a user to delete
-		user, err := CreateUser("deleteuser", "delete@example.com")
-		if err != nil {
-			t.Fatalf("CreateUser() error = %v", err)
-		}
-
-		// Delete the user
-		err = DeleteUser(user.ID)
-		if err != nil {
-			t.Fatalf("DeleteUser() error = %v", err)
-		}
-
-		// Try to retrieve deleted user
-		_, err = GetUserByID(user.ID)
-		if err == nil {
-			t.Error("GetUserByID() expected error for deleted user, got none")
-		}
-	})
-
-	t.Run("Get non-existent user", func(t *testing.T) {
-		_, err := GetUserByID(99999)
-		if err == nil {
-			t.Error("GetUserByID() expected error for non-existent user, got none")
-		}
-	})
-
-	t.Run("Delete non-existent user", func(t *testing.T) {
-		err := DeleteUser(99999)
-		if err == nil {
-			t.Error("DeleteUser() expected error for non-existent user, got none")
+		// Test that we can ping the database
+		if err := dbInstance.Ping(); err != nil {
+			t.Errorf("Database ping failed: %v", err)
 		}
 	})
 }

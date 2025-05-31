@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"threatreg/internal/config"
@@ -17,23 +16,6 @@ type DB struct {
 }
 
 var db *DB
-
-// User represents a user in the database
-type User struct {
-	ID        int       `db:"id" json:"id"`
-	Username  string    `db:"username" json:"username"`
-	Email     string    `db:"email" json:"email"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-}
-
-// Post represents a blog post
-type Post struct {
-	ID        int       `db:"id" json:"id"`
-	Title     string    `db:"title" json:"title"`
-	Content   string    `db:"content" json:"content"`
-	UserID    int       `db:"user_id" json:"user_id"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-}
 
 // Connect establishes a database connection
 func Connect() error {
@@ -86,148 +68,4 @@ func Close() error {
 		return db.Close()
 	}
 	return nil
-}
-
-// CreateTables creates the database tables (for development only - use migrations in production)
-func CreateTables() error {
-	if db == nil {
-		return fmt.Errorf("database not connected")
-	}
-
-	// SQLite-compatible table creation
-	usersTable := `
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		username VARCHAR(50) UNIQUE NOT NULL,
-		email VARCHAR(100) UNIQUE NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	);`
-
-	postsTable := `
-	CREATE TABLE IF NOT EXISTS posts (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		title VARCHAR(200) NOT NULL,
-		content TEXT,
-		user_id INTEGER NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	);`
-
-	// Create indexes
-	userIndexes := []string{
-		"CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);",
-		"CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);",
-	}
-
-	postIndexes := []string{
-		"CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);",
-		"CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);",
-	}
-
-	// Execute table creation
-	if _, err := db.Exec(usersTable); err != nil {
-		return fmt.Errorf("failed to create users table: %w", err)
-	}
-
-	if _, err := db.Exec(postsTable); err != nil {
-		return fmt.Errorf("failed to create posts table: %w", err)
-	}
-
-	// Create indexes
-	for _, index := range userIndexes {
-		if _, err := db.Exec(index); err != nil {
-			return fmt.Errorf("failed to create user index: %w", err)
-		}
-	}
-
-	for _, index := range postIndexes {
-		if _, err := db.Exec(index); err != nil {
-			return fmt.Errorf("failed to create post index: %w", err)
-		}
-	}
-
-	fmt.Println("✅ Tables created successfully")
-	return nil
-}
-
-// User repository methods
-func CreateUser(username, email string) (*User, error) {
-	query := `INSERT INTO users (username, email) VALUES (?, ?) RETURNING id, created_at`
-
-	// SQLite doesn't support RETURNING, so we use a different approach
-	if strings.Contains(config.GetDatabaseURL(), "sqlite") {
-		result, err := db.Exec(`INSERT INTO users (username, email) VALUES (?, ?)`, username, email)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create user: %w", err)
-		}
-
-		id, err := result.LastInsertId()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get last insert ID: %w", err)
-		}
-
-		// Get the created user
-		return GetUserByID(int(id))
-	}
-
-	// PostgreSQL with RETURNING
-	user := &User{}
-	err := db.QueryRowx(query, username, email).StructScan(user)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	user.Username = username
-	user.Email = email
-	return user, nil
-}
-
-func GetUserByID(id int) (*User, error) {
-	user := &User{}
-	err := db.Get(user, "SELECT * FROM users WHERE id = ?", id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user with ID %d not found", id)
-		}
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	return user, nil
-}
-
-func GetAllUsers() ([]User, error) {
-	var users []User
-	err := db.Select(&users, "SELECT * FROM users ORDER BY created_at DESC")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get users: %w", err)
-	}
-	return users, nil
-}
-
-func DeleteUser(id int) error {
-	result, err := db.Exec("DELETE FROM users WHERE id = ?", id)
-	if err != nil {
-		return fmt.Errorf("failed to delete user: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("user with ID %d not found", id)
-	}
-
-	return nil
-}
-
-func GetUserCount() (int, error) {
-	var count int
-	err := db.Get(&count, "SELECT COUNT(*) FROM users")
-	return count, err
-}
-
-func GetPostCount() (int, error) {
-	var count int
-	err := db.Get(&count, "SELECT COUNT(*) FROM posts")
-	return count, err
 }
