@@ -1,6 +1,6 @@
 # Go CLI Application Makefile
 
-.PHONY: build run clean test deps help migrate-up migrate-down migrate-create
+.PHONY: build run clean test deps help migrate-up migrate-down migrate-create migrate-status migrate-force
 
 # Treat unknown targets as arguments to the run command
 %:
@@ -24,6 +24,8 @@ help:
 	@echo "  make migrate-up     - Run database migrations"
 	@echo "  make migrate-down   - Rollback last migration"
 	@echo "  make migrate-create NAME=<name> - Create new migration"
+	@echo "  make migrate-status - Check migration status"
+	@echo "  make migrate-force VERSION=<n> - Force migration version"
 	@echo "  make setup          - Initial project setup"
 
 # Build the application
@@ -83,6 +85,35 @@ lint:
 	else \
 		echo "📥 Install golangci-lint first: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
 	fi
+
+# Database migration commands using migrate CLI
+migrate-up:
+	@echo "⬆️  Running database migrations..."
+	@migrate -path migrations -database $(DATABASE_URL) up
+
+migrate-down:
+	@echo "⬇️  Rolling back last migration..."
+	@migrate -path migrations -database $(DATABASE_URL) down 1
+
+migrate-create:
+ifndef NAME
+	@echo "❌ Please provide a migration name: make migrate-create NAME=add_users_table"
+else
+	@echo "📝 Creating migration: $(NAME)"
+	@migrate create -ext sql -dir migrations $(NAME)
+endif
+
+migrate-status:
+	@echo "📊 Checking migration status..."
+	@migrate -path migrations -database $(DATABASE_URL) version
+
+migrate-force:
+ifndef VERSION
+	@echo "❌ Please provide a version: make migrate-force VERSION=1"
+else
+	@echo "⚠️  Forcing migration to version $(VERSION)..."
+	@migrate -path migrations -database $(DATABASE_URL) force $(VERSION)
+endif
 
 # Show application status
 status: build
