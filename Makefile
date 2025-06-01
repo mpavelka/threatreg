@@ -2,6 +2,10 @@
 
 .PHONY: build run clean test deps help migrate-up migrate-down migrate-create
 
+# Treat unknown targets as arguments to the run command
+%:
+	@:
+
 # Variables
 BINARY_NAME=threatreg
 MAIN_PATH=.
@@ -32,7 +36,7 @@ build:
 # Run the application
 run: build
 	@echo "🚀 Running $(BINARY_NAME)..."
-	@./$(BINARY_PATH)
+	@./$(BINARY_PATH) $(filter-out $@,$(MAKECMDGOALS))
 
 # Clean build artifacts
 clean:
@@ -58,23 +62,6 @@ install: build
 	@echo "📦 Installing $(BINARY_NAME) globally..."
 	@go install $(MAIN_PATH)
 	@echo "✅ $(BINARY_NAME) installed! You can now run '$(BINARY_NAME)' from anywhere."
-
-# Database migration commands
-migrate-up: build
-	@echo "⬆️  Running database migrations..."
-	@./$(BINARY_PATH) db up
-
-migrate-down: build
-	@echo "⬇️  Rolling back last migration..."
-	@./$(BINARY_PATH) db down
-
-migrate-create: build
-ifndef NAME
-	@echo "❌ Please provide a migration name: make migrate-create NAME=add_users_table"
-else
-	@echo "📝 Creating migration: $(NAME)"
-	@./$(BINARY_PATH) db create "$(NAME)"
-endif
 
 # Development setup
 setup:

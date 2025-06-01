@@ -14,8 +14,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `make migrate-up` - Run all pending migrations
 - `make migrate-down` - Rollback last migration
 - `make migrate-create NAME="migration_name"` - Create new migration files
-- `./bin/threatreg db status` - Check migration status
-- `./bin/threatreg db setup` - Create tables directly (development only)
 
 ### Code Quality
 - `make fmt` - Format Go code
@@ -55,8 +53,6 @@ Uses Viper with these key variables:
 
 ### CLI Command Structure
 - Root command: `threatreg`
-- Database commands: `threatreg db [init|create|up|down|status|setup|reset]`
 - Status command: `threatreg status`
-- Serve command: `threatreg serve`
 
 The application follows Go project layout conventions with clear separation between CLI interface, business logic, and data persistence layers.

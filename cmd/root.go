@@ -10,23 +10,12 @@ import (
 // Root command
 var rootCmd = &cobra.Command{
 	Use:   "threatreg",
-	Short: "A Go CLI application for threat registry management",
-	Long: `Threatreg - A complete Go application for threat registry management with database migrations and CLI interface.
-	
-Features:
-- Database migrations using golang-migrate
-- User management
-- SQLite and PostgreSQL support
-- Configuration management`,
-	// No Run function - this allows subcommands to work properly
+	Short: "A CLI application for threat registry management",
 }
 
 // Declare all subcommands here so they're available to all files in the cmd package
 var (
-	dbCmd     *cobra.Command
-	userCmd   *cobra.Command
 	statusCmd *cobra.Command
-	serveCmd  *cobra.Command
 )
 
 func Execute() {
@@ -37,14 +26,6 @@ func Execute() {
 }
 
 func init() {
-	// Initialize commands (will be defined in their respective files)
-	initDBCmd() // Only has db setup now
-	// initUserCmd()
 	initStatusCmd()
-
-	// Add subcommands to root
-	rootCmd.AddCommand(dbCmd)
-	// rootCmd.AddCommand(userCmd)
 	rootCmd.AddCommand(statusCmd)
-	rootCmd.AddCommand(serveCmd)
 }

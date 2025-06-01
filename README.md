@@ -34,7 +34,7 @@ myapp/
 │   ├── root.go            # Root command and setup
 │   ├── db.go              # Database management commands
 │   ├── user.go            # User management commands
-│   └── status.go          # Status and serve commands
+│   └── status.go          # Status command
 ├── internal/
 │   ├── config/            # Configuration management
 │   ├── database/          # Database models and operations
@@ -193,31 +193,6 @@ migrate -path migrations -database $DATABASE_URL force 1
 
 ## 📚 Usage
 
-### Database Commands
-
-```bash
-# Initialize migration system
-./myapp db init
-
-# Create a new migration
-./myapp db create "add_users_table"
-
-# Run all pending migrations
-./myapp db up
-
-# Rollback last migration
-./myapp db down
-
-# Check migration status
-./myapp db status
-
-# Reset database (DANGER!)
-./myapp db reset
-
-# Create tables directly (development only)
-./myapp db setup
-```
-
 ### User Management
 
 ```bash
@@ -241,12 +216,8 @@ migrate -path migrations -database $DATABASE_URL force 1
 # Show application status
 ./myapp status
 
-# Start the server (implement your HTTP server)
-./myapp serve --port 8080
-
 # Show help
 ./myapp --help
-./myapp db --help
 ./myapp user --help
 ```
 
@@ -275,39 +246,6 @@ SECRET_KEY=your-secret-key-here
 PORT=8080
 ```
 
-## 🔄 Development Workflow
-
-### 1. Create a Migration
-```bash
-# Create migration file
-./myapp db create "add_posts_table"
-
-# Edit the generated files in migrations/
-# - migrations/TIMESTAMP_add_posts_table.up.sql
-# - migrations/TIMESTAMP_add_posts_table.down.sql
-```
-
-### 2. Run Migration
-```bash
-# Apply migration
-./myapp db up
-
-# Check status
-./myapp db status
-```
-
-### 3. Update Models
-Edit `internal/database/database.go` to add your new models and operations.
-
-### 4. Test Your Changes
-```bash
-# Create test data
-./myapp user create -u testuser -e test@example.com
-
-# Check application status
-./myapp status
-```
-
 ## 🛠️ Make Commands
 
 ```bash
@@ -327,10 +265,8 @@ make migrate-down   # Rollback migration
 make migrate-create NAME="migration_name"  # Create migration
 
 # Development
-make dev            # Auto-reload server (requires air)
 make status         # Show app status
 make user           # Create admin user
-make serve          # Start server
 ```
 
 ## 📝 Creating Migrations
@@ -377,9 +313,6 @@ export SECRET_KEY="your-production-secret"
 
 # Run migrations
 ./myapp db up
-
-# Start server
-./myapp serve --port 8080
 ```
 
 ### Docker (Optional)
