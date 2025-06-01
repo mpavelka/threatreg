@@ -3,9 +3,10 @@
 .PHONY: build run clean test deps help migrate-up migrate-down migrate-create
 
 # Variables
-BINARY_NAME=myapp
+BINARY_NAME=threatreg
 MAIN_PATH=.
 BUILD_DIR=bin
+BINARY_PATH=$(BUILD_DIR)/$(BINARY_NAME)
 
 # Default target
 help:
@@ -24,13 +25,14 @@ help:
 # Build the application
 build:
 	@echo "🔨 Building $(BINARY_NAME)..."
-	@go build -o $(BINARY_NAME) $(MAIN_PATH)
+	@mkdir -p $(BUILD_DIR)
+	@go build -o $(BINARY_PATH) $(MAIN_PATH)
 	@echo "✅ Build complete!"
 
 # Run the application
 run: build
 	@echo "🚀 Running $(BINARY_NAME)..."
-	@./$(BINARY_NAME)
+	@./$(BINARY_PATH)
 
 # Clean build artifacts
 clean:
@@ -55,23 +57,23 @@ deps:
 install: build
 	@echo "📦 Installing $(BINARY_NAME) globally..."
 	@go install $(MAIN_PATH)
-	@echo "✅ $(BINARY_NAME) installed! You can now run 'myapp' from anywhere."
+	@echo "✅ $(BINARY_NAME) installed! You can now run '$(BINARY_NAME)' from anywhere."
 
 # Database migration commands
 migrate-up: build
 	@echo "⬆️  Running database migrations..."
-	@./$(BINARY_NAME) db up
+	@./$(BINARY_PATH) db up
 
 migrate-down: build
 	@echo "⬇️  Rolling back last migration..."
-	@./$(BINARY_NAME) db down
+	@./$(BINARY_PATH) db down
 
 migrate-create: build
 ifndef NAME
 	@echo "❌ Please provide a migration name: make migrate-create NAME=add_users_table"
 else
 	@echo "📝 Creating migration: $(NAME)"
-	@./$(BINARY_NAME) db create "$(NAME)"
+	@./$(BINARY_PATH) db create "$(NAME)"
 endif
 
 # Development setup
@@ -109,12 +111,12 @@ lint:
 
 # Show application status
 status: build
-	@./$(BINARY_NAME) status
+	@./$(BINARY_PATH) status
 
 # Create a user quickly
 user: build
-	@./$(BINARY_NAME) user create --username admin --email admin@example.com
+	@./$(BINARY_PATH) user create --username admin --email admin@example.com
 
 # Start the server
 serve: build
-	@./$(BINARY_NAME) serve
+	@./$(BINARY_PATH) serve
