@@ -82,18 +82,6 @@ setup:
 	@chmod +x setup.sh
 	@./setup.sh
 
-# Development server with auto-reload (requires air: go install github.com/cosmtrek/air@latest)
-dev:
-	@if command -v air > /dev/null; then \
-		echo "🔄 Starting development server with auto-reload..."; \
-		air; \
-	else \
-		echo "📥 Installing air for auto-reload..."; \
-		go install github.com/cosmtrek/air@latest; \
-		echo "🔄 Starting development server..."; \
-		air; \
-	fi
-
 # Format code
 fmt:
 	@echo "🎨 Formatting code..."
@@ -112,11 +100,3 @@ lint:
 # Show application status
 status: build
 	@./$(BINARY_PATH) status
-
-# Create a user quickly
-user: build
-	@./$(BINARY_PATH) user create --username admin --email admin@example.com
-
-# Start the server
-serve: build
-	@./$(BINARY_PATH) serve
