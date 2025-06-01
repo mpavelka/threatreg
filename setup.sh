@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Variables
+BUILD_DIR="bin"
+BINARY_NAME="threatreg"
+BINARY_PATH="$BUILD_DIR/$BINARY_NAME"
+
 echo "🚀 Setting up Threatreg application..."
 
 # Check if Go is installed
@@ -43,7 +48,8 @@ fi
 
 # Build the application
 echo "🔨 Building application..."
-go build -o threatreg .
+mkdir -p $BUILD_DIR
+go build -o $BINARY_PATH .
 
 if [ $? -eq 0 ]; then
     echo "✅ Build successful!"
@@ -61,12 +67,12 @@ echo ""
 echo "🎉 Setup complete!"
 echo ""
 echo "Available commands:"
-echo "  ./threatreg --help                    # Show all commands"
-echo "  ./threatreg db setup                  # Quick database setup (dev only)"
-echo "  ./threatreg user create -u name -e email@example.com"
-echo "  ./threatreg user list                 # List users"
-echo "  ./threatreg status                    # Show app status"
-echo "  ./threatreg serve                     # Start server"
+echo "  ./$BINARY_PATH --help                    # Show all commands"
+echo "  ./$BINARY_PATH db setup                  # Quick database setup (dev only)"
+echo "  ./$BINARY_PATH user create -u name -e email@example.com"
+echo "  ./$BINARY_PATH user list                 # List users"
+echo "  ./$BINARY_PATH status                    # Show app status"
+echo "  ./$BINARY_PATH serve                     # Start server"
 echo ""
 echo "Database Migrations (use migrate CLI directly):"
 echo "  migrate create -ext sql -dir migrations create_users"
@@ -79,5 +85,5 @@ echo "  1. Create your first migration:"
 echo "     migrate create -ext sql -dir migrations create_users_table"
 echo "  2. Edit the generated SQL files in ./migrations/"
 echo "  3. Run migrations: migrate -path migrations -database \$DATABASE_URL up"
-echo "  4. Create a user: ./threatreg user create -u admin -e admin@example.com"
-echo "  5. Check status: ./threatreg status"
+echo "  4. Create a user: ./$BINARY_PATH user create -u admin -e admin@example.com"
+echo "  5. Check status: ./$BINARY_PATH status"
