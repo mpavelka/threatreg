@@ -51,10 +51,11 @@ func TestConnect(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set test config
 			config.AppConfig = tt.config
-			
+
 			// Reset any existing connection
 			if db != nil {
-				db.Close()
+				dbInstanceSQL, _ := db.DB()
+				dbInstanceSQL.Close()
 				db = nil
 			}
 
@@ -70,13 +71,13 @@ func TestConnect(t *testing.T) {
 				if err != nil {
 					t.Errorf("Connect() error = %v, expected no error", err)
 				}
-				
+
 				// Test that we can get the database instance
 				dbInstance := GetDB()
 				if dbInstance == nil {
 					t.Error("GetDB() returned nil after successful connection")
 				}
-				
+
 				// Clean up
 				Close()
 			}
@@ -112,7 +113,10 @@ func TestDatabaseConnectionWithSQLite(t *testing.T) {
 		}
 
 		// Test that we can ping the database
-		if err := dbInstance.Ping(); err != nil {
+		sqlDB, err := dbInstance.DB()
+		if err != nil {
+			t.Errorf("Failed to get underlying SQL DB: %v", err)
+		} else if err := sqlDB.Ping(); err != nil {
 			t.Errorf("Database ping failed: %v", err)
 		}
 	})
@@ -121,10 +125,10 @@ func TestDatabaseConnectionWithSQLite(t *testing.T) {
 func TestBuildDatabaseURLIntegration(t *testing.T) {
 	// Test that Connect() uses BuildDatabaseURL() correctly
 	originalConfig := config.AppConfig
-	
+
 	// Reset viper to ensure clean state
 	viper.Reset()
-	
+
 	// Test with granular config (no DatabaseURL)
 	config.AppConfig = config.Config{
 		DatabaseURL:      "",
@@ -134,7 +138,8 @@ func TestBuildDatabaseURLIntegration(t *testing.T) {
 
 	// Reset any existing connection
 	if db != nil {
-		db.Close()
+		sqlDB, _ := db.DB()
+		sqlDB.Close()
 		db = nil
 	}
 
@@ -142,12 +147,12 @@ func TestBuildDatabaseURLIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Connect() with granular config error = %v", err)
 	}
-	
+
 	dbInstance := GetDB()
 	if dbInstance == nil {
 		t.Error("GetDB() returned nil after successful connection with granular config")
 	}
-	
+
 	Close()
 
 	// Test with DatabaseURL taking precedence
@@ -165,12 +170,12 @@ func TestBuildDatabaseURLIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Connect() with DatabaseURL precedence error = %v", err)
 	}
-	
+
 	dbInstance = GetDB()
 	if dbInstance == nil {
 		t.Error("GetDB() returned nil after successful connection with DatabaseURL precedence")
 	}
-	
+
 	Close()
 
 	// Restore original config

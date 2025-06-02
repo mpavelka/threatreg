@@ -26,107 +26,97 @@ make setup
 - Make (optional, for convenience commands)
 
 
-## 🗄️ Database Migrations
+## Generating Migrations
 
-This project uses the official [golang-migrate](https://github.com/golang-migrate/migrate) CLI tool for database migrations.
+This project uses [Atlas](https://atlasgo.io/) for database migrations with GORM model integration.
 
-### Installation
+### Atlas Installation
 
-The `migrate` CLI is automatically installed during setup, or install it manually:
+Atlas CLI needs to be installed manually:
 
 ```bash
-# Install migrate CLI
-go install -tags 'sqlite3,postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+# Install Atlas CLI
+go install ariga.io/atlas/cmd/atlas@latest
+
+# Install Atlas GORM provider
+go get -u ariga.io/atlas-provider-gorm
+
+# Make sure atlas is in your PATH
+export PATH=$PATH:$(go env GOPATH)/bin
 
 # Verify installation
-migrate -version
+atlas version
 ```
 
-### Migration Commands
+To generate migrations for each database, use the following commands:
 
-```bash
-# Create a new migration
-migrate create -ext sql -dir migrations create_users_table
+### SQLite
+- Generate: `make migrate-gen-sqlite`
+- Apply: `make migrate-apply-sqlite`
+- Status: `make migrate-status-sqlite`
+- Validate: `make migrate-validate-sqlite`
 
-# Run all pending migrations
-migrate -path migrations -database $DATABASE_URL up
-
-# Rollback one migration
-migrate -path migrations -database $DATABASE_URL down 1
-
-# Check migration status
-migrate -path migrations -database $DATABASE_URL version
-
-# Force migration version (recovery)
-migrate -path migrations -database $DATABASE_URL force 1
-
-# Drop all tables (DANGER!)
-migrate -path migrations -database $DATABASE_URL drop
-```
-
-### Make Shortcuts
-
-For convenience, you can use Make commands:
-
-```bash
-# Create migration
-make migrate-create NAME=add_posts_table
-
-# Run migrations
-make migrate-up
-
-# Rollback last migration  
-make migrate-down
-
-# Check status
-make migrate-status
-
-# Force version (for recovery)
-make migrate-force VERSION=1
-```
+### Postgres
+- Generate: `make migrate-gen-postgres`
+- Apply: `make migrate-apply-postgres`
+- Status: `make migrate-status-postgres`
+- Validate: `make migrate-validate-postgres`
 
 ### Migration Workflow
 
-1. **Create a migration:**
-```bash
-migrate create -ext sql -dir migrations add_users_table
+1. **Update your GORM models:**
+```go
+// internal/models/product.go
+type Product struct {
+    ID          uuid.UUID `gorm:"type:uuid;primary_key"`
+    Name        string    `gorm:"not null"`
+    Description string
+    gorm.Model
+}
 ```
 
-This creates two files:
-- `migrations/000001_add_users_table.up.sql` - Forward migration
-- `migrations/000001_add_users_table.down.sql` - Rollback migration
+2. **Generate migration from models:**
+```bash
+atlas migrate diff --env sqlite
+```
+This creates a new migration file in the `migrations/` directory based on the difference between your current database schema and your GORM models.
 
-2. **Edit the migration files:**
-
-**`000001_add_users_table.up.sql`:**
+3. **Create a down migration file:**
+For each generated migration (e.g., `20250602124850.sql`), create a corresponding down migration file named `20250602124850_down.sql` in the same directory. This file should contain SQL to revert the changes. For example:
 ```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
+-- Drop index and table for products (rollback)
+DROP INDEX IF EXISTS idx_products_deleted_at;
+DROP TABLE IF EXISTS products;
 ```
 
-**`000001_add_users_table.down.sql`:**
-```sql
-DROP INDEX IF EXISTS idx_users_email;
-DROP INDEX IF EXISTS idx_users_username;
-DROP TABLE IF EXISTS users;
-```
+4. **Review the generated migration:**
+Atlas will show you the SQL changes and create a migration file like `migrations/20240101120000.sql`.
 
-3. **Run the migration:**
+5. **Apply the migration:**
 ```bash
-migrate -path migrations -database $DATABASE_URL up
+atlas migrate apply --env sqlite
 ```
 
-4. **Verify it worked:**
+6. **Verify it worked:**
 ```bash
-./threatreg status
+atlas migrate status --env sqlite
 ```
+
+## Troubleshooting
+
+To apply only one migration (go one migration up):
+
+```sh
+atlas migrate apply --env sqlite --dir file://migrations/sqlite --limit 1
+```
+
+To roll back (revert) the last migration (go one migration down):
+
+```sh
+atlas migrate down --env sqlite --dir file://migrations/sqlite --steps 1
+```
+
+Replace `sqlite` and the directory as needed for Postgres.
 
 ### Environment Variables
 
@@ -138,73 +128,6 @@ export DATABASE_URL="sqlite3://app.db"
 
 # PostgreSQL
 export DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
-```
-
-### Production Deployment
-
-For production, generate SQL scripts for review:
-
-```bash
-# Generate SQL for all pending migrations
-migrate -path migrations -database $DATABASE_URL up -dry-run > migration_script.sql
-
-# Review the SQL
-cat migration_script.sql
-
-# Apply manually or through your deployment process
-```
-
-### Troubleshooting
-
-**Migration fails:**
-```bash
-# Check current version
-migrate -path migrations -database $DATABASE_URL version
-
-# Force to specific version if needed
-migrate -path migrations -database $DATABASE_URL force 1
-```
-
-**Dirty database state:**
-```bash
-# Check logs and fix manually, then force to clean version
-migrate -path migrations -database $DATABASE_URL force 1
-```
-
-## 🗄️ Database Configuration
-
-### SQLite (Default)
-```bash
-DATABASE_URL=sqlite3://app.db
-```
-
-### PostgreSQL
-```bash
-DATABASE_URL=postgresql://username:password@localhost:5432/database_name
-```
-
-## 📝 Creating Migrations
-
-### Example Migration Files
-
-**up migration** (`migrations/20240530120000_create_users.up.sql`):
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
-```
-
-**down migration** (`migrations/20240530120000_create_users.down.sql`):
-```sql
-DROP INDEX IF EXISTS idx_users_email;
-DROP INDEX IF EXISTS idx_users_username;
-DROP TABLE IF EXISTS users;
 ```
 
 ## 🏭 Production Deployment
