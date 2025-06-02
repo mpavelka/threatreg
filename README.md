@@ -1,6 +1,6 @@
 # Go CLI Application with Database Migrations
 
-A complete Go application template with database migrations, CLI interface, and user management. Built with modern Go practices and robust tooling.
+A complete Go application template with database migrations, CLI interface.
 
 ## 🚀 Quick Start
 
@@ -18,7 +18,6 @@ make setup
 - **Database Migrations** with golang-migrate - Version-controlled schema changes
 - **Multi-database Support** - SQLite, PostgreSQL (MySQL ready)
 - **Configuration Management** - Environment variables with Viper
-- **User Management** - Complete CRUD operations
 - **Production Ready** - Proper error handling, logging, and project structure
 
 ## 📋 Requirements
@@ -26,25 +25,6 @@ make setup
 - Go 1.24+
 - Make (optional, for convenience commands)
 
-## 🏗️ Project Structure
-
-```
-myapp/
-├── cmd/                    # CLI commands
-│   ├── root.go            # Root command and setup
-│   ├── db.go              # Database management commands
-│   ├── user.go            # User management commands
-│   └── status.go          # Status command
-├── internal/
-│   ├── config/            # Configuration management
-│   ├── database/          # Database models and operations
-│   └── migrations/        # Migration management
-├── migrations/            # SQL migration files
-├── .env.example          # Environment configuration template
-├── go.mod                # Go module dependencies
-├── Makefile              # Development commands
-└── README.md             # This file
-```
 
 ## 🗄️ Database Migrations
 
@@ -191,36 +171,6 @@ migrate -path migrations -database $DATABASE_URL force 1
 migrate -path migrations -database $DATABASE_URL force 1
 ```
 
-## 📚 Usage
-
-### User Management
-
-```bash
-# Create a new user
-./myapp user create --username john --email john@example.com
-./myapp user create -u jane -e jane@example.com
-
-# List all users
-./myapp user list
-
-# Show specific user
-./myapp user show 1
-
-# Delete a user
-./myapp user delete 1
-```
-
-### Application Commands
-
-```bash
-# Show application status
-./myapp status
-
-# Show help
-./myapp --help
-./myapp user --help
-```
-
 ## 🗄️ Database Configuration
 
 ### SQLite (Default)
@@ -231,42 +181,6 @@ DATABASE_URL=sqlite3://app.db
 ### PostgreSQL
 ```bash
 DATABASE_URL=postgresql://username:password@localhost:5432/database_name
-```
-
-### Environment Variables
-Create a `.env` file:
-```bash
-# Copy from example
-cp .env.example .env
-
-# Edit your settings
-DATABASE_URL=sqlite3://app.db
-APP_ENV=development
-SECRET_KEY=your-secret-key-here
-PORT=8080
-```
-
-## 🛠️ Make Commands
-
-```bash
-make help           # Show all available commands
-make build          # Build the application
-make run            # Build and run
-make test           # Run tests
-make clean          # Clean build files
-make deps           # Update dependencies
-make install        # Install globally
-make fmt            # Format code
-make lint           # Lint code (requires golangci-lint)
-
-# Database shortcuts
-make migrate-up     # Run migrations
-make migrate-down   # Rollback migration
-make migrate-create NAME="migration_name"  # Create migration
-
-# Development
-make status         # Show app status
-make user           # Create admin user
 ```
 
 ## 📝 Creating Migrations
@@ -303,84 +217,3 @@ go build -ldflags="-w -s" -o myapp .
 # Or with Make
 make build
 ```
-
-### Environment Setup
-```bash
-# Production environment variables
-export DATABASE_URL="postgresql://user:pass@localhost:5432/prod_db"
-export APP_ENV="production"
-export SECRET_KEY="your-production-secret"
-
-# Run migrations
-./myapp db up
-```
-
-### Docker (Optional)
-```dockerfile
-FROM golang:1.24-alpine AS builder
-WORKDIR /app
-COPY . .
-RUN go build -ldflags="-w -s" -o myapp .
-
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /app/myapp .
-CMD ["./myapp", "serve"]
-```
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**Migration fails:**
-```bash
-# Check current status
-./myapp db status
-
-# Force to specific version if needed
-./myapp db force 1
-```
-
-**Database connection issues:**
-```bash
-# Check your DATABASE_URL in .env
-# Verify database server is running
-./myapp status
-```
-
-**Build errors:**
-```bash
-# Update dependencies
-go mod tidy
-
-# Clean and rebuild
-make clean && make build
-```
-
-## 📦 Dependencies
-
-- **[cobra](https://github.com/spf13/cobra)** - CLI framework
-- **[viper](https://github.com/spf13/viper)** - Configuration management
-- **[sqlx](https://github.com/jmoiron/sqlx)** - SQL toolkit
-- **[golang-migrate](https://github.com/golang-migrate/migrate)** - Database migrations
-- **[godotenv](https://github.com/joho/godotenv)** - Environment variables
-- **Database drivers:** SQLite, PostgreSQL
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-**Happy coding! 🚀** 
-
-This template gives you a solid foundation for building CLI applications in Go with proper database management, migrations, and modern Go practices.
