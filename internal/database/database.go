@@ -58,6 +58,13 @@ func GetDB() *gorm.DB {
 	return db
 }
 
+func GetDBOrError() (*gorm.DB, error) {
+	if db == nil {
+		return nil, fmt.Errorf("database connection is not initialized")
+	}
+	return db, nil
+}
+
 // Close closes the database connection
 func Close() error {
 	if db != nil {
