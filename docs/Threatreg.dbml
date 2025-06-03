@@ -1,0 +1,73 @@
+Table Product {
+	id uuid [ pk, not null, unique ]
+	name varchar
+	description text
+}
+
+Table Application {
+	id uuid [ pk, not null, unique ]
+	instance_of uuid
+}
+
+Table ThreatAssignment {
+	id integer [ pk, increment, not null, unique ]
+	threat_id uuid
+	product_id uuid
+	application_id uuid
+}
+
+Table Threat {
+	id uuid [ pk, not null, unique ]
+	title varchar
+	description text
+}
+
+Table Control {
+	id uuid [ pk, not null, unique ]
+	title varchar
+	description text
+}
+
+Table ControlAssignment {
+	id integer [ pk, increment, not null, unique ]
+	threat_assignment_id integer
+	control_id uuid
+}
+
+Table ThreatControl {
+	id integer [ pk, increment, not null, unique ]
+	threat_id uuid
+	control_id uuid
+}
+
+Ref fk_Product_id_Application {
+	Product.id < Application.instance_of [ delete: no action, update: no action ]
+}
+
+Ref fk_Product_id_Threat {
+	Product.id < ThreatAssignment.product_id [ delete: no action, update: no action ]
+}
+
+Ref fk_Application_id_Threat {
+	Application.id < ThreatAssignment.application_id [ delete: no action, update: no action ]
+}
+
+Ref fk_Threat_id_ThreatAssignment {
+	Threat.id < ThreatAssignment.threat_id [ delete: no action, update: no action ]
+}
+
+Ref fk_Control_id_ControlAssignment {
+	Control.id < ControlAssignment.control_id [ delete: no action, update: no action ]
+}
+
+Ref fk_ThreatAssignment_id_ControlAssignment {
+	ThreatAssignment.id < ControlAssignment.threat_assignment_id [ delete: no action, update: no action ]
+}
+
+Ref fk_Control_id_ThreatControl {
+	Control.id < ThreatControl.control_id [ delete: no action, update: no action ]
+}
+
+Ref fk_Threat_id_ThreatControl {
+	Threat.id < ThreatControl.threat_id [ delete: no action, update: no action ]
+}

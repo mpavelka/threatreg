@@ -119,8 +119,8 @@ migrate-validate-postgres:
 migrate-gen-sqlite:
 	@echo "📝 Generating SQLite migration from GORM models..."
 	@mkdir -p migrations/sqlite
-	@read -r DESC?'Enter migration description: '; \
-	$(ATLAS_CMD) migrate diff --env sqlite --dir file://migrations/sqlite --description "$$DESC"
+	# @read -r DESC?'Enter migration description: '; \
+	$(ATLAS_CMD) migrate diff --env sqlite --dir file://migrations/sqlite
 
 migrate-gen-postgres:
 	@echo "📝 Generating Postgres migration from GORM models..."
