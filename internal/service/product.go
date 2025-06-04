@@ -5,19 +5,25 @@ import (
 	"threatreg/internal/database"
 	"threatreg/internal/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func GetProduct(id string) (*models.Product, error) {
-	product := &models.Product{}
-	result := database.GetDB().First(product, id)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("product not found with id: %s", id)
-		}
-		return nil, fmt.Errorf("error retrieving product: %w", result.Error)
+func getProductRepository() (*models.ProductRepository, error) {
+	db, err := database.GetDBOrError()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database connection: %w", err)
 	}
-	return product, nil
+	return models.NewProductRepository(db), nil
+}
+
+func GetProduct(id uuid.UUID) (*models.Product, error) {
+	productRepository, err := getProductRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return productRepository.GetByID(nil, id)
 }
 
 func CreateProduct(
@@ -29,59 +35,69 @@ func CreateProduct(
 		Name:        Name,
 		Description: Description,
 	}
-	fmt.Printf("Creating product with name: '%s' and description: '%s'\n", product.Name, product.Description)
-	db, err := database.GetDBOrError()
+	productRepository, err := getProductRepository()
 	if err != nil {
 		return nil, err
 	}
-	result := db.Create(product)
-	if result.Error != nil {
-		return nil, fmt.Errorf("error creating product: %w", result.Error)
+
+	err = productRepository.Create(nil, product)
+	if err != nil {
+		fmt.Println("Error creating product:", err)
+		return nil, err
 	}
-	if result.RowsAffected != 1 {
-		return nil, fmt.Errorf("unexpected number of rows affected: %d", result.RowsAffected)
-	}
+
 	return product, nil
 }
 
 func UpdateProduct(
-	id string,
+	id uuid.UUID,
 	Name *string,
 	Description *string,
 ) (*models.Product, error) {
 	var updatedProduct *models.Product
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
-		product := &models.Product{}
-		result := tx.First(product, id)
-		if result.Error != nil {
-			return fmt.Errorf("error finding product: %w", result.Error)
+		productRepository, err := getProductRepository()
+		if err != nil {
+			return err
 		}
+		product, err := productRepository.GetByID(tx, id)
+		if err != nil {
+			return err
+		}
+
+		// New values
 		if Name != nil {
 			product.Name = *Name
 		}
 		if Description != nil {
 			product.Description = *Description
 		}
-		saveResult := tx.Save(product)
-		if saveResult.Error != nil {
-			return fmt.Errorf("error updating product: %w", saveResult.Error)
+
+		err = productRepository.Update(tx, product)
+		if err != nil {
+			return err
 		}
 		updatedProduct = product
 		return nil
 	})
+
+	return updatedProduct, err
+}
+
+func DeleteProduct(id uuid.UUID) error {
+	productRepository, err := getProductRepository()
+	if err != nil {
+		return err
+	}
+
+	return productRepository.Delete(nil, id)
+}
+
+func ListProducts() ([]models.Product, error) {
+	productRepository, err := getProductRepository()
 	if err != nil {
 		return nil, err
 	}
-	return updatedProduct, nil
-}
 
-func DeleteProduct(id string) error {
-	result := database.GetDB().Delete(&models.Product{}, id)
-	if result.Error != nil {
-		return fmt.Errorf("error deleting product: %w", result.Error)
-	}
-	if result.RowsAffected != 1 {
-		return fmt.Errorf("unexpected number of rows affected: %d", result.RowsAffected)
-	}
-	return nil
+	return productRepository.List(nil)
 }

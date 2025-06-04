@@ -21,3 +21,57 @@ func (p *Product) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+type ProductRepository struct {
+	db *gorm.DB
+}
+
+func NewProductRepository(db *gorm.DB) *ProductRepository {
+	return &ProductRepository{db: db}
+}
+
+func (r *ProductRepository) Create(tx *gorm.DB, product *Product) error {
+	if tx == nil {
+		tx = r.db
+	}
+	return tx.Create(product).Error
+}
+
+func (r *ProductRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*Product, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var product Product
+	err := tx.First(&product, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
+func (r *ProductRepository) Update(tx *gorm.DB, product *Product) error {
+	if tx == nil {
+		tx = r.db
+	}
+	return tx.Save(product).Error
+}
+
+func (r *ProductRepository) Delete(tx *gorm.DB, id uuid.UUID) error {
+	if tx == nil {
+		tx = r.db
+	}
+	return tx.Delete(&Product{}, "id = ?", id).Error
+}
+
+func (r *ProductRepository) List(tx *gorm.DB) ([]Product, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var products []Product
+	err := r.db.Find(&products).Error
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+}

@@ -32,4 +32,5 @@ go.work.sum
 # .vscode/
 
 app.db
+app.dev.db
 bin/

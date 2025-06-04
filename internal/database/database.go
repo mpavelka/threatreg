@@ -49,7 +49,6 @@ func Connect() error {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	fmt.Println("✅ Database connected successfully")
 	return nil
 }
 
