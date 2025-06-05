@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 	"threatreg/internal/database"
 	"threatreg/internal/models"
@@ -22,15 +23,17 @@ func TestApplicationService_Integration(t *testing.T) {
 
 	t.Run("CreateApplication", func(t *testing.T) {
 		// Test data
+		name := "Test Application"
 		instanceOf := testProduct.ID
 
 		// Create application
-		application, err := CreateApplication(instanceOf)
+		application, err := CreateApplication(name, instanceOf)
 
 		// Assertions
 		require.NoError(t, err)
 		assert.NotNil(t, application)
 		assert.NotEqual(t, uuid.Nil, application.ID)
+		assert.Equal(t, name, application.Name)
 		assert.Equal(t, instanceOf, application.InstanceOf)
 
 		// Verify application was actually saved to database
@@ -39,13 +42,15 @@ func TestApplicationService_Integration(t *testing.T) {
 		err = db.First(&dbApplication, "id = ?", application.ID).Error
 		require.NoError(t, err)
 		assert.Equal(t, application.ID, dbApplication.ID)
+		assert.Equal(t, name, dbApplication.Name)
 		assert.Equal(t, instanceOf, dbApplication.InstanceOf)
 	})
 
 	t.Run("GetApplication", func(t *testing.T) {
 		// Create an application first
+		name := "Get Test Application"
 		instanceOf := testProduct.ID
-		createdApplication, err := CreateApplication(instanceOf)
+		createdApplication, err := CreateApplication(name, instanceOf)
 		require.NoError(t, err)
 
 		// Get the application
@@ -55,6 +60,7 @@ func TestApplicationService_Integration(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, retrievedApplication)
 		assert.Equal(t, createdApplication.ID, retrievedApplication.ID)
+		assert.Equal(t, name, retrievedApplication.Name)
 		assert.Equal(t, instanceOf, retrievedApplication.InstanceOf)
 		assert.Equal(t, testProduct.ID, retrievedApplication.Product.ID)
 		assert.Equal(t, testProduct.Name, retrievedApplication.Product.Name)
@@ -77,18 +83,21 @@ func TestApplicationService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create an application first
+		originalName := "Original Application"
 		originalInstanceOf := testProduct.ID
-		createdApplication, err := CreateApplication(originalInstanceOf)
+		createdApplication, err := CreateApplication(originalName, originalInstanceOf)
 		require.NoError(t, err)
 
 		// Update the application
+		newName := "Updated Application"
 		newInstanceOf := anotherProduct.ID
-		updatedApplication, err := UpdateApplication(createdApplication.ID, &newInstanceOf)
+		updatedApplication, err := UpdateApplication(createdApplication.ID, &newName, &newInstanceOf)
 
 		// Assertions
 		require.NoError(t, err)
 		assert.NotNil(t, updatedApplication)
 		assert.Equal(t, createdApplication.ID, updatedApplication.ID)
+		assert.Equal(t, newName, updatedApplication.Name)
 		assert.Equal(t, newInstanceOf, updatedApplication.InstanceOf)
 		
 		// Also verify the Product relationship is loaded correctly
@@ -100,37 +109,43 @@ func TestApplicationService_Integration(t *testing.T) {
 		var dbApplication models.Application
 		err = db.First(&dbApplication, "id = ?", createdApplication.ID).Error
 		require.NoError(t, err)
+		assert.Equal(t, newName, dbApplication.Name)
 		assert.Equal(t, newInstanceOf, dbApplication.InstanceOf)
 	})
 
-	t.Run("UpdateApplication_NoChange", func(t *testing.T) {
+	t.Run("UpdateApplication_PartialUpdate", func(t *testing.T) {
 		// Create an application first
+		originalName := "Partial Update Application"
 		originalInstanceOf := testProduct.ID
-		createdApplication, err := CreateApplication(originalInstanceOf)
+		createdApplication, err := CreateApplication(originalName, originalInstanceOf)
 		require.NoError(t, err)
 
-		// Update with nil (no change)
-		updatedApplication, err := UpdateApplication(createdApplication.ID, nil)
+		// Update only the name
+		newName := "New Name Only"
+		updatedApplication, err := UpdateApplication(createdApplication.ID, &newName, nil)
 
 		// Assertions
 		require.NoError(t, err)
 		assert.NotNil(t, updatedApplication)
 		assert.Equal(t, createdApplication.ID, updatedApplication.ID)
+		assert.Equal(t, newName, updatedApplication.Name)
 		assert.Equal(t, originalInstanceOf, updatedApplication.InstanceOf) // Should remain unchanged
 
-		// Verify no change was persisted
+		// Verify the partial update was persisted
 		db := database.GetDB()
 		var dbApplication models.Application
 		err = db.First(&dbApplication, "id = ?", createdApplication.ID).Error
 		require.NoError(t, err)
+		assert.Equal(t, newName, dbApplication.Name)
 		assert.Equal(t, originalInstanceOf, dbApplication.InstanceOf)
 	})
 
 	t.Run("UpdateApplication_NotFound", func(t *testing.T) {
 		// Try to update a non-existent application
 		nonExistentID := uuid.New()
+		newName := "New Name"
 		newInstanceOf := testProduct.ID
-		application, err := UpdateApplication(nonExistentID, &newInstanceOf)
+		application, err := UpdateApplication(nonExistentID, &newName, &newInstanceOf)
 
 		// Should return error and nil application
 		assert.Error(t, err)
@@ -140,8 +155,9 @@ func TestApplicationService_Integration(t *testing.T) {
 
 	t.Run("DeleteApplication", func(t *testing.T) {
 		// Create an application first
+		name := "Delete Test Application"
 		instanceOf := testProduct.ID
-		createdApplication, err := CreateApplication(instanceOf)
+		createdApplication, err := CreateApplication(name, instanceOf)
 		require.NoError(t, err)
 
 		// Delete the application
@@ -175,7 +191,8 @@ func TestApplicationService_Integration(t *testing.T) {
 		// Create multiple applications
 		var createdApplications []*models.Application
 		for i := 0; i < 3; i++ {
-			application, err := CreateApplication(testProduct.ID)
+			name := fmt.Sprintf("Application %d", i+1)
+			application, err := CreateApplication(name, testProduct.ID)
 			require.NoError(t, err)
 			createdApplications = append(createdApplications, application)
 		}
@@ -196,6 +213,7 @@ func TestApplicationService_Integration(t *testing.T) {
 		for _, created := range createdApplications {
 			retrieved, exists := applicationMap[created.ID]
 			assert.True(t, exists, "Created application should exist in list")
+			assert.Equal(t, created.Name, retrieved.Name)
 			assert.Equal(t, created.InstanceOf, retrieved.InstanceOf)
 			assert.Equal(t, testProduct.ID, retrieved.Product.ID)
 		}
@@ -228,11 +246,13 @@ func TestApplicationService_Integration(t *testing.T) {
 		var anotherProductApps []*models.Application
 
 		for i := 0; i < 2; i++ {
-			app1, err := CreateApplication(testProduct.ID)
+			app1Name := fmt.Sprintf("Test Product App %d", i+1)
+			app1, err := CreateApplication(app1Name, testProduct.ID)
 			require.NoError(t, err)
 			testProductApps = append(testProductApps, app1)
 
-			app2, err := CreateApplication(anotherProduct.ID)
+			app2Name := fmt.Sprintf("Another Product App %d", i+1)
+			app2, err := CreateApplication(app2Name, anotherProduct.ID)
 			require.NoError(t, err)
 			anotherProductApps = append(anotherProductApps, app2)
 		}

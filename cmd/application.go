@@ -30,8 +30,8 @@ var applicationGetCmd = &cobra.Command{
 			fmt.Printf("Error retrieving application: %v\n", err)
 			return
 		}
-		fmt.Printf("Application details: uuid=%s, instance_of=%s, product_name=%s\n", 
-			application.ID, application.InstanceOf, application.Product.Name)
+		fmt.Printf("Application details: uuid=%s, name=%s, instance_of=%s, product_name=%s\n", 
+			application.ID, application.Name, application.InstanceOf, application.Product.Name)
 	},
 }
 
@@ -39,7 +39,12 @@ var applicationCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new application instance of a product",
 	Run: func(cmd *cobra.Command, args []string) {
+		name, _ := cmd.Flags().GetString("name")
 		instanceOf, _ := cmd.Flags().GetString("instance-of")
+		if name == "" {
+			fmt.Println("Error: name is required")
+			return
+		}
 		if instanceOf == "" {
 			fmt.Println("Error: instance-of is required")
 			return
@@ -49,12 +54,13 @@ var applicationCreateCmd = &cobra.Command{
 			fmt.Println("Error: invalid instance-of ID (must be a uuid)")
 			return
 		}
-		application, err := service.CreateApplication(productUUID)
+		application, err := service.CreateApplication(name, productUUID)
 		if err != nil {
 			fmt.Printf("Error creating application: %v\n", err)
 			return
 		}
-		fmt.Printf("Application created: uuid=%s, instance_of=%s\n", application.ID, application.InstanceOf)
+		fmt.Printf("Application created: uuid=%s, name=%s, instance_of=%s\n", 
+			application.ID, application.Name, application.InstanceOf)
 	},
 }
 
@@ -69,6 +75,12 @@ var applicationUpdateCmd = &cobra.Command{
 			return
 		}
 
+		var name *string
+		nameStr, err := cmd.Flags().GetString("name")
+		if err == nil && nameStr != "" {
+			name = &nameStr
+		}
+
 		var instanceOf *uuid.UUID
 		instanceOfStr, err := cmd.Flags().GetString("instance-of")
 		if err == nil && instanceOfStr != "" {
@@ -80,14 +92,14 @@ var applicationUpdateCmd = &cobra.Command{
 			instanceOf = &parsedUUID
 		}
 
-		application, err := service.UpdateApplication(appUUID, instanceOf)
+		application, err := service.UpdateApplication(appUUID, name, instanceOf)
 		if err != nil {
 			fmt.Printf("Error updating application: %v\n", err)
 			return
 		}
 		fmt.Println("✅ Application updated:")
-		fmt.Printf("- uuid=%s, instance_of=%s, product_name=%s\n", 
-			application.ID, application.InstanceOf, application.Product.Name)
+		fmt.Printf("- uuid=%s, name=%s, instance_of=%s, product_name=%s\n", 
+			application.ID, application.Name, application.InstanceOf, application.Product.Name)
 	},
 }
 
@@ -142,8 +154,8 @@ var applicationListCmd = &cobra.Command{
 		}
 		
 		for _, application := range applications {
-			fmt.Printf("- uuid=%s, instance_of=%s, product_name=%s\n", 
-				application.ID, application.InstanceOf, application.Product.Name)
+			fmt.Printf("- uuid=%s, name=%s, instance_of=%s, product_name=%s\n", 
+				application.ID, application.Name, application.InstanceOf, application.Product.Name)
 		}
 	},
 }
@@ -154,8 +166,10 @@ func init() {
 	}
 
 	applicationGetCmd.Flags().String("id", "", "UUID of the application (required)")
+	applicationCreateCmd.Flags().String("name", "", "Name of the application (required)")
 	applicationCreateCmd.Flags().String("instance-of", "", "UUID of the product this application is an instance of (required)")
 	applicationUpdateCmd.Flags().String("id", "", "UUID of the application (required)")
+	applicationUpdateCmd.Flags().String("name", "", "New name of the application")
 	applicationUpdateCmd.Flags().String("instance-of", "", "New product UUID this application is an instance of")
 	applicationDeleteCmd.Flags().String("id", "", "UUID of the application (required)")
 	applicationListCmd.Flags().String("product-id", "", "Filter applications by product UUID (optional)")

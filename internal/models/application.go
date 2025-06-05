@@ -7,6 +7,7 @@ import (
 
 type Application struct {
 	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
+	Name              string             `gorm:"type:varchar(255)"`
 	InstanceOf        uuid.UUID          `gorm:"type:uuid"`
 	Product           Product            `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ApplicationID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
@@ -50,9 +51,9 @@ func (r *ApplicationRepository) Update(tx *gorm.DB, application *Application) er
 	if tx == nil {
 		tx = r.db
 	}
-	// Use Updates to explicitly update the foreign key field
+	// Use Updates to explicitly update both name and foreign key field
 	// GORM may not update foreign key fields with Save due to the relationship
-	return tx.Model(application).Select("instance_of").Updates(application).Error
+	return tx.Model(application).Select("name", "instance_of").Updates(application).Error
 }
 
 func (r *ApplicationRepository) Delete(tx *gorm.DB, id uuid.UUID) error {

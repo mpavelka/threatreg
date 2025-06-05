@@ -26,8 +26,9 @@ func GetApplication(id uuid.UUID) (*models.Application, error) {
 	return applicationRepository.GetByID(nil, id)
 }
 
-func CreateApplication(instanceOf uuid.UUID) (*models.Application, error) {
+func CreateApplication(name string, instanceOf uuid.UUID) (*models.Application, error) {
 	application := &models.Application{
+		Name:       name,
 		InstanceOf: instanceOf,
 	}
 	applicationRepository, err := getApplicationRepository()
@@ -46,6 +47,7 @@ func CreateApplication(instanceOf uuid.UUID) (*models.Application, error) {
 
 func UpdateApplication(
 	id uuid.UUID,
+	name *string,
 	instanceOf *uuid.UUID,
 ) (*models.Application, error) {
 	var updatedApplication *models.Application
@@ -60,6 +62,9 @@ func UpdateApplication(
 		}
 
 		// New values
+		if name != nil {
+			application.Name = *name
+		}
 		if instanceOf != nil {
 			application.InstanceOf = *instanceOf
 		}
