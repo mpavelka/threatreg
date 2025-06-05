@@ -77,7 +77,7 @@ type Product struct {
 
 2. **Generate migration from models:**
 ```bash
-atlas migrate diff --env sqlite
+$(go env GOPATH)/bin/atlas migrate diff $MIGRATION_SUFFIX --env sqlite --dir file://migrations/sqlite
 ```
 This creates a new migration file in the `migrations/` directory based on the difference between your current database schema and your GORM models.
 
