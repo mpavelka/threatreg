@@ -29,4 +29,5 @@ func init() {
 	initStatusCmd()
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(productCmd)
+	rootCmd.AddCommand(applicationCmd)
 }
