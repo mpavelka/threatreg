@@ -15,7 +15,7 @@ func NewRootLayout(app *tview.Application) *RootLayout {
 		contentContainer.SetContent(NewProductsView())
 	})
 	applicationsBtn := tview.NewButton("Applications").SetSelectedFunc(func() {
-		contentContainer.SetContent(NewApplicationsView())
+		contentContainer.SetContent(NewApplicationsView(contentContainer))
 	})
 	threatsBtn := tview.NewButton("Threats").SetSelectedFunc(func() {
 		contentContainer.SetContent(NewThreatsView())
