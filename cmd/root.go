@@ -31,4 +31,5 @@ func init() {
 	rootCmd.AddCommand(productCmd)
 	rootCmd.AddCommand(applicationCmd)
 	rootCmd.AddCommand(threatCmd)
+	rootCmd.AddCommand(controlCmd)
 }
