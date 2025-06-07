@@ -119,10 +119,10 @@ func BuildDatabaseURL() string {
 		if dbName == "" {
 			dbName = "postgres"
 		}
-		
+
 		var connStr strings.Builder
 		connStr.WriteString("postgresql://")
-		
+
 		if AppConfig.DatabaseUsername != "" {
 			connStr.WriteString(AppConfig.DatabaseUsername)
 			if AppConfig.DatabasePassword != "" {
@@ -131,13 +131,13 @@ func BuildDatabaseURL() string {
 			}
 			connStr.WriteString("@")
 		}
-		
+
 		connStr.WriteString(host)
 		connStr.WriteString(":")
 		connStr.WriteString(port)
 		connStr.WriteString("/")
 		connStr.WriteString(dbName)
-		
+
 		return connStr.String()
 	default:
 		return fmt.Sprintf("%s://app.db", protocol)

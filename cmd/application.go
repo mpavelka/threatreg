@@ -30,7 +30,7 @@ var applicationGetCmd = &cobra.Command{
 			fmt.Printf("Error retrieving application: %v\n", err)
 			return
 		}
-		fmt.Printf("Application details: uuid=%s, name=%s, instance_of=%s, product_name=%s\n", 
+		fmt.Printf("Application details: uuid=%s, name=%s, instance_of=%s, product_name=%s\n",
 			application.ID, application.Name, application.InstanceOf, application.Product.Name)
 	},
 }
@@ -59,7 +59,7 @@ var applicationCreateCmd = &cobra.Command{
 			fmt.Printf("Error creating application: %v\n", err)
 			return
 		}
-		fmt.Printf("Application created: uuid=%s, name=%s, instance_of=%s\n", 
+		fmt.Printf("Application created: uuid=%s, name=%s, instance_of=%s\n",
 			application.ID, application.Name, application.InstanceOf)
 	},
 }
@@ -98,7 +98,7 @@ var applicationUpdateCmd = &cobra.Command{
 			return
 		}
 		fmt.Println("✅ Application updated:")
-		fmt.Printf("- uuid=%s, name=%s, instance_of=%s, product_name=%s\n", 
+		fmt.Printf("- uuid=%s, name=%s, instance_of=%s, product_name=%s\n",
 			application.ID, application.Name, application.InstanceOf, application.Product.Name)
 	},
 }
@@ -127,10 +127,10 @@ var applicationListCmd = &cobra.Command{
 	Short: "List all applications",
 	Run: func(cmd *cobra.Command, args []string) {
 		productID, _ := cmd.Flags().GetString("product-id")
-		
+
 		var applications []models.Application
 		var err error
-		
+
 		if productID != "" {
 			productUUID, err := uuid.Parse(productID)
 			if err != nil {
@@ -141,20 +141,20 @@ var applicationListCmd = &cobra.Command{
 		} else {
 			applications, err = service.ListApplications()
 		}
-		
+
 		if err != nil {
 			fmt.Printf("Error listing applications: %v\n", err)
 			return
 		}
-		
+
 		if productID != "" {
 			fmt.Printf("Applications for product %s:\n", productID)
 		} else {
 			fmt.Println("Applications:")
 		}
-		
+
 		for _, application := range applications {
-			fmt.Printf("- uuid=%s, name=%s, instance_of=%s, product_name=%s\n", 
+			fmt.Printf("- uuid=%s, name=%s, instance_of=%s, product_name=%s\n",
 				application.ID, application.Name, application.InstanceOf, application.Product.Name)
 		}
 	},

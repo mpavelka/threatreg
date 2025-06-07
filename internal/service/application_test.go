@@ -99,7 +99,7 @@ func TestApplicationService_Integration(t *testing.T) {
 		assert.Equal(t, createdApplication.ID, updatedApplication.ID)
 		assert.Equal(t, newName, updatedApplication.Name)
 		assert.Equal(t, newInstanceOf, updatedApplication.InstanceOf)
-		
+
 		// Also verify the Product relationship is loaded correctly
 		assert.Equal(t, anotherProduct.ID, updatedApplication.Product.ID)
 		assert.Equal(t, anotherProduct.Name, updatedApplication.Product.Name)

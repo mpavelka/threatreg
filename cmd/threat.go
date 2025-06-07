@@ -29,7 +29,7 @@ var threatGetCmd = &cobra.Command{
 			fmt.Printf("Error retrieving threat: %v\n", err)
 			return
 		}
-		fmt.Printf("Threat details: uuid=%s, title=%s, description=%s\n", 
+		fmt.Printf("Threat details: uuid=%s, title=%s, description=%s\n",
 			threat.ID, threat.Title, threat.Description)
 	},
 }
@@ -49,7 +49,7 @@ var threatCreateCmd = &cobra.Command{
 			fmt.Printf("Error creating threat: %v\n", err)
 			return
 		}
-		fmt.Printf("Threat created: uuid=%s, title=%s, description=%s\n", 
+		fmt.Printf("Threat created: uuid=%s, title=%s, description=%s\n",
 			threat.ID, threat.Title, threat.Description)
 	},
 }
@@ -83,7 +83,7 @@ var threatUpdateCmd = &cobra.Command{
 			return
 		}
 		fmt.Println("✅ Threat updated:")
-		fmt.Printf("- uuid=%s, title=%s, description=%s\n", 
+		fmt.Printf("- uuid=%s, title=%s, description=%s\n",
 			threat.ID, threat.Title, threat.Description)
 	},
 }
@@ -118,7 +118,7 @@ var threatListCmd = &cobra.Command{
 		}
 		fmt.Println("Threats:")
 		for _, threat := range threats {
-			fmt.Printf("- uuid=%s, title=%s, description=%s\n", 
+			fmt.Printf("- uuid=%s, title=%s, description=%s\n",
 				threat.ID, threat.Title, threat.Description)
 		}
 	},

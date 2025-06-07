@@ -73,7 +73,7 @@ func UpdateApplication(
 		if err != nil {
 			return err
 		}
-		
+
 		// Reload to get updated Product relationship
 		updatedApplication, err = applicationRepository.GetByID(tx, id)
 		return err
