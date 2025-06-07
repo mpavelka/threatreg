@@ -108,3 +108,12 @@ func ListApplicationsByProductID(productID uuid.UUID) ([]models.Application, err
 
 	return applicationRepository.ListByProductID(nil, productID)
 }
+
+func FilterApplications(applicationName, productName string) ([]models.Application, error) {
+	applicationRepository, err := getApplicationRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return applicationRepository.Filter(nil, applicationName, productName)
+}

@@ -294,4 +294,105 @@ func TestApplicationService_Integration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, applications, 0)
 	})
+
+	t.Run("FilterApplications", func(t *testing.T) {
+		// Clear all applications first
+		db := database.GetDB()
+		db.Exec("DELETE FROM applications")
+
+		// Create multiple products for testing
+		webProduct, err := CreateProduct("Web Platform", "Web-based platform")
+		require.NoError(t, err)
+		mobileProduct, err := CreateProduct("Mobile App", "Mobile application")
+		require.NoError(t, err)
+
+		// Create applications with different names
+		testApps := []struct {
+			name      string
+			productID uuid.UUID
+		}{
+			{"Production Web", webProduct.ID},
+			{"Staging Web", webProduct.ID},
+			{"Development Web", webProduct.ID},
+			{"Production Mobile", mobileProduct.ID},
+			{"Test Mobile", mobileProduct.ID},
+			{"API Gateway", webProduct.ID},
+		}
+
+		var createdApps []*models.Application
+		for _, ta := range testApps {
+			app, err := CreateApplication(ta.name, ta.productID)
+			require.NoError(t, err)
+			createdApps = append(createdApps, app)
+		}
+
+		t.Run("FilterByApplicationName", func(t *testing.T) {
+			// Filter by application name containing "Production"
+			apps, err := FilterApplications("Production", "")
+			require.NoError(t, err)
+			assert.Len(t, apps, 2)
+
+			for _, app := range apps {
+				assert.Contains(t, app.Name, "Production")
+			}
+		})
+
+		t.Run("FilterByProductName", func(t *testing.T) {
+			// Filter by product name containing "Web"
+			apps, err := FilterApplications("", "Web")
+			require.NoError(t, err)
+			assert.Len(t, apps, 4) // All Web Platform applications
+
+			for _, app := range apps {
+				assert.Contains(t, app.Product.Name, "Web")
+			}
+		})
+
+		t.Run("FilterByBothNames", func(t *testing.T) {
+			// Filter by both application and product name
+			apps, err := FilterApplications("Production", "Mobile")
+			require.NoError(t, err)
+			assert.Len(t, apps, 1)
+
+			app := apps[0]
+			assert.Contains(t, app.Name, "Production")
+			assert.Contains(t, app.Product.Name, "Mobile")
+		})
+
+		t.Run("FilterCaseInsensitive", func(t *testing.T) {
+			// Test case insensitive filtering
+			apps, err := FilterApplications("production", "web")
+			require.NoError(t, err)
+			assert.Len(t, apps, 1)
+
+			app := apps[0]
+			assert.Equal(t, "Production Web", app.Name)
+			assert.Contains(t, app.Product.Name, "Web")
+		})
+
+		t.Run("FilterNoMatch", func(t *testing.T) {
+			// Filter with no matches
+			apps, err := FilterApplications("NonExistent", "")
+			require.NoError(t, err)
+			assert.Len(t, apps, 0)
+		})
+
+		t.Run("FilterEmptyStrings", func(t *testing.T) {
+			// Filter with empty strings should return all
+			apps, err := FilterApplications("", "")
+			require.NoError(t, err)
+			assert.Len(t, apps, 6) // All created applications
+		})
+
+		t.Run("FilterPartialMatch", func(t *testing.T) {
+			// Filter with partial name match
+			apps, err := FilterApplications("Web", "")
+			require.NoError(t, err)
+			assert.Len(t, apps, 3) // Production Web, Staging Web, Development Web
+
+			for _, app := range apps {
+				assert.Contains(t, app.Name, "Web")
+			}
+		})
+	})
 }

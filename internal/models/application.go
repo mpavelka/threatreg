@@ -7,7 +7,7 @@ import (
 
 type Application struct {
 	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
-	Name              string             `gorm:"type:varchar(255)"`
+	Name              string             `gorm:"type:varchar(255);index"`
 	InstanceOf        uuid.UUID          `gorm:"type:uuid"`
 	Product           Product            `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ApplicationID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
@@ -83,6 +83,40 @@ func (r *ApplicationRepository) ListByProductID(tx *gorm.DB, productID uuid.UUID
 
 	var applications []Application
 	err := tx.Preload("Product").Where("instance_of = ?", productID).Find(&applications).Error
+	if err != nil {
+		return nil, err
+	}
+	return applications, nil
+}
+
+func (r *ApplicationRepository) Filter(tx *gorm.DB, applicationName, productName string) ([]Application, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var applications []Application
+	query := tx.Preload("Product")
+
+	// Detect database dialect for case-insensitive comparison
+	dialect := tx.Dialector.Name()
+
+	if applicationName != "" {
+		if dialect == "postgres" {
+			query = query.Where("applications.name ILIKE ?", "%"+applicationName+"%")
+		} else {
+			query = query.Where("LOWER(applications.name) LIKE LOWER(?)", "%"+applicationName+"%")
+		}
+	}
+
+	if productName != "" {
+		if dialect == "postgres" {
+			query = query.Where("Product.name ILIKE ?", "%"+productName+"%").Joins("Product")
+		} else {
+			query = query.Where("LOWER(Product.name) LIKE LOWER(?)", "%"+productName+"%").Joins("Product")
+		}
+	}
+
+	err := query.Find(&applications).Error
 	if err != nil {
 		return nil, err
 	}
