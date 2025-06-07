@@ -69,7 +69,7 @@ func (r *ProductRepository) List(tx *gorm.DB) ([]Product, error) {
 	}
 
 	var products []Product
-	err := r.db.Find(&products).Error
+	err := tx.Find(&products).Error
 	if err != nil {
 		return nil, err
 	}
