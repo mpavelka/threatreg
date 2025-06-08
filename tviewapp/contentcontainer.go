@@ -1,6 +1,8 @@
 package tviewapp
 
-import "github.com/rivo/tview"
+import (
+	"github.com/rivo/tview"
+)
 
 // ContentContainer is a Flex that always contains exactly one item (the content view)
 type ContentContainer struct {

@@ -23,14 +23,19 @@ func NewApplicationsView(contentContainer *ContentContainer) tview.Primitive {
 	updateApplicationsTable()
 
 	// Create layout
-	flex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(filterForm, 0, 1, true).
-		AddItem(applicationsTable, 0, 2, false)
-	return flex
+	grid := tview.NewGrid().
+		SetRows(0).
+		SetColumns(30, 0).
+		AddItem(filterForm, 0, 0, 1, 1, 0, 0, true).
+		AddItem(applicationsTable, 0, 1, 1, 2, 0, 0, true)
+	return grid
 }
 
 func reloadApplications() {
-	applications, err := service.ListApplications()
+	applications, err := service.FilterApplications(
+		filterForm.GetFormItemByLabel("Name").(*tview.InputField).GetText(),
+		filterForm.GetFormItemByLabel("Product").(*tview.InputField).GetText(),
+	)
 	if err != nil {
 		applicationsTable.SetCell(1, 0, tview.NewTableCell(fmt.Sprintf("Error loading applications: %v", err)))
 		return
@@ -40,9 +45,9 @@ func reloadApplications() {
 
 func initFilter() {
 	filterForm = tview.NewForm().SetHorizontal(false)
-	filterForm.SetBorder(true).SetTitle("Filter")
-	filterForm.AddInputField("Name", "", 30, nil, nil)
-	filterForm.AddInputField("Product", "", 30, nil, nil)
+	filterForm.SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
+	filterForm.AddInputField("Name", "", 0, nil, nil)
+	filterForm.AddInputField("Product", "", 0, nil, nil)
 	filterForm.AddButton("Filter", func() {
 		// Apply filters
 		reloadApplications()
@@ -59,12 +64,13 @@ func initFilter() {
 
 func initApplicationsTable(contentContainer *ContentContainer) {
 	applicationsTable = tview.NewTable().SetBorders(true)
-	applicationsTable.SetTitle("Applications").SetBorder(true)
+	applicationsTable.SetTitle("Applications").SetTitleAlign(tview.AlignLeft).SetBorder(true)
 
 	// Header (use color for bold effect)
-	applicationsTable.SetCell(0, 0, tview.NewTableCell("[::b]ID"))
-	applicationsTable.SetCell(0, 1, tview.NewTableCell("[::b]Name"))
-	applicationsTable.SetCell(0, 2, tview.NewTableCell("[::b]Product"))
+	applicationsTable.SetFixed(1, 0) // Keep header fixed
+	applicationsTable.SetCell(0, 0, tview.NewTableCell("[::b]ID").SetSelectable(false))
+	applicationsTable.SetCell(0, 1, tview.NewTableCell("[::b]Name").SetSelectable(false))
+	applicationsTable.SetCell(0, 2, tview.NewTableCell("[::b]Product").SetSelectable(false))
 	applicationsTable.SetSelectable(true, false)
 
 	// Set selected function to navigate to detail screen
