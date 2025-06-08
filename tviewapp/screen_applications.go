@@ -68,12 +68,7 @@ func initApplicationsTable(contentContainer *ContentContainer) {
 
 	// Header (use color for bold effect)
 	applicationsTable.SetFixed(1, 0) // Keep header fixed
-	applicationsTable.SetCell(0, 0, tview.NewTableCell("[::b]ID").SetSelectable(false))
-	applicationsTable.SetCell(0, 1, tview.NewTableCell("[::b]Name").SetSelectable(false))
-	applicationsTable.SetCell(0, 2, tview.NewTableCell("[::b]Product").SetSelectable(false))
 	applicationsTable.SetSelectable(true, false)
-
-	// Set selected function to navigate to detail screen
 	applicationsTable.SetSelectedFunc(func(row, column int) {
 		if row == 0 {
 			return // header
@@ -86,14 +81,12 @@ func updateApplicationsTable() {
 	applicationsTable.Clear()
 
 	// Header
-	applicationsTable.SetCell(0, 0, tview.NewTableCell("[::b]ID"))
-	applicationsTable.SetCell(0, 1, tview.NewTableCell("[::b]Name"))
-	applicationsTable.SetCell(0, 2, tview.NewTableCell("[::b]Product"))
+	applicationsTable.SetCell(0, 0, tview.NewTableCell("[::b]Name"))
+	applicationsTable.SetCell(0, 1, tview.NewTableCell("[::b]Product"))
 
 	// Data
 	for i, a := range applicationsList {
-		applicationsTable.SetCell(i+1, 0, tview.NewTableCell(a.ID.String()))
-		applicationsTable.SetCell(i+1, 1, tview.NewTableCell(a.Name))
-		applicationsTable.SetCell(i+1, 2, tview.NewTableCell(a.Product.Name))
+		applicationsTable.SetCell(i+1, 0, tview.NewTableCell(a.Name))
+		applicationsTable.SetCell(i+1, 1, tview.NewTableCell(a.Product.Name))
 	}
 }
