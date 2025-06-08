@@ -20,8 +20,8 @@ func NewRootLayout() *RootLayout {
 	)
 
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex.AddItem(navbar, 2, 0, true)
 	flex.AddItem(contentContainer, 0, 3, false)
-	flex.AddItem(navbar, 1, 0, true)
 	return &RootLayout{
 		Flex: flex,
 	}
