@@ -123,3 +123,20 @@ func (r *InstanceRepository) Filter(tx *gorm.DB, instanceName, productName strin
 	}
 	return instances, nil
 }
+
+func (r *InstanceRepository) ListByDomainId(tx *gorm.DB, domainID uuid.UUID) ([]Instance, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var instances []Instance
+	err := tx.Preload("Product").
+		Joins("JOIN domain_instances ON instances.id = domain_instances.instance_id").
+		Where("domain_instances.domain_id = ?", domainID).
+		Find(&instances).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}

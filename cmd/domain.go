@@ -204,7 +204,7 @@ var domainListInstancesCmd = &cobra.Command{
 			return
 		}
 
-		instances, err := service.GetInstancesByDomain(domainUUID)
+		instances, err := service.GetInstancesByDomainId(domainUUID)
 		if err != nil {
 			fmt.Printf("Error listing instances in domain: %v\n", err)
 			return

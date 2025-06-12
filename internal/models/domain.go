@@ -39,7 +39,7 @@ func (r *DomainRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*Domain, error) {
 		tx = r.db
 	}
 	var domain Domain
-	err := tx.Preload("Instances").Preload("Instances.Product").First(&domain, "id = ?", id).Error
+	err := tx.First(&domain, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (r *DomainRepository) List(tx *gorm.DB) ([]Domain, error) {
 	}
 
 	var domains []Domain
-	err := tx.Preload("Instances").Preload("Instances.Product").Find(&domains).Error
+	err := tx.Find(&domains).Error
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,7 @@ func (r *DomainRepository) GetInstancesByDomainID(tx *gorm.DB, domainID uuid.UUI
 	}
 
 	var instances []Instance
-	err := tx.Preload("Product").
-		Joins("JOIN domain_instances ON instances.id = domain_instances.instance_id").
+	err := tx.Joins("JOIN domain_instances ON instances.id = domain_instances.instance_id").
 		Where("domain_instances.domain_id = ?", domainID).
 		Find(&instances).Error
 

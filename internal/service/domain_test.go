@@ -204,7 +204,7 @@ func TestDomainService_Integration(t *testing.T) {
 		err = AddInstanceToDomain(domain.ID, instance.ID)
 		require.NoError(t, err)
 
-		instances, err := GetInstancesByDomain(domain.ID)
+		instances, err := GetInstancesByDomainId(domain.ID)
 		require.NoError(t, err)
 		assert.Len(t, instances, 1)
 		assert.Equal(t, instance.ID, instances[0].ID)
@@ -234,7 +234,7 @@ func TestDomainService_Integration(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		retrievedInstances, err := GetInstancesByDomain(domain.ID)
+		retrievedInstances, err := GetInstancesByDomainId(domain.ID)
 		require.NoError(t, err)
 		assert.Len(t, retrievedInstances, 3)
 
@@ -269,14 +269,14 @@ func TestDomainService_Integration(t *testing.T) {
 		err = AddInstanceToDomain(domain.ID, instance2.ID)
 		require.NoError(t, err)
 
-		instances, err := GetInstancesByDomain(domain.ID)
+		instances, err := GetInstancesByDomainId(domain.ID)
 		require.NoError(t, err)
 		assert.Len(t, instances, 2)
 
 		err = RemoveInstanceFromDomain(domain.ID, instance1.ID)
 		require.NoError(t, err)
 
-		instances, err = GetInstancesByDomain(domain.ID)
+		instances, err = GetInstancesByDomainId(domain.ID)
 		require.NoError(t, err)
 		assert.Len(t, instances, 1)
 		assert.Equal(t, instance2.ID, instances[0].ID)

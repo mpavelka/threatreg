@@ -101,6 +101,15 @@ func ListDomains() ([]models.Domain, error) {
 	return domainRepository.List(nil)
 }
 
+func GetInstancesByDomainId(domainID uuid.UUID) ([]models.Instance, error) {
+	instanceRepository, err := getInstanceRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return instanceRepository.ListByDomainId(nil, domainID)
+}
+
 func AddInstanceToDomain(domainID, instanceID uuid.UUID) error {
 	domainRepository, err := getDomainRepository()
 	if err != nil {
@@ -117,15 +126,6 @@ func RemoveInstanceFromDomain(domainID, instanceID uuid.UUID) error {
 	}
 
 	return domainRepository.RemoveInstance(nil, domainID, instanceID)
-}
-
-func GetInstancesByDomain(domainID uuid.UUID) ([]models.Instance, error) {
-	domainRepository, err := getDomainRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return domainRepository.GetInstancesByDomainID(nil, domainID)
 }
 
 func GetDomainsByInstance(instanceID uuid.UUID) ([]models.Domain, error) {

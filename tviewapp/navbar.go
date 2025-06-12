@@ -1,6 +1,8 @@
 package tviewapp
 
 import (
+	"threatreg/tviewapp/domains"
+
 	"github.com/rivo/tview"
 )
 
@@ -16,7 +18,7 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 	buttons := []*tview.Button{
 		tview.NewButton("Domains").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(NewDomainsView(contentContainer))
+				contentContainer.SetContent(domains.NewDomainsView(contentContainer, NewInstanceDetailScreen))
 			}),
 		tview.NewButton("Products").
 			SetSelectedFunc(func() {
