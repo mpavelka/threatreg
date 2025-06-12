@@ -11,6 +11,7 @@ type Instance struct {
 	InstanceOf        uuid.UUID          `gorm:"type:uuid"`
 	Product           Product            `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	Domains           []Domain           `gorm:"many2many:domain_instances;"`
 }
 
 func (i *Instance) BeforeCreate(tx *gorm.DB) (err error) {

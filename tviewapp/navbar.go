@@ -14,6 +14,10 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 	flex := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	buttons := []*tview.Button{
+		tview.NewButton("Domains").
+			SetSelectedFunc(func() {
+				contentContainer.SetContent(NewDomainsView(contentContainer))
+			}),
 		tview.NewButton("Products").
 			SetSelectedFunc(func() {
 				contentContainer.SetContent(NewProductsView())
