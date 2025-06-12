@@ -18,9 +18,9 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 			SetSelectedFunc(func() {
 				contentContainer.SetContent(NewProductsView())
 			}),
-		tview.NewButton("Applications").
+		tview.NewButton("Instances").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(NewApplicationsView(contentContainer))
+				contentContainer.SetContent(NewInstancesView(contentContainer))
 			}),
 		tview.NewButton("Threats").
 			SetSelectedFunc(func() {

@@ -8,17 +8,17 @@ import (
 	"github.com/rivo/tview"
 )
 
-// NewApplicationDetailScreen returns a Flex with a form to edit the application and a dummy table for related threats
-func NewApplicationDetailScreen(appID uuid.UUID) tview.Primitive {
-	app, err := service.GetApplication(appID)
+// NewInstanceDetailScreen returns a Flex with a form to edit the instance and a dummy table for related threats
+func NewInstanceDetailScreen(instanceID uuid.UUID) tview.Primitive {
+	instance, err := service.GetInstance(instanceID)
 	if err != nil {
-		return tview.NewTextView().SetText(fmt.Sprintf("Error loading application: %v", err))
+		return tview.NewTextView().SetText(fmt.Sprintf("Error loading instance: %v", err))
 	}
 
 	form := tview.NewForm().SetHorizontal(false)
-	form.SetBorder(true).SetTitle("Edit Application")
-	form.AddInputField("Name", app.Name, 30, nil, nil)
-	form.AddInputField("Product", app.Product.Name, 30, nil, nil)
+	form.SetBorder(true).SetTitle("Edit Instance")
+	form.AddInputField("Name", instance.Name, 30, nil, nil)
+	form.AddInputField("Product", instance.Product.Name, 30, nil, nil)
 	form.AddButton("Save", func() {
 		// TODO: Save logic
 	})

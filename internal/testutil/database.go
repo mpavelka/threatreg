@@ -22,7 +22,7 @@ import (
 func SetupTestDatabase(t *testing.T) func() {
 	return SetupTestDatabaseWithCustomModels(t,
 		&models.Product{},
-		&models.Application{},
+		&models.Instance{},
 		&models.Threat{},
 		&models.Control{},
 		&models.ThreatAssignment{},

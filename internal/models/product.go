@@ -10,7 +10,7 @@ type Product struct {
 	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
 	Name              string             `gorm:"type:varchar(255);index"`
 	Description       string             `gorm:"type:text"`
-	Applications      []Application      `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	Instances         []Instance         `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 }
 
