@@ -10,5 +10,5 @@ type ContentContainer interface {
 	SetContent(content tview.Primitive)
 }
 
-// InstanceDetailScreenFunc is a function type for creating instance detail screens
-type InstanceDetailScreenFunc func(instanceID uuid.UUID) tview.Primitive
+// InstanceDetailScreenBuilder is a function type for creating instance detail screens
+type InstanceDetailScreenBuilder func(instanceID uuid.UUID) tview.Primitive
