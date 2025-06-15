@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
+	pkgInstances "threatreg/tviewapp/instances"
 
 	"github.com/rivo/tview"
 )
 
-func NewDomainsView(contentContainer ContentContainer, instanceDetailScreenBuilder InstanceDetailScreenBuilder) tview.Primitive {
+func NewDomainsView(contentContainer ContentContainer) tview.Primitive {
 	domains, err := service.ListDomains()
 	if err != nil {
 		return tview.NewTextView().SetText(fmt.Sprintf("Error loading domains: %v", err))
@@ -40,7 +41,7 @@ func NewDomainsView(contentContainer ContentContainer, instanceDetailScreenBuild
 		if row > 0 && row-1 < len(domains) {
 			domain := domains[row-1]
 			contentContainer.PushContentWithFactory(func() tview.Primitive {
-				return NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder)
+				return NewDomainDetailView(domain, contentContainer)
 			})
 		}
 	})
@@ -50,7 +51,7 @@ func NewDomainsView(contentContainer ContentContainer, instanceDetailScreenBuild
 	return table
 }
 
-func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer, instanceDetailScreenBuilder InstanceDetailScreenBuilder) tview.Primitive {
+func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer) tview.Primitive {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 	flex.SetTitle(fmt.Sprintf("Domain: %s", domain.Name)).SetBorder(true)
 
@@ -64,7 +65,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 
 	editButton := tview.NewButton("Edit").
 		SetSelectedFunc(func() {
-			modal := createEditDomainModal(domain, contentContainer, instanceDetailScreenBuilder, func(updatedDomain models.Domain) {
+			modal := createEditDomainModal(domain, contentContainer, func(updatedDomain models.Domain) {
 				contentContainer.PopContent()
 			})
 			contentContainer.PushContent(modal)
@@ -72,7 +73,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 
 	addInstanceButton := tview.NewButton("Add Instance").
 		SetSelectedFunc(func() {
-			modal := createSelectInstanceModal(domain.ID, contentContainer, instanceDetailScreenBuilder, func() {
+			modal := createSelectInstanceModal(domain.ID, contentContainer, func() {
 				contentContainer.PopContent()
 			})
 			contentContainer.PushContent(modal)
@@ -141,7 +142,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			} else {
 				// Navigate to instance detail for other columns
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return instanceDetailScreenBuilder(instance.ID)
+					return pkgInstances.NewInstanceThreatManager(instance.ID, contentContainer)
 				})
 			}
 		}

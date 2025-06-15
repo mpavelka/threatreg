@@ -1,7 +1,6 @@
 package domains
 
 import (
-	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
 
@@ -13,6 +12,3 @@ type ContentContainer interface {
 	PushContentWithFactory(factory func() tview.Primitive)
 	PopContent() bool
 }
-
-// InstanceDetailScreenBuilder is a function type for creating instance detail screens
-type InstanceDetailScreenBuilder func(instanceID uuid.UUID) tview.Primitive

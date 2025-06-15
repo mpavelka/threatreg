@@ -4,7 +4,6 @@ import (
 	"threatreg/tviewapp/domains"
 	"threatreg/tviewapp/instances"
 
-	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
 
@@ -30,9 +29,7 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 	buttons := []*tview.Button{
 		tview.NewButton("Domains").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(domains.NewDomainsView(contentContainer, func(instanceID uuid.UUID) tview.Primitive {
-					return instances.NewInstanceThreatManager(instanceID, contentContainer)
-				}))
+				contentContainer.SetContent(domains.NewDomainsView(contentContainer))
 			}),
 		tview.NewButton("Products").
 			SetSelectedFunc(func() {
