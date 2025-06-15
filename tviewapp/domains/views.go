@@ -39,7 +39,7 @@ func NewDomainsView(contentContainer ContentContainer, instanceDetailScreenBuild
 	table.SetSelectedFunc(func(row, column int) {
 		if row > 0 && row-1 < len(domains) {
 			domain := domains[row-1]
-			contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+			contentContainer.PushContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
 		}
 	})
 
@@ -65,7 +65,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			modal := createEditDomainModal(domain, contentContainer, instanceDetailScreenBuilder, func(updatedDomain models.Domain) {
 				contentContainer.SetContent(NewDomainDetailView(updatedDomain, contentContainer, instanceDetailScreenBuilder))
 			})
-			contentContainer.SetContent(modal)
+			contentContainer.PushContent(modal)
 		})
 
 	addInstanceButton := tview.NewButton("Add Instance").
@@ -73,7 +73,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			modal := createSelectInstanceModal(domain.ID, contentContainer, instanceDetailScreenBuilder, func() {
 				contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
 			})
-			contentContainer.SetContent(modal)
+			contentContainer.PushContent(modal)
 		})
 
 	actionBar.AddItem(editButton, 0, 1, false)
@@ -135,17 +135,17 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 						contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
 					},
 				)
-				contentContainer.SetContent(modal)
+				contentContainer.PushContent(modal)
 			} else {
 				// Navigate to instance detail for other columns
-				contentContainer.SetContent(instanceDetailScreenBuilder(instance.ID))
+				contentContainer.PushContent(instanceDetailScreenBuilder(instance.ID))
 			}
 		}
 	})
 
 	backButton := tview.NewButton("Back to Domains").
 		SetSelectedFunc(func() {
-			contentContainer.SetContent(NewDomainsView(contentContainer, instanceDetailScreenBuilder))
+			contentContainer.PopContent()
 		})
 
 	flex.AddItem(info, 5, 1, false)

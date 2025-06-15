@@ -8,6 +8,8 @@ import (
 // ContentContainer interface defines what the domains package needs from tviewapp
 type ContentContainer interface {
 	SetContent(content tview.Primitive)
+	PushContent(content tview.Primitive)
+	PopContent() bool
 }
 
 // InstanceDetailScreenBuilder is a function type for creating instance detail screens

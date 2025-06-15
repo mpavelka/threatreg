@@ -15,6 +15,16 @@ type Navbar struct {
 func NewNavbar(contentContainer *ContentContainer) *Navbar {
 	flex := tview.NewFlex().SetDirection(tview.FlexColumn)
 
+	// Add Back button first
+	backButton := tview.NewButton("← Back").
+		SetSelectedFunc(func() {
+			contentContainer.PopContent()
+		})
+	flex.AddItem(backButton, 8, 0, false)
+
+	// Add a spacer
+	flex.AddItem(tview.NewBox(), 1, 0, false)
+
 	buttons := []*tview.Button{
 		tview.NewButton("Domains").
 			SetSelectedFunc(func() {
