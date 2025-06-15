@@ -1,6 +1,9 @@
 package domains
 
 import (
+	"threatreg/internal/models"
+	"threatreg/internal/service"
+
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
@@ -47,6 +50,50 @@ func createSelectInstanceModal(domainID uuid.UUID, contentContainer ContentConta
 	centerFlex.AddItem(tview.NewBox(), 0, 1, false) // Right spacer
 
 	modalContainer.AddItem(centerFlex, 18, 0, true)     // Form area (increased height for tabs)
+	modalContainer.AddItem(tview.NewBox(), 0, 1, false) // Bottom spacer
+
+	return modalContainer
+}
+
+func createEditDomainModal(domain models.Domain, contentContainer ContentContainer, instanceDetailScreenBuilder InstanceDetailScreenBuilder, onSave func(models.Domain)) tview.Primitive {
+	form := tview.NewForm()
+	form.SetBorder(true).SetTitle("Edit Domain")
+
+	nameField := domain.Name
+	descField := domain.Description
+
+	form.AddInputField("Name", domain.Name, 50, nil, func(text string) {
+		nameField = text
+	})
+	form.AddInputField("Description", domain.Description, 50, nil, func(text string) {
+		descField = text
+	})
+
+	form.AddButton("Save", func() {
+		updatedDomain, err := service.UpdateDomain(domain.ID, &nameField, &descField)
+		if err != nil {
+			// TODO: Show error message in the future
+			contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+			return
+		}
+
+		onSave(*updatedDomain)
+	})
+
+	form.AddButton("Close", func() {
+		contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+	})
+
+	// Create a centered modal-like container
+	modalContainer := tview.NewFlex().SetDirection(tview.FlexRow)
+	modalContainer.AddItem(tview.NewBox(), 0, 1, false) // Top spacer
+
+	centerFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	centerFlex.AddItem(tview.NewBox(), 0, 1, false) // Left spacer
+	centerFlex.AddItem(form, 80, 0, true)           // Form with fixed width
+	centerFlex.AddItem(tview.NewBox(), 0, 1, false) // Right spacer
+
+	modalContainer.AddItem(centerFlex, 15, 0, true)     // Form area
 	modalContainer.AddItem(tview.NewBox(), 0, 1, false) // Bottom spacer
 
 	return modalContainer
