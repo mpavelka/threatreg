@@ -79,6 +79,16 @@ func (c *ContentContainer) PushContent(content tview.Primitive) {
 	}{View: content, Factory: nil})
 }
 
+func (c *ContentContainer) PushContentWithFactory(factory func() tview.Primitive) {
+	c.Clear()
+	content := factory()
+	c.AddItem(content, 0, 3, false)
+	c.navigationStack = append(c.navigationStack, struct {
+		View    tview.Primitive
+		Factory func() tview.Primitive
+	}{View: content, Factory: factory})
+}
+
 // PopContent removes the current view and shows the previous one
 // Returns true if navigation was successful, false if already at root
 func (c *ContentContainer) PopContent() bool {

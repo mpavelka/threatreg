@@ -39,7 +39,9 @@ func NewDomainsView(contentContainer ContentContainer, instanceDetailScreenBuild
 	table.SetSelectedFunc(func(row, column int) {
 		if row > 0 && row-1 < len(domains) {
 			domain := domains[row-1]
-			contentContainer.PushContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+			contentContainer.PushContentWithFactory(func() tview.Primitive {
+				return NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder)
+			})
 		}
 	})
 
@@ -63,7 +65,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 	editButton := tview.NewButton("Edit").
 		SetSelectedFunc(func() {
 			modal := createEditDomainModal(domain, contentContainer, instanceDetailScreenBuilder, func(updatedDomain models.Domain) {
-				contentContainer.SetContent(NewDomainDetailView(updatedDomain, contentContainer, instanceDetailScreenBuilder))
+				contentContainer.PopContent()
 			})
 			contentContainer.PushContent(modal)
 		})
@@ -71,7 +73,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 	addInstanceButton := tview.NewButton("Add Instance").
 		SetSelectedFunc(func() {
 			modal := createSelectInstanceModal(domain.ID, contentContainer, instanceDetailScreenBuilder, func() {
-				contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+				contentContainer.PopContent()
 			})
 			contentContainer.PushContent(modal)
 		})
@@ -104,7 +106,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			instancesTable.SetCell(i+1, 1, tview.NewTableCell(productName))
 
 			// Add remove button in Actions column
-			removeButton := fmt.Sprintf("[red]Remove[-]")
+			removeButton := "[red]Remove[-]"
 			instancesTable.SetCell(i+1, 2, tview.NewTableCell(removeButton).SetSelectable(true))
 		}
 	}
@@ -128,17 +130,19 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 							return
 						}
 						// Refresh the view to reflect changes
-						contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+						contentContainer.PopContent()
 					},
 					func() {
 						// onNo callback - just close modal, go back to domain detail view
-						contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+						contentContainer.PopContent()
 					},
 				)
 				contentContainer.PushContent(modal)
 			} else {
 				// Navigate to instance detail for other columns
-				contentContainer.PushContent(instanceDetailScreenBuilder(instance.ID))
+				contentContainer.PushContentWithFactory(func() tview.Primitive {
+					return instanceDetailScreenBuilder(instance.ID)
+				})
 			}
 		}
 	})
