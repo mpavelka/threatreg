@@ -31,7 +31,7 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 		tview.NewButton("Domains").
 			SetSelectedFunc(func() {
 				contentContainer.SetContent(domains.NewDomainsView(contentContainer, func(instanceID uuid.UUID) tview.Primitive {
-					return instances.NewInstanceDetailView(instanceID, contentContainer)
+					return instances.NewInstanceThreatManager(instanceID, contentContainer)
 				}))
 			}),
 		tview.NewButton("Products").

@@ -31,39 +31,6 @@ func NewInstancesView(contentContainer ContentContainer) tview.Primitive {
 	return grid
 }
 
-func NewInstanceDetailView(instanceID uuid.UUID, contentContainer ContentContainer) tview.Primitive {
-	instance, err := service.GetInstance(instanceID)
-	if err != nil {
-		return tview.NewTextView().SetText(fmt.Sprintf("Error loading instance: %v", err))
-	}
-
-	form := tview.NewForm().SetHorizontal(false)
-	form.SetBorder(true).SetTitle("Edit Instance")
-	form.AddInputField("Name", instance.Name, 30, nil, nil)
-	form.AddInputField("Product", instance.Product.Name, 30, nil, nil)
-	form.AddButton("Save", func() {
-		// TODO: Save logic
-	})
-	form.AddButton("Back", func() {
-		contentContainer.PopContent()
-	})
-
-	threatsTable := tview.NewTable().SetBorders(true)
-	threatsTable.SetTitle("Related Threats").SetBorder(true)
-	threatsTable.SetCell(0, 0, tview.NewTableCell("[::b]ID").SetSelectable(false))
-	threatsTable.SetCell(0, 1, tview.NewTableCell("[::b]Name").SetSelectable(false))
-	// Dummy data for now
-	for i := 1; i <= 3; i++ {
-		threatsTable.SetCell(i, 0, tview.NewTableCell(fmt.Sprintf("T%d", i)))
-		threatsTable.SetCell(i, 1, tview.NewTableCell(fmt.Sprintf("Threat %d", i)))
-	}
-
-	flex := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(form, 0, 1, true).
-		AddItem(threatsTable, 0, 2, false)
-	return flex
-}
-
 func reloadInstances() {
 	instances, err := service.FilterInstances(
 		filterForm.GetFormItemByLabel("Name").(*tview.InputField).GetText(),
@@ -107,9 +74,100 @@ func initInstancesTable(contentContainer ContentContainer) {
 			return // header
 		}
 		contentContainer.PushContentWithFactory(func() tview.Primitive {
-			return NewInstanceDetailView(instancesList[row-1].ID, contentContainer)
+			return NewInstanceThreatManager(instancesList[row-1].ID, contentContainer)
 		})
 	})
+}
+
+// NewInstanceThreatManager creates a threat management view for an instance
+func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentContainer) tview.Primitive {
+	instance, err := service.GetInstance(instanceID)
+	if err != nil {
+		return tview.NewTextView().SetText(fmt.Sprintf("Error loading instance: %v", err))
+	}
+
+	// Left column - Instance section
+	instanceText := tview.NewTextView()
+	instanceText.SetBorder(true).SetTitle("Instance Information")
+	instanceText.SetText(fmt.Sprintf("Name: %s\nID: %s", instance.Name, instance.ID.String()))
+
+	instanceButton := tview.NewButton("Edit Instance").SetSelectedFunc(func() {
+		// TODO: Navigate to instance edit view
+	})
+
+	instanceSection := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(instanceText, 0, 1, false).
+		AddItem(instanceButton, 1, 0, true)
+
+	// Left column - Product section
+	productText := tview.NewTextView()
+	productText.SetBorder(true).SetTitle("Product Information")
+	productText.SetText(fmt.Sprintf("Name: %s\nID: %s", instance.Product.Name, instance.Product.ID.String()))
+
+	productButton := tview.NewButton("Edit Product").SetSelectedFunc(func() {
+		// TODO: Navigate to product edit view
+	})
+
+	productSection := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(productText, 0, 1, false).
+		AddItem(productButton, 1, 0, false)
+
+	// Left column container
+	leftColumn := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(instanceSection, 0, 1, true).
+		AddItem(productSection, 0, 1, false)
+
+	// Right column - Actions section
+	actionBar := tview.NewFlex().SetDirection(tview.FlexColumn)
+	actionBar.SetTitle("Actions").SetBorder(true)
+
+	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {}), 0, 1, false)
+	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {}), 0, 1, false)
+	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
+
+	// Right column - Dummy table
+	dummyTable := tview.NewTable().SetBorders(true)
+	dummyTable.SetTitle("Threat Assignments").SetBorder(true)
+	dummyTable.SetCell(0, 0, tview.NewTableCell("[::b]Type").SetSelectable(false))
+	dummyTable.SetCell(0, 1, tview.NewTableCell("[::b]Threat").SetSelectable(false))
+	dummyTable.SetCell(0, 2, tview.NewTableCell("[::b]Status").SetSelectable(false))
+
+	// Dummy data
+	dummyData := [][]string{
+		{"Instance", "SQL Injection", "Active"},
+		{"Product", "Cross-Site Scripting", "Mitigated"},
+		{"Instance", "Authentication Bypass", "Under Review"},
+		{"Product", "Data Exposure", "Active"},
+	}
+
+	for i, row := range dummyData {
+		for j, cell := range row {
+			dummyTable.SetCell(i+1, j, tview.NewTableCell(cell))
+		}
+	}
+
+	// Right column container
+	rightColumn := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(actionBar, 3, 0, false).
+		AddItem(dummyTable, 0, 1, false)
+
+	// Main layout - two columns
+	mainLayout := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(leftColumn, 30, 0, true).
+		AddItem(rightColumn, 0, 1, false)
+
+	// Add navigation back button
+	wrapper := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	backButton := tview.NewButton("← Back").SetSelectedFunc(func() {
+		contentContainer.PopContent()
+	})
+	backButton.SetBorder(true)
+
+	wrapper.AddItem(backButton, 3, 0, false).
+		AddItem(mainLayout, 0, 1, true)
+
+	return mainLayout
 }
 
 func updateInstancesTable() {
