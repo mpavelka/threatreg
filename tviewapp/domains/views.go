@@ -85,12 +85,14 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 
 	instancesTable.SetCell(0, 0, tview.NewTableCell("[::b]Name").SetSelectable(false))
 	instancesTable.SetCell(0, 1, tview.NewTableCell("[::b]Product").SetSelectable(false))
+	instancesTable.SetCell(0, 2, tview.NewTableCell("[::b]Actions").SetSelectable(false))
 
 	instances, err := service.GetInstancesByDomainId(domain.ID)
 	if err != nil {
 		// If we can't load instances, show an error message in the table
 		instancesTable.SetCell(1, 0, tview.NewTableCell(fmt.Sprintf("Error loading instances: %v", err)))
 		instancesTable.SetCell(1, 1, tview.NewTableCell(""))
+		instancesTable.SetCell(1, 2, tview.NewTableCell(""))
 		instances = []models.Instance{} // Set to empty slice to avoid nil access
 	} else {
 		for i, instance := range instances {
@@ -100,14 +102,44 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			}
 			instancesTable.SetCell(i+1, 0, tview.NewTableCell(instance.Name))
 			instancesTable.SetCell(i+1, 1, tview.NewTableCell(productName))
+
+			// Add remove button in Actions column
+			removeButton := fmt.Sprintf("[red]Remove[-]")
+			instancesTable.SetCell(i+1, 2, tview.NewTableCell(removeButton).SetSelectable(true))
 		}
 	}
 
-	instancesTable.SetSelectable(true, false)
+	instancesTable.SetSelectable(true, true)
 	instancesTable.SetSelectedFunc(func(row, column int) {
 		if row > 0 && row-1 < len(instances) {
 			instance := instances[row-1]
-			contentContainer.SetContent(instanceDetailScreenBuilder(instance.ID))
+
+			// Handle Actions column (Remove button)
+			if column == 2 {
+				// Show confirmation modal
+				modal := createConfirmationModal(
+					"Remove Instance",
+					fmt.Sprintf("Are you sure you want to remove instance '%s' from this domain?", instance.Name),
+					func() {
+						// onYes callback - remove instance from domain
+						err := service.RemoveInstanceFromDomain(domain.ID, instance.ID)
+						if err != nil {
+							// TODO: Show error message in the future
+							return
+						}
+						// Refresh the view to reflect changes
+						contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+					},
+					func() {
+						// onNo callback - just close modal, go back to domain detail view
+						contentContainer.SetContent(NewDomainDetailView(domain, contentContainer, instanceDetailScreenBuilder))
+					},
+				)
+				contentContainer.SetContent(modal)
+			} else {
+				// Navigate to instance detail for other columns
+				contentContainer.SetContent(instanceDetailScreenBuilder(instance.ID))
+			}
 		}
 	})
 
