@@ -8,6 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -21,9 +22,13 @@ func Connect() error {
 
 	if strings.HasPrefix(dbURL, "sqlite3://") {
 		dataSourceName := strings.TrimPrefix(dbURL, "sqlite3://")
-		gormDB, err = gorm.Open(sqlite.Open(dataSourceName), &gorm.Config{})
+		gormDB, err = gorm.Open(sqlite.Open(dataSourceName), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
 	} else if strings.HasPrefix(dbURL, "postgres://") || strings.HasPrefix(dbURL, "postgresql://") {
-		gormDB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{})
+		gormDB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
 	} else {
 		return fmt.Errorf("unsupported database URL format: %s", dbURL)
 	}

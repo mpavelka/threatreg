@@ -122,12 +122,12 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	actionBar.SetTitle("Actions").SetBorder(true)
 
 	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {
-		contentContainer.SetContent(createInstanceSelectThreatModal(instance.ID, func() {
+		contentContainer.PushContent(createInstanceSelectThreatModal(instance.ID, func() {
 			contentContainer.PopContent()
 		}))
 	}), 0, 1, false)
 	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {
-		contentContainer.SetContent(createProductSelectThreatModal(instance.Product.ID, func() {
+		contentContainer.PushContent(createProductSelectThreatModal(instance.Product.ID, func() {
 			contentContainer.PopContent()
 		}))
 	}), 0, 1, false)
