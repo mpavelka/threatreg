@@ -117,3 +117,20 @@ func FilterInstances(instanceName, productName string) ([]models.Instance, error
 
 	return instanceRepository.Filter(nil, instanceName, productName)
 }
+
+func getThreatAssignmentRepositoryForInstance() (*models.ThreatAssignmentRepository, error) {
+	db, err := database.GetDBOrError()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database connection: %w", err)
+	}
+	return models.NewThreatAssignmentRepository(db), nil
+}
+
+func AssignThreatToInstance(instanceID, threatID uuid.UUID) (*models.ThreatAssignment, error) {
+	threatAssignmentRepository, err := getThreatAssignmentRepositoryForInstance()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatAssignmentRepository.AssignThreatToInstance(nil, threatID, instanceID)
+}

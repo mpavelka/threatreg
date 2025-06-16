@@ -222,4 +222,99 @@ func TestProductService_Integration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, products, 0)
 	})
+
+	t.Run("AssignThreatToProduct", func(t *testing.T) {
+		// Create a product first
+		product, err := CreateProduct("Test Product for Threat", "A test product for threat assignment")
+		require.NoError(t, err)
+
+		// Create a threat first
+		threat, err := CreateThreat("Test Threat", "A test threat for assignment")
+		require.NoError(t, err)
+
+		// Assign threat to product
+		assignment, err := AssignThreatToProduct(product.ID, threat.ID)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.NotNil(t, assignment)
+		assert.NotEqual(t, 0, assignment.ID)
+		assert.Equal(t, threat.ID, assignment.ThreatID)
+		assert.Equal(t, product.ID, assignment.ProductID)
+		assert.Equal(t, uuid.Nil, assignment.InstanceID) // Should be nil for product assignment
+
+		// Verify assignment was saved to database
+		db := database.GetDB()
+		var dbAssignment models.ThreatAssignment
+		err = db.First(&dbAssignment, "id = ?", assignment.ID).Error
+		require.NoError(t, err)
+		assert.Equal(t, assignment.ThreatID, dbAssignment.ThreatID)
+		assert.Equal(t, assignment.ProductID, dbAssignment.ProductID)
+		assert.Equal(t, uuid.Nil, dbAssignment.InstanceID)
+	})
+
+	t.Run("AssignThreatToProduct_Duplicate", func(t *testing.T) {
+		// Create a product and threat
+		product, err := CreateProduct("Duplicate Test Product", "A test product for duplicate assignment")
+		require.NoError(t, err)
+
+		threat, err := CreateThreat("Duplicate Test Threat", "A test threat for duplicate assignment")
+		require.NoError(t, err)
+
+		// Assign threat to product first time
+		assignment1, err := AssignThreatToProduct(product.ID, threat.ID)
+		require.NoError(t, err)
+		require.NotNil(t, assignment1)
+
+		// Try to assign the same threat to the same product again
+		assignment2, err := AssignThreatToProduct(product.ID, threat.ID)
+
+		// Should return the existing assignment, not create a new one
+		require.NoError(t, err)
+		assert.NotNil(t, assignment2)
+		assert.Equal(t, assignment1.ID, assignment2.ID)
+		assert.Equal(t, assignment1.ThreatID, assignment2.ThreatID)
+		assert.Equal(t, assignment1.ProductID, assignment2.ProductID)
+
+		// Verify that only one assignment exists in the database for this threat/product combination
+		db := database.GetDB()
+		var count int64
+		err = db.Model(&models.ThreatAssignment{}).
+			Where("threat_id = ? AND product_id = ? AND (instance_id IS NULL OR instance_id = ?)", threat.ID, product.ID, uuid.Nil).
+			Count(&count).Error
+		require.NoError(t, err)
+		assert.Equal(t, int64(1), count, "Should only have one assignment for this threat/product combination")
+	})
+
+	t.Run("AssignThreatToProduct_InvalidThreatID", func(t *testing.T) {
+		// Create a product
+		product, err := CreateProduct("Invalid Threat Test Product", "A test product")
+		require.NoError(t, err)
+
+		// Try to assign non-existent threat
+		nonExistentThreatID := uuid.New()
+		assignment, err := AssignThreatToProduct(product.ID, nonExistentThreatID)
+
+		// Should succeed (foreign key constraint allows it, but relationship won't load)
+		require.NoError(t, err)
+		assert.NotNil(t, assignment)
+		assert.Equal(t, nonExistentThreatID, assignment.ThreatID)
+		assert.Equal(t, product.ID, assignment.ProductID)
+	})
+
+	t.Run("AssignThreatToProduct_InvalidProductID", func(t *testing.T) {
+		// Create a threat
+		threat, err := CreateThreat("Invalid Product Test Threat", "A test threat")
+		require.NoError(t, err)
+
+		// Try to assign to non-existent product
+		nonExistentProductID := uuid.New()
+		assignment, err := AssignThreatToProduct(nonExistentProductID, threat.ID)
+
+		// Should succeed (foreign key constraint allows it, but relationship won't load)
+		require.NoError(t, err)
+		assert.NotNil(t, assignment)
+		assert.Equal(t, threat.ID, assignment.ThreatID)
+		assert.Equal(t, nonExistentProductID, assignment.ProductID)
+	})
 }

@@ -101,3 +101,20 @@ func ListProducts() ([]models.Product, error) {
 
 	return productRepository.List(nil)
 }
+
+func getThreatAssignmentRepository() (*models.ThreatAssignmentRepository, error) {
+	db, err := database.GetDBOrError()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database connection: %w", err)
+	}
+	return models.NewThreatAssignmentRepository(db), nil
+}
+
+func AssignThreatToProduct(productID, threatID uuid.UUID) (*models.ThreatAssignment, error) {
+	threatAssignmentRepository, err := getThreatAssignmentRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatAssignmentRepository.AssignThreatToProduct(nil, threatID, productID)
+}
