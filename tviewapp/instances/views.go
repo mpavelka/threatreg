@@ -121,35 +121,67 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	actionBar := tview.NewFlex().SetDirection(tview.FlexColumn)
 	actionBar.SetTitle("Actions").SetBorder(true)
 
-	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {}), 0, 1, false)
+	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {
+		modal := createSelectThreatModal(instance.ID, contentContainer, func() {
+			// Close modal and refresh the threat manager view
+			contentContainer.SetContent(NewInstanceThreatManager(instance.ID, contentContainer))
+		})
+		contentContainer.SetContent(modal)
+	}), 0, 1, false)
 	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {}), 0, 1, false)
 	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
 
-	// Right column - Dummy table
-	dummyTable := tview.NewTable().SetBorders(true)
-	dummyTable.SetTitle("Threat Assignments").SetBorder(true)
-	dummyTable.SetCell(0, 0, tview.NewTableCell("[::b]Type").SetSelectable(false))
-	dummyTable.SetCell(0, 1, tview.NewTableCell("[::b]Threat").SetSelectable(false))
-	dummyTable.SetCell(0, 2, tview.NewTableCell("[::b]Status").SetSelectable(false))
+	// Right column - Threat Assignments table
+	threatTable := tview.NewTable().SetBorders(true)
+	threatTable.SetTitle("Threat Assignments").SetBorder(true)
+	threatTable.SetCell(0, 0, tview.NewTableCell("[::b]Type").SetSelectable(false))
+	threatTable.SetCell(0, 1, tview.NewTableCell("[::b]Threat").SetSelectable(false))
+	threatTable.SetCell(0, 2, tview.NewTableCell("[::b]Description").SetSelectable(false))
 
-	// Dummy data
-	dummyData := [][]string{
-		{"Instance", "SQL Injection", "Active"},
-		{"Product", "Cross-Site Scripting", "Mitigated"},
-		{"Instance", "Authentication Bypass", "Under Review"},
-		{"Product", "Data Exposure", "Active"},
-	}
+	// Load actual threat assignments for this instance
+	instanceAssignments, err := service.ListThreatAssignmentsByInstanceID(instance.ID)
+	if err != nil {
+		// Show error in table
+		threatTable.SetCell(1, 0, tview.NewTableCell("Error"))
+		threatTable.SetCell(1, 1, tview.NewTableCell(fmt.Sprintf("Failed to load: %v", err)))
+		threatTable.SetCell(1, 2, tview.NewTableCell(""))
+	} else {
+		// Load product-level assignments as well (instance inherits product threats)
+		productAssignments, err := service.ListThreatAssignmentsByProductID(instance.Product.ID)
+		if err != nil {
+			productAssignments = []models.ThreatAssignment{}
+		}
 
-	for i, row := range dummyData {
-		for j, cell := range row {
-			dummyTable.SetCell(i+1, j, tview.NewTableCell(cell))
+		row := 1
+
+		// Add instance-specific threats
+		for _, assignment := range instanceAssignments {
+			threatTable.SetCell(row, 0, tview.NewTableCell("Instance"))
+			threatTable.SetCell(row, 1, tview.NewTableCell(assignment.Threat.Title))
+			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Description))
+			row++
+		}
+
+		// Add product-level threats (inherited)
+		for _, assignment := range productAssignments {
+			threatTable.SetCell(row, 0, tview.NewTableCell("Product"))
+			threatTable.SetCell(row, 1, tview.NewTableCell(assignment.Threat.Title))
+			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Description))
+			row++
+		}
+
+		// Show message if no threats are assigned
+		if len(instanceAssignments) == 0 && len(productAssignments) == 0 {
+			threatTable.SetCell(1, 0, tview.NewTableCell(""))
+			threatTable.SetCell(1, 1, tview.NewTableCell("No threats assigned"))
+			threatTable.SetCell(1, 2, tview.NewTableCell(""))
 		}
 	}
 
 	// Right column container
 	rightColumn := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(actionBar, 3, 0, false).
-		AddItem(dummyTable, 0, 1, false)
+		AddItem(threatTable, 0, 1, false)
 
 	// Main layout - two columns
 	mainLayout := tview.NewFlex().SetDirection(tview.FlexColumn).

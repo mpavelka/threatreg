@@ -134,3 +134,12 @@ func AssignThreatToInstance(instanceID, threatID uuid.UUID) (*models.ThreatAssig
 
 	return threatAssignmentRepository.AssignThreatToInstance(nil, threatID, instanceID)
 }
+
+func ListThreatAssignmentsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAssignment, error) {
+	threatAssignmentRepository, err := getThreatAssignmentRepositoryForInstance()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatAssignmentRepository.ListByInstanceID(nil, instanceID)
+}

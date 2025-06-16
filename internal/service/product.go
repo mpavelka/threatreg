@@ -118,3 +118,12 @@ func AssignThreatToProduct(productID, threatID uuid.UUID) (*models.ThreatAssignm
 
 	return threatAssignmentRepository.AssignThreatToProduct(nil, threatID, productID)
 }
+
+func ListThreatAssignmentsByProductID(productID uuid.UUID) ([]models.ThreatAssignment, error) {
+	threatAssignmentRepository, err := getThreatAssignmentRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatAssignmentRepository.ListByProductID(nil, productID)
+}

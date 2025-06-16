@@ -490,4 +490,72 @@ func TestInstanceService_Integration(t *testing.T) {
 		assert.Equal(t, threat.ID, assignment.ThreatID)
 		assert.Equal(t, nonExistentInstanceID, assignment.InstanceID)
 	})
+
+	t.Run("ListThreatAssignmentsByInstanceID", func(t *testing.T) {
+		// Create an instance for testing
+		instance, err := CreateInstance("Test Instance for Assignments", testProduct.ID)
+		require.NoError(t, err)
+
+		// Create multiple threats for testing
+		threat1, err := CreateThreat("Threat 1", "First test threat")
+		require.NoError(t, err)
+		threat2, err := CreateThreat("Threat 2", "Second test threat")
+		require.NoError(t, err)
+		threat3, err := CreateThreat("Threat 3", "Third test threat")
+		require.NoError(t, err)
+
+		// Assign threats to the instance
+		assignment1, err := AssignThreatToInstance(instance.ID, threat1.ID)
+		require.NoError(t, err)
+		assignment2, err := AssignThreatToInstance(instance.ID, threat2.ID)
+		require.NoError(t, err)
+
+		// Assign one threat to a different instance to ensure filtering works
+		otherInstance, err := CreateInstance("Other Instance", testProduct.ID)
+		require.NoError(t, err)
+		_, err = AssignThreatToInstance(otherInstance.ID, threat3.ID)
+		require.NoError(t, err)
+
+		// List threat assignments for our test instance
+		assignments, err := ListThreatAssignmentsByInstanceID(instance.ID)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Len(t, assignments, 2)
+
+		// Check that we got the correct assignments
+		assignmentIDs := []int{assignments[0].ID, assignments[1].ID}
+		assert.Contains(t, assignmentIDs, assignment1.ID)
+		assert.Contains(t, assignmentIDs, assignment2.ID)
+
+		// Verify threat relationships are loaded
+		for _, assignment := range assignments {
+			assert.NotEmpty(t, assignment.Threat.Title)
+			assert.Equal(t, instance.ID, assignment.InstanceID)
+			assert.Equal(t, uuid.Nil, assignment.ProductID) // Should be nil for instance assignments
+		}
+	})
+
+	t.Run("ListThreatAssignmentsByInstanceID_Empty", func(t *testing.T) {
+		// Create an instance with no threat assignments
+		instance, err := CreateInstance("Empty Assignments Instance", testProduct.ID)
+		require.NoError(t, err)
+
+		// List threat assignments for this instance
+		assignments, err := ListThreatAssignmentsByInstanceID(instance.ID)
+
+		// Should return empty slice, not error
+		require.NoError(t, err)
+		assert.Len(t, assignments, 0)
+	})
+
+	t.Run("ListThreatAssignmentsByInstanceID_InvalidInstanceID", func(t *testing.T) {
+		// Try to list assignments for non-existent instance
+		nonExistentInstanceID := uuid.New()
+		assignments, err := ListThreatAssignmentsByInstanceID(nonExistentInstanceID)
+
+		// Should succeed but return empty slice
+		require.NoError(t, err)
+		assert.Len(t, assignments, 0)
+	})
 }

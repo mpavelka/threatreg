@@ -317,4 +317,72 @@ func TestProductService_Integration(t *testing.T) {
 		assert.Equal(t, threat.ID, assignment.ThreatID)
 		assert.Equal(t, nonExistentProductID, assignment.ProductID)
 	})
+
+	t.Run("ListThreatAssignmentsByProductID", func(t *testing.T) {
+		// Create a product for testing
+		product, err := CreateProduct("Test Product for Assignments", "A test product for threat assignment listing")
+		require.NoError(t, err)
+
+		// Create multiple threats for testing
+		threat1, err := CreateThreat("Product Threat 1", "First product test threat")
+		require.NoError(t, err)
+		threat2, err := CreateThreat("Product Threat 2", "Second product test threat")
+		require.NoError(t, err)
+		threat3, err := CreateThreat("Product Threat 3", "Third product test threat")
+		require.NoError(t, err)
+
+		// Assign threats to the product
+		assignment1, err := AssignThreatToProduct(product.ID, threat1.ID)
+		require.NoError(t, err)
+		assignment2, err := AssignThreatToProduct(product.ID, threat2.ID)
+		require.NoError(t, err)
+
+		// Assign one threat to a different product to ensure filtering works
+		otherProduct, err := CreateProduct("Other Product", "Another product for testing")
+		require.NoError(t, err)
+		_, err = AssignThreatToProduct(otherProduct.ID, threat3.ID)
+		require.NoError(t, err)
+
+		// List threat assignments for our test product
+		assignments, err := ListThreatAssignmentsByProductID(product.ID)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Len(t, assignments, 2)
+
+		// Check that we got the correct assignments
+		assignmentIDs := []int{assignments[0].ID, assignments[1].ID}
+		assert.Contains(t, assignmentIDs, assignment1.ID)
+		assert.Contains(t, assignmentIDs, assignment2.ID)
+
+		// Verify threat relationships are loaded
+		for _, assignment := range assignments {
+			assert.NotEmpty(t, assignment.Threat.Title)
+			assert.Equal(t, product.ID, assignment.ProductID)
+			assert.Equal(t, uuid.Nil, assignment.InstanceID) // Should be nil for product assignments
+		}
+	})
+
+	t.Run("ListThreatAssignmentsByProductID_Empty", func(t *testing.T) {
+		// Create a product with no threat assignments
+		product, err := CreateProduct("Empty Assignments Product", "A product with no threat assignments")
+		require.NoError(t, err)
+
+		// List threat assignments for this product
+		assignments, err := ListThreatAssignmentsByProductID(product.ID)
+
+		// Should return empty slice, not error
+		require.NoError(t, err)
+		assert.Len(t, assignments, 0)
+	})
+
+	t.Run("ListThreatAssignmentsByProductID_InvalidProductID", func(t *testing.T) {
+		// Try to list assignments for non-existent product
+		nonExistentProductID := uuid.New()
+		assignments, err := ListThreatAssignmentsByProductID(nonExistentProductID)
+
+		// Should succeed but return empty slice
+		require.NoError(t, err)
+		assert.Len(t, assignments, 0)
+	})
 }
