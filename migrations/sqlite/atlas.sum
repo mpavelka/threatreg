@@ -1,6 +1,7 @@
-h1:bMrt/gYldelG0RL76OaVnzugHo3ZCPDBPDUMLgsIUhY=
+h1:sGyw0MrsbhUIoq98DEqlubULyJoHdn08DN3yTvxjXd8=
 20250603062251.sql h1:DmEiM6OlQr1BpUmcFNforPy9yw5ERxhWMAUBwAvZdUI=
 20250605210736_add_name_to_applications.sql h1:Enb5WdHnfRX0iiqEZ+gx/SKyPZI9/zxMx+7J2bfFQyE=
 20250607222039_add_indices.sql h1:dCeb825BODSCSo2Pws4YaqSR8q9UpKU7InFUyyxenEc=
 20250612063743_refactor_app_to_instance.sql h1:GdVqHkMqZB4xnKU82cfC+lTUgk3K1I4LVSV6fRnaQ20=
 20250612205738.sql h1:BQEBdMY1iYcBdNKDn/ANMUpgSqKxN3NJEs3jJivt3Qs=
+20250616144926_add_unique_constraint_threat_assignments.sql h1:8q0GH0zoVsdLkLvMwxHrmim7OCYfMpFz+Lll00yRVeA=

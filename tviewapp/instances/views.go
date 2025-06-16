@@ -122,13 +122,17 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	actionBar.SetTitle("Actions").SetBorder(true)
 
 	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {
-		modal := createSelectThreatModal(instance.ID, contentContainer, func() {
-			// Close modal and refresh the threat manager view
+		modal := createInstanceSelectThreatModal(instance.ID, contentContainer, func() {
 			contentContainer.SetContent(NewInstanceThreatManager(instance.ID, contentContainer))
 		})
 		contentContainer.SetContent(modal)
 	}), 0, 1, false)
-	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {}), 0, 1, false)
+	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {
+		modal := createProductSelectThreatModal(instance.Product.ID, contentContainer, func() {
+			contentContainer.SetContent(NewInstanceThreatManager(instance.ID, contentContainer))
+		})
+		contentContainer.SetContent(modal)
+	}), 0, 1, false)
 	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
 
 	// Right column - Threat Assignments table
