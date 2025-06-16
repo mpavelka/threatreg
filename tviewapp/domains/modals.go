@@ -8,7 +8,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func createSelectInstanceModal(domainID uuid.UUID, contentContainer ContentContainer, onClose func()) tview.Primitive {
+func createSelectInstanceModal(domainID uuid.UUID, onClose func()) tview.Primitive {
 	// Create tabs
 	tabs := tview.NewPages()
 	tabs.SetBorder(true).SetTitle("Select Instance")
@@ -55,7 +55,10 @@ func createSelectInstanceModal(domainID uuid.UUID, contentContainer ContentConta
 	return modalContainer
 }
 
-func createEditDomainModal(domain models.Domain, contentContainer ContentContainer, onSave func(models.Domain)) tview.Primitive {
+func createEditDomainModal(
+	domain models.Domain,
+	onClose func(models.Domain),
+) tview.Primitive {
 	form := tview.NewForm()
 	form.SetBorder(true).SetTitle("Edit Domain")
 
@@ -72,16 +75,13 @@ func createEditDomainModal(domain models.Domain, contentContainer ContentContain
 	form.AddButton("Save", func() {
 		updatedDomain, err := service.UpdateDomain(domain.ID, &nameField, &descField)
 		if err != nil {
-			// TODO: Show error message in the future
-			contentContainer.SetContent(NewDomainDetailView(domain, contentContainer))
+			onClose(*updatedDomain)
 			return
 		}
-
-		onSave(*updatedDomain)
 	})
 
 	form.AddButton("Close", func() {
-		contentContainer.SetContent(NewDomainDetailView(domain, contentContainer))
+		onClose(domain)
 	})
 
 	// Create a centered modal-like container

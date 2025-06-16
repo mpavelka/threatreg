@@ -122,16 +122,14 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	actionBar.SetTitle("Actions").SetBorder(true)
 
 	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {
-		modal := createInstanceSelectThreatModal(instance.ID, contentContainer, func() {
-			contentContainer.SetContent(NewInstanceThreatManager(instance.ID, contentContainer))
-		})
-		contentContainer.SetContent(modal)
+		contentContainer.SetContent(createInstanceSelectThreatModal(instance.ID, func() {
+			contentContainer.PopContent()
+		}))
 	}), 0, 1, false)
 	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {
-		modal := createProductSelectThreatModal(instance.Product.ID, contentContainer, func() {
-			contentContainer.SetContent(NewInstanceThreatManager(instance.ID, contentContainer))
-		})
-		contentContainer.SetContent(modal)
+		contentContainer.SetContent(createProductSelectThreatModal(instance.Product.ID, func() {
+			contentContainer.PopContent()
+		}))
 	}), 0, 1, false)
 	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
 

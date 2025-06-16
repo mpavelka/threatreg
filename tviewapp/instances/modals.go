@@ -5,7 +5,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func createInstanceSelectThreatModal(instanceID uuid.UUID, contentContainer ContentContainer, onClose func()) tview.Primitive {
+func createInstanceSelectThreatModal(instanceID uuid.UUID, onClose func()) tview.Primitive {
 	// Create tabs
 	tabs := tview.NewPages()
 	tabs.SetBorder(true).SetTitle("Select Threat")
@@ -52,22 +52,7 @@ func createInstanceSelectThreatModal(instanceID uuid.UUID, contentContainer Cont
 	return modalContainer
 }
 
-func createConfirmationModal(title, message string, onYes, onNo func()) tview.Primitive {
-	modal := tview.NewModal()
-	modal.SetText(message)
-	modal.AddButtons([]string{"Yes", "No"})
-	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
-			onYes()
-		} else {
-			onNo()
-		}
-	})
-
-	return modal
-}
-
-func createProductSelectThreatModal(productID uuid.UUID, contentContainer ContentContainer, onClose func()) tview.Primitive {
+func createProductSelectThreatModal(productID uuid.UUID, onClose func()) tview.Primitive {
 	// Create tabs
 	tabs := tview.NewPages()
 	tabs.SetBorder(true).SetTitle("Select Threat for Product")

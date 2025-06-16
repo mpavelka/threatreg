@@ -65,18 +65,16 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 
 	editButton := tview.NewButton("Edit").
 		SetSelectedFunc(func() {
-			modal := createEditDomainModal(domain, contentContainer, func(updatedDomain models.Domain) {
+			contentContainer.PushContent(createEditDomainModal(domain, func(updatedDomain models.Domain) {
 				contentContainer.PopContent()
-			})
-			contentContainer.PushContent(modal)
+			}))
 		})
 
 	addInstanceButton := tview.NewButton("Add Instance").
 		SetSelectedFunc(func() {
-			modal := createSelectInstanceModal(domain.ID, contentContainer, func() {
+			contentContainer.PushContent(createSelectInstanceModal(domain.ID, func() {
 				contentContainer.PopContent()
-			})
-			contentContainer.PushContent(modal)
+			}))
 		})
 
 	actionBar.AddItem(editButton, 0, 1, false)
@@ -120,7 +118,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			// Handle Actions column (Remove button)
 			if column == 2 {
 				// Show confirmation modal
-				modal := createConfirmationModal(
+				contentContainer.PushContent(createConfirmationModal(
 					"Remove Instance",
 					fmt.Sprintf("Are you sure you want to remove instance '%s' from this domain?", instance.Name),
 					func() {
@@ -137,8 +135,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 						// onNo callback - just close modal, go back to domain detail view
 						contentContainer.PopContent()
 					},
-				)
-				contentContainer.PushContent(modal)
+				))
 			} else {
 				// Navigate to instance detail for other columns
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
