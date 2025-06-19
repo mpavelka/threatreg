@@ -1,9 +1,11 @@
 package tviewapp
 
 import (
+	"threatreg/tviewapp/controls"
 	"threatreg/tviewapp/domains"
 	"threatreg/tviewapp/instances"
 	"threatreg/tviewapp/products"
+	"threatreg/tviewapp/threats"
 
 	"github.com/rivo/tview"
 )
@@ -49,13 +51,13 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 		tview.NewButton("Threats").
 			SetSelectedFunc(func() {
 				contentContainer.SetContentWithFactory(func() tview.Primitive {
-					return NewThreatsView()
+					return threats.NewThreatsView(contentContainer)
 				})
 			}),
 		tview.NewButton("Controls").
 			SetSelectedFunc(func() {
 				contentContainer.SetContentWithFactory(func() tview.Primitive {
-					return NewControlsView()
+					return controls.NewControlsView(contentContainer)
 				})
 			}),
 	}
