@@ -179,6 +179,9 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 
 		row := 1
 
+		// Store all assignments for navigation
+		allAssignments := append(instanceAssignments, productAssignments...)
+
 		// Add instance-specific threats
 		for _, assignment := range instanceAssignments {
 			threatTable.SetCell(row, 0, tview.NewTableCell("Instance"))
@@ -194,6 +197,17 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Description))
 			row++
 		}
+
+		// Make table selectable and add click handler
+		threatTable.SetSelectable(true, false)
+		threatTable.SetSelectedFunc(func(row, column int) {
+			if row > 0 && row-1 < len(allAssignments) {
+				assignment := allAssignments[row-1]
+				contentContainer.PushContentWithFactory(func() tview.Primitive {
+					return NewThreatAssignmentManager(assignment, contentContainer)
+				})
+			}
+		})
 
 		// Show message if no threats are assigned
 		if len(instanceAssignments) == 0 && len(productAssignments) == 0 {
@@ -242,4 +256,108 @@ func updateInstancesTable() {
 		removeButton := "[red]Remove[-]"
 		instancesTable.SetCell(i+1, 2, tview.NewTableCell(removeButton).SetSelectable(true))
 	}
+}
+
+// NewThreatAssignmentManager creates a management view for a specific threat assignment
+func NewThreatAssignmentManager(assignment models.ThreatAssignment, contentContainer ContentContainer) tview.Primitive {
+	// Determine if this is an instance or product assignment
+	isInstanceAssignment := assignment.InstanceID != uuid.Nil
+
+	// Left column - Instance or Product section
+	var entitySection *tview.Flex
+	if isInstanceAssignment {
+		// Instance information section
+		instanceText := tview.NewTextView()
+		instanceText.SetBorder(true).SetTitle("Instance Information")
+		instanceText.SetText(fmt.Sprintf("Name: %s\nID: %s", 
+			assignment.Instance.Name, assignment.Instance.ID.String()))
+
+		instanceButton := tview.NewButton("Edit Instance").SetSelectedFunc(func() {
+			// TODO: Navigate to instance edit view
+		})
+
+		entitySection = tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(instanceText, 0, 1, false).
+			AddItem(instanceButton, 1, 0, true)
+	} else {
+		// Product information section
+		productText := tview.NewTextView()
+		productText.SetBorder(true).SetTitle("Product Information")
+		productText.SetText(fmt.Sprintf("Name: %s\nID: %s", 
+			assignment.Product.Name, assignment.Product.ID.String()))
+
+		productButton := tview.NewButton("Edit Product").SetSelectedFunc(func() {
+			// TODO: Navigate to product edit view
+		})
+
+		entitySection = tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(productText, 0, 1, false).
+			AddItem(productButton, 1, 0, true)
+	}
+
+	// Threat information section
+	threatText := tview.NewTextView()
+	threatText.SetBorder(true).SetTitle("Threat Information")
+	threatText.SetText(fmt.Sprintf("ID: %s\nTitle: %s\nDescription: %s", 
+		assignment.Threat.ID.String(), 
+		assignment.Threat.Title, 
+		assignment.Threat.Description))
+
+	// Left column container
+	leftColumn := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(entitySection, 0, 1, true).
+		AddItem(threatText, 0, 1, false)
+
+	// Right column - Actions section
+	actionBar := tview.NewFlex().SetDirection(tview.FlexColumn)
+	actionBar.SetTitle("Actions").SetBorder(true)
+
+	actionBar.AddItem(tview.NewButton("Add Control").SetSelectedFunc(func() {
+		// TODO: Implement add control functionality
+	}), 0, 1, false)
+	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
+
+	// Right column - Controls table
+	controlsTable := tview.NewTable().SetBorders(true)
+	controlsTable.SetTitle("Associated Controls").SetBorder(true)
+	controlsTable.SetCell(0, 0, tview.NewTableCell("[::b]Title").SetSelectable(false))
+	controlsTable.SetCell(0, 1, tview.NewTableCell("[::b]Description").SetSelectable(false))
+
+	// Load controls associated with this threat assignment
+	// Note: Using ControlAssignments from the ThreatAssignment model
+	if len(assignment.ControlAssignments) > 0 {
+		for i, controlAssignment := range assignment.ControlAssignments {
+			controlsTable.SetCell(i+1, 0, tview.NewTableCell(controlAssignment.Control.Title))
+			controlsTable.SetCell(i+1, 1, tview.NewTableCell(controlAssignment.Control.Description))
+		}
+	} else {
+		// Show message if no controls are assigned
+		controlsTable.SetCell(1, 0, tview.NewTableCell("No controls assigned"))
+		controlsTable.SetCell(1, 1, tview.NewTableCell(""))
+	}
+
+	controlsTable.SetSelectable(true, false)
+
+	// Right column container
+	rightColumn := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(actionBar, 3, 0, false).
+		AddItem(controlsTable, 0, 1, false)
+
+	// Main layout - two columns
+	mainLayout := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(leftColumn, 30, 0, true).
+		AddItem(rightColumn, 0, 1, false)
+
+	// Add navigation back button
+	wrapper := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	backButton := tview.NewButton("← Back").SetSelectedFunc(func() {
+		contentContainer.PopContent()
+	})
+	backButton.SetBorder(true)
+
+	wrapper.AddItem(backButton, 3, 0, false).
+		AddItem(mainLayout, 0, 1, true)
+
+	return wrapper
 }
