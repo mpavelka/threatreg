@@ -3,6 +3,7 @@ package tviewapp
 import (
 	"threatreg/tviewapp/domains"
 	"threatreg/tviewapp/instances"
+	"threatreg/tviewapp/products"
 
 	"github.com/rivo/tview"
 )
@@ -36,7 +37,7 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 		tview.NewButton("Products").
 			SetSelectedFunc(func() {
 				contentContainer.SetContentWithFactory(func() tview.Primitive {
-					return NewProductsView()
+					return products.NewProductsView(contentContainer)
 				})
 			}),
 		tview.NewButton("Instances").
