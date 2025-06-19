@@ -5,6 +5,7 @@ import (
 	"threatreg/internal/models"
 	"threatreg/internal/service"
 	pkgInstances "threatreg/tviewapp/instances"
+	"threatreg/tviewapp/common"
 
 	"github.com/rivo/tview"
 )
@@ -43,6 +44,7 @@ func NewDomainsView(contentContainer ContentContainer) tview.Primitive {
 	table.SetCell(0, 1, tview.NewTableCell("[::b]Name").SetSelectable(false))
 	table.SetCell(0, 2, tview.NewTableCell("[::b]Description").SetSelectable(false))
 	table.SetCell(0, 3, tview.NewTableCell("[::b]Instances").SetSelectable(false))
+	table.SetCell(0, 4, tview.NewTableCell("[::b]Actions").SetSelectable(false))
 
 	for i, d := range domains {
 		instances, err := service.GetInstancesByDomainId(d.ID)
@@ -56,18 +58,39 @@ func NewDomainsView(contentContainer ContentContainer) tview.Primitive {
 		table.SetCell(i+1, 1, tview.NewTableCell(d.Name))
 		table.SetCell(i+1, 2, tview.NewTableCell(d.Description))
 		table.SetCell(i+1, 3, tview.NewTableCell(instanceText))
+		removeButton := "[red]Remove[-]"
+		table.SetCell(i+1, 4, tview.NewTableCell(removeButton).SetSelectable(true))
 	}
 
 	table.SetSelectedFunc(func(row, column int) {
 		if row > 0 && row-1 < len(domains) {
 			domain := domains[row-1]
-			contentContainer.PushContentWithFactory(func() tview.Primitive {
-				return NewDomainDetailView(domain, contentContainer)
-			})
+			if column == 4 {
+				// Remove button clicked
+				contentContainer.PushContent(common.CreateConfirmationModal(
+					"Remove Domain",
+					fmt.Sprintf("Are you sure you want to remove domain '%s'?", domain.Name),
+					func() {
+						err := service.DeleteDomain(domain.ID)
+						if err != nil {
+							return
+						}
+						contentContainer.PopContent()
+					},
+					func() {
+						contentContainer.PopContent()
+					},
+				))
+			} else {
+				// Navigate to domain detail
+				contentContainer.PushContentWithFactory(func() tview.Primitive {
+					return NewDomainDetailView(domain, contentContainer)
+				})
+			}
 		}
 	})
 
-	table.SetSelectable(true, false)
+	table.SetSelectable(true, true)
 
 	flex.AddItem(actionBar, 3, 0, false)
 	flex.AddItem(table, 0, 1, true)
@@ -148,7 +171,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			// Handle Actions column (Remove button)
 			if column == 2 {
 				// Show confirmation modal
-				contentContainer.PushContent(createConfirmationModal(
+				contentContainer.PushContent(common.CreateConfirmationModal(
 					"Remove Instance",
 					fmt.Sprintf("Are you sure you want to remove instance '%s' from this domain?", instance.Name),
 					func() {

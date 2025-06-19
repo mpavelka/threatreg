@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
+	"threatreg/tviewapp/common"
 
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
@@ -68,14 +69,36 @@ func initInstancesTable(contentContainer ContentContainer) {
 
 	// Header (use color for bold effect)
 	instancesTable.SetFixed(1, 0) // Keep header fixed
-	instancesTable.SetSelectable(true, false)
+	instancesTable.SetSelectable(true, true)
 	instancesTable.SetSelectedFunc(func(row, column int) {
 		if row == 0 {
 			return // header
 		}
-		contentContainer.PushContentWithFactory(func() tview.Primitive {
-			return NewInstanceThreatManager(instancesList[row-1].ID, contentContainer)
-		})
+		if column == 2 {
+			// Remove button clicked
+			instance := instancesList[row-1]
+			contentContainer.PushContent(common.CreateConfirmationModal(
+				"Remove Instance",
+				fmt.Sprintf("Are you sure you want to remove instance '%s'?", instance.Name),
+				func() {
+					err := service.DeleteInstance(instance.ID)
+					if err != nil {
+						return
+					}
+					reloadInstances()
+					updateInstancesTable()
+					contentContainer.PopContent()
+				},
+				func() {
+					contentContainer.PopContent()
+				},
+			))
+		} else {
+			// Navigate to threat manager
+			contentContainer.PushContentWithFactory(func() tview.Primitive {
+				return NewInstanceThreatManager(instancesList[row-1].ID, contentContainer)
+			})
+		}
 	})
 }
 
@@ -210,10 +233,13 @@ func updateInstancesTable() {
 	// Header
 	instancesTable.SetCell(0, 0, tview.NewTableCell("[::b]Name"))
 	instancesTable.SetCell(0, 1, tview.NewTableCell("[::b]Product"))
+	instancesTable.SetCell(0, 2, tview.NewTableCell("[::b]Actions"))
 
 	// Data
 	for i, instance := range instancesList {
 		instancesTable.SetCell(i+1, 0, tview.NewTableCell(instance.Name))
 		instancesTable.SetCell(i+1, 1, tview.NewTableCell(instance.Product.Name))
+		removeButton := "[red]Remove[-]"
+		instancesTable.SetCell(i+1, 2, tview.NewTableCell(removeButton).SetSelectable(true))
 	}
 }
