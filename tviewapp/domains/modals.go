@@ -1,9 +1,6 @@
 package domains
 
 import (
-	"threatreg/internal/models"
-	"threatreg/internal/service"
-
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
@@ -56,32 +53,30 @@ func createSelectInstanceModal(domainID uuid.UUID, onClose func()) tview.Primiti
 }
 
 func createEditDomainModal(
-	domain models.Domain,
-	onClose func(models.Domain),
+	name string,
+	description string,
+	onSave func(
+		name string,
+		description string,
+	),
+	onClose func(),
 ) tview.Primitive {
 	form := tview.NewForm()
 	form.SetBorder(true).SetTitle("Edit Domain")
 
-	nameField := domain.Name
-	descField := domain.Description
-
-	form.AddInputField("Name", domain.Name, 50, nil, func(text string) {
-		nameField = text
+	form.AddInputField("Name", name, 50, nil, func(text string) {
+		name = text
 	})
-	form.AddInputField("Description", domain.Description, 50, nil, func(text string) {
-		descField = text
+	form.AddInputField("Description", description, 50, nil, func(text string) {
+		description = text
 	})
 
 	form.AddButton("Save", func() {
-		updatedDomain, err := service.UpdateDomain(domain.ID, &nameField, &descField)
-		if err != nil {
-			onClose(*updatedDomain)
-			return
-		}
+		onSave(name, description)
 	})
 
 	form.AddButton("Close", func() {
-		onClose(domain)
+		onClose()
 	})
 
 	// Create a centered modal-like container

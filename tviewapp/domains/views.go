@@ -10,6 +10,27 @@ import (
 )
 
 func NewDomainsView(contentContainer ContentContainer) tview.Primitive {
+	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex.SetTitle("Domains")
+
+	newDomainButton := tview.NewButton("New Domain").
+		SetSelectedFunc(func() {
+			contentContainer.PushContent(createEditDomainModal(
+				"", "",
+				func(name, description string) {
+					if _, err := service.CreateDomain(name, description); err == nil {
+						contentContainer.PopContent()
+					}
+				},
+				func() { contentContainer.PopContent() },
+			))
+		})
+
+	actionBar := tview.NewFlex().SetDirection(tview.FlexColumn)
+	actionBar.SetTitle("Actions").SetBorder(true)
+	actionBar.AddItem(newDomainButton, 0, 1, false)
+	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
+
 	domains, err := service.ListDomains()
 	if err != nil {
 		return tview.NewTextView().SetText(fmt.Sprintf("Error loading domains: %v", err))
@@ -48,7 +69,10 @@ func NewDomainsView(contentContainer ContentContainer) tview.Primitive {
 
 	table.SetSelectable(true, false)
 
-	return table
+	flex.AddItem(actionBar, 3, 0, false)
+	flex.AddItem(table, 0, 1, true)
+
+	return flex
 }
 
 func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer) tview.Primitive {
@@ -65,9 +89,15 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 
 	editButton := tview.NewButton("Edit").
 		SetSelectedFunc(func() {
-			contentContainer.PushContent(createEditDomainModal(domain, func(updatedDomain models.Domain) {
-				contentContainer.PopContent()
-			}))
+			contentContainer.PushContent(createEditDomainModal(
+				domain.Name, domain.Description,
+				func(name, description string) {
+					if _, err := service.UpdateDomain(domain.ID, &name, &description); err == nil {
+						contentContainer.PopContent()
+					}
+				},
+				func() { contentContainer.PopContent() },
+			))
 		})
 
 	addInstanceButton := tview.NewButton("Add Instance").
