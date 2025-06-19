@@ -29,23 +29,33 @@ func NewNavbar(contentContainer *ContentContainer) *Navbar {
 	buttons := []*tview.Button{
 		tview.NewButton("Domains").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(domains.NewDomainsView(contentContainer))
+				contentContainer.SetContentWithFactory(func() tview.Primitive {
+					return domains.NewDomainsView(contentContainer)
+				})
 			}),
 		tview.NewButton("Products").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(NewProductsView())
+				contentContainer.SetContentWithFactory(func() tview.Primitive {
+					return NewProductsView()
+				})
 			}),
 		tview.NewButton("Instances").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(instances.NewInstancesView(contentContainer))
+				contentContainer.SetContentWithFactory(func() tview.Primitive {
+					return instances.NewInstancesView(contentContainer)
+				})
 			}),
 		tview.NewButton("Threats").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(NewThreatsView())
+				contentContainer.SetContentWithFactory(func() tview.Primitive {
+					return NewThreatsView()
+				})
 			}),
 		tview.NewButton("Controls").
 			SetSelectedFunc(func() {
-				contentContainer.SetContent(NewControlsView())
+				contentContainer.SetContentWithFactory(func() tview.Primitive {
+					return NewControlsView()
+				})
 			}),
 	}
 	for _, btn := range buttons {
