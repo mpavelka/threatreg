@@ -269,7 +269,7 @@ func NewThreatAssignmentManager(assignment models.ThreatAssignment, contentConta
 		// Instance information section
 		instanceText := tview.NewTextView()
 		instanceText.SetBorder(true).SetTitle("Instance Information")
-		instanceText.SetText(fmt.Sprintf("Name: %s\nID: %s", 
+		instanceText.SetText(fmt.Sprintf("Name: %s\nID: %s",
 			assignment.Instance.Name, assignment.Instance.ID.String()))
 
 		instanceButton := tview.NewButton("Edit Instance").SetSelectedFunc(func() {
@@ -283,7 +283,7 @@ func NewThreatAssignmentManager(assignment models.ThreatAssignment, contentConta
 		// Product information section
 		productText := tview.NewTextView()
 		productText.SetBorder(true).SetTitle("Product Information")
-		productText.SetText(fmt.Sprintf("Name: %s\nID: %s", 
+		productText.SetText(fmt.Sprintf("Name: %s\nID: %s",
 			assignment.Product.Name, assignment.Product.ID.String()))
 
 		productButton := tview.NewButton("Edit Product").SetSelectedFunc(func() {
@@ -298,9 +298,9 @@ func NewThreatAssignmentManager(assignment models.ThreatAssignment, contentConta
 	// Threat information section
 	threatText := tview.NewTextView()
 	threatText.SetBorder(true).SetTitle("Threat Information")
-	threatText.SetText(fmt.Sprintf("ID: %s\nTitle: %s\nDescription: %s", 
-		assignment.Threat.ID.String(), 
-		assignment.Threat.Title, 
+	threatText.SetText(fmt.Sprintf("ID: %s\nTitle: %s\nDescription: %s",
+		assignment.Threat.ID.String(),
+		assignment.Threat.Title,
 		assignment.Threat.Description))
 
 	// Left column container

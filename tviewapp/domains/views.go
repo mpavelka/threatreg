@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
-	pkgInstances "threatreg/tviewapp/instances"
 	"threatreg/tviewapp/common"
+	pkgInstances "threatreg/tviewapp/instances"
 
 	"github.com/rivo/tview"
 )

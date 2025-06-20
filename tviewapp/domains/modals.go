@@ -93,4 +93,3 @@ func createEditDomainModal(
 
 	return modalContainer
 }
-
