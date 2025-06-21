@@ -160,8 +160,9 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	threatTable := tview.NewTable().SetBorders(true)
 	threatTable.SetTitle("Threat Assignments").SetBorder(true)
 	threatTable.SetCell(0, 0, tview.NewTableCell("[::b]Type").SetSelectable(false))
-	threatTable.SetCell(0, 1, tview.NewTableCell("[::b]Threat").SetSelectable(false))
-	threatTable.SetCell(0, 2, tview.NewTableCell("[::b]Description").SetSelectable(false))
+	threatTable.SetCell(0, 1, tview.NewTableCell("[::b]Resolution").SetSelectable(false))
+	threatTable.SetCell(0, 2, tview.NewTableCell("[::b]Threat").SetSelectable(false))
+	threatTable.SetCell(0, 3, tview.NewTableCell("[::b]Description").SetSelectable(false))
 
 	// Load actual threat assignments for this instance
 	instanceAssignments, err := service.ListThreatAssignmentsByInstanceID(instance.ID)
@@ -170,6 +171,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 		threatTable.SetCell(1, 0, tview.NewTableCell("Error"))
 		threatTable.SetCell(1, 1, tview.NewTableCell(fmt.Sprintf("Failed to load: %v", err)))
 		threatTable.SetCell(1, 2, tview.NewTableCell(""))
+		threatTable.SetCell(1, 3, tview.NewTableCell(""))
 	} else {
 		// Load product-level assignments as well (instance inherits product threats)
 		productAssignments, err := service.ListThreatAssignmentsByProductID(instance.Product.ID)
@@ -185,16 +187,18 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 		// Add instance-specific threats
 		for _, assignment := range instanceAssignments {
 			threatTable.SetCell(row, 0, tview.NewTableCell("Instance"))
-			threatTable.SetCell(row, 1, tview.NewTableCell(assignment.Threat.Title))
-			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Description))
+			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment)))
+			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Title))
+			threatTable.SetCell(row, 3, tview.NewTableCell(assignment.Threat.Description))
 			row++
 		}
 
 		// Add product-level threats (inherited)
 		for _, assignment := range productAssignments {
 			threatTable.SetCell(row, 0, tview.NewTableCell("Product"))
-			threatTable.SetCell(row, 1, tview.NewTableCell(assignment.Threat.Title))
-			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Description))
+			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment)))
+			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Title))
+			threatTable.SetCell(row, 3, tview.NewTableCell(assignment.Threat.Description))
 			row++
 		}
 
@@ -212,8 +216,9 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 		// Show message if no threats are assigned
 		if len(instanceAssignments) == 0 && len(productAssignments) == 0 {
 			threatTable.SetCell(1, 0, tview.NewTableCell(""))
-			threatTable.SetCell(1, 1, tview.NewTableCell("No threats assigned"))
-			threatTable.SetCell(1, 2, tview.NewTableCell(""))
+			threatTable.SetCell(1, 1, tview.NewTableCell(""))
+			threatTable.SetCell(1, 2, tview.NewTableCell("No threats assigned"))
+			threatTable.SetCell(1, 3, tview.NewTableCell(""))
 		}
 	}
 
@@ -349,4 +354,23 @@ func NewThreatAssignmentManager(assignment models.ThreatAssignment, contentConta
 		AddItem(rightColumn, 0, 1, false)
 
 	return mainLayout
+}
+
+// getResolutionStatus returns the resolution status for a threat assignment
+func getResolutionStatus(assignment models.ThreatAssignment) string {
+	resolution, err := service.GetThreatResolutionByThreatAssignmentID(assignment.ID)
+	if err != nil || resolution == nil {
+		return "-"
+	}
+
+	switch resolution.Status {
+	case models.ThreatAssignmentResolutionStatusResolved:
+		return "[green]Resolved[-]"
+	case models.ThreatAssignmentResolutionStatusAwaiting:
+		return "[yellow]Awaiting[-]"
+	case models.ThreatAssignmentResolutionStatusAccepted:
+		return "[blue]Accepted[-]"
+	default:
+		return "Unknown"
+	}
 }
