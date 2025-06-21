@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/google/uuid"
@@ -16,6 +17,32 @@ type ThreatAssignment struct {
 	Product            Product             `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	Instance           Instance            `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	ControlAssignments []ControlAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+}
+
+// BeforeCreate ensures exactly one of ProductID or InstanceID is set
+func (ta *ThreatAssignment) BeforeCreate(tx *gorm.DB) error {
+	return ta.validateAssignment()
+}
+
+// BeforeUpdate ensures exactly one of ProductID or InstanceID is set
+func (ta *ThreatAssignment) BeforeUpdate(tx *gorm.DB) error {
+	return ta.validateAssignment()
+}
+
+// validateAssignment checks that exactly one of ProductID or InstanceID is not null/nil
+func (ta *ThreatAssignment) validateAssignment() error {
+	productIsSet := ta.ProductID != uuid.Nil
+	instanceIsSet := ta.InstanceID != uuid.Nil
+
+	if productIsSet && instanceIsSet {
+		return errors.New("threat assignment cannot have both ProductID and InstanceID set")
+	}
+
+	if !productIsSet && !instanceIsSet {
+		return errors.New("threat assignment must have either ProductID or InstanceID set")
+	}
+
+	return nil
 }
 
 type ThreatAssignmentRepository struct {
