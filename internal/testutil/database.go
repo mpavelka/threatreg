@@ -28,6 +28,7 @@ func SetupTestDatabase(t *testing.T) func() {
 		&models.ThreatAssignment{},
 		&models.ControlAssignment{},
 		&models.ThreatControl{},
+		&models.ThreatAssignmentResolution{},
 	)
 }
 
