@@ -348,16 +348,5 @@ func NewThreatAssignmentManager(assignment models.ThreatAssignment, contentConta
 		AddItem(leftColumn, 30, 0, true).
 		AddItem(rightColumn, 0, 1, false)
 
-	// Add navigation back button
-	wrapper := tview.NewFlex().SetDirection(tview.FlexRow)
-
-	backButton := tview.NewButton("← Back").SetSelectedFunc(func() {
-		contentContainer.PopContent()
-	})
-	backButton.SetBorder(true)
-
-	wrapper.AddItem(backButton, 3, 0, false).
-		AddItem(mainLayout, 0, 1, true)
-
-	return wrapper
+	return mainLayout
 }
