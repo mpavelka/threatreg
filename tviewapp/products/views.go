@@ -14,7 +14,7 @@ func NewProductsView(contentContainer ContentContainer) tview.Primitive {
 
 	newProductButton := tview.NewButton("New Product").
 		SetSelectedFunc(func() {
-			contentContainer.PushContent(createEditProductModal(
+			contentContainer.PushContent(CreateEditProductModal(
 				"", "",
 				func(name, description string) {
 					if _, err := service.CreateProduct(name, description); err == nil {

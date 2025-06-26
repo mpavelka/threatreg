@@ -5,6 +5,7 @@ import (
 	"threatreg/internal/models"
 	"threatreg/internal/service"
 	"threatreg/tviewapp/common"
+	"threatreg/tviewapp/products"
 	"threatreg/tviewapp/threats"
 
 	"github.com/google/uuid"
@@ -113,23 +114,60 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	// Left column - Instance section
 	instanceText := tview.NewTextView()
 	instanceText.SetBorder(true).SetTitle("Instance Information")
-	instanceText.SetText(fmt.Sprintf("Name: %s\nID: %s", instance.Name, instance.ID.String()))
+	instanceText.SetText(fmt.Sprintf("Name: %s\n", instance.Name))
 
 	instanceButton := tview.NewButton("Edit Instance").SetSelectedFunc(func() {
-		// TODO: Navigate to instance edit view
+		contentContainer.PushContent(CreateEditInstanceModal(
+			instance.Name,
+			func(name string) {
+				_, err := service.UpdateInstance(instance.ID, &name, nil)
+				if err != nil {
+					// TODO: Show error message
+					return
+				}
+				// Refresh the view
+				contentContainer.PopContent()
+				contentContainer.PopContent()
+				contentContainer.PushContentWithFactory(func() tview.Primitive {
+					return NewInstanceThreatManager(instanceID, contentContainer)
+				})
+			},
+			func() {
+				contentContainer.PopContent()
+			},
+		))
 	})
 
 	instanceSection := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(instanceText, 0, 1, false).
+		AddItem(instanceText, 5, 0, false).
 		AddItem(instanceButton, 1, 0, true)
 
 	// Left column - Product section
 	productText := tview.NewTextView()
 	productText.SetBorder(true).SetTitle("Product Information")
-	productText.SetText(fmt.Sprintf("Name: %s\nID: %s", instance.Product.Name, instance.Product.ID.String()))
+	productText.SetText(fmt.Sprintf("Name: %s\nDescription: %s", instance.Product.Name, instance.Product.Description))
 
 	productButton := tview.NewButton("Edit Product").SetSelectedFunc(func() {
-		// TODO: Navigate to product edit view
+		contentContainer.PushContent(products.CreateEditProductModal(
+			instance.Product.Name,
+			instance.Product.Description,
+			func(name, description string) {
+				_, err := service.UpdateProduct(instance.Product.ID, &name, &description)
+				if err != nil {
+					// TODO: Show error message
+					return
+				}
+				// Refresh the view
+				contentContainer.PopContent()
+				contentContainer.PopContent()
+				contentContainer.PushContentWithFactory(func() tview.Primitive {
+					return NewInstanceThreatManager(instanceID, contentContainer)
+				})
+			},
+			func() {
+				contentContainer.PopContent()
+			},
+		))
 	})
 
 	productSection := tview.NewFlex().SetDirection(tview.FlexRow).

@@ -4,7 +4,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func createEditProductModal(
+func CreateEditProductModal(
 	name string,
 	description string,
 	onSave func(
