@@ -136,3 +136,12 @@ func GetDomainsByInstance(instanceID uuid.UUID) ([]models.Domain, error) {
 
 	return domainRepository.GetDomainsByInstanceID(nil, instanceID)
 }
+
+func GetInstancesByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.InstanceWithThreatStats, error) {
+	instanceRepository, err := getInstanceRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return instanceRepository.ListByDomainIdWithThreatStats(nil, domainID)
+}

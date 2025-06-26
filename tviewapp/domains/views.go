@@ -139,15 +139,17 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 
 	instancesTable.SetCell(0, 0, tview.NewTableCell("[::b]Name").SetSelectable(false))
 	instancesTable.SetCell(0, 1, tview.NewTableCell("[::b]Product").SetSelectable(false))
-	instancesTable.SetCell(0, 2, tview.NewTableCell("[::b]Actions").SetSelectable(false))
+	instancesTable.SetCell(0, 2, tview.NewTableCell("[::b]Unresolved Threats").SetSelectable(false))
+	instancesTable.SetCell(0, 3, tview.NewTableCell("[::b]Actions").SetSelectable(false))
 
-	instances, err := service.GetInstancesByDomainId(domain.ID)
+	instances, err := service.GetInstancesByDomainIdWithThreatStats(domain.ID)
 	if err != nil {
 		// If we can't load instances, show an error message in the table
 		instancesTable.SetCell(1, 0, tview.NewTableCell(fmt.Sprintf("Error loading instances: %v", err)))
 		instancesTable.SetCell(1, 1, tview.NewTableCell(""))
 		instancesTable.SetCell(1, 2, tview.NewTableCell(""))
-		instances = []models.Instance{} // Set to empty slice to avoid nil access
+		instancesTable.SetCell(1, 3, tview.NewTableCell(""))
+		instances = []models.InstanceWithThreatStats{} // Set to empty slice to avoid nil access
 	} else {
 		for i, instance := range instances {
 			productName := ""
@@ -156,10 +158,11 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			}
 			instancesTable.SetCell(i+1, 0, tview.NewTableCell(instance.Name))
 			instancesTable.SetCell(i+1, 1, tview.NewTableCell(productName))
+			instancesTable.SetCell(i+1, 2, tview.NewTableCell(fmt.Sprintf("%d", instance.UnresolvedThreatCount)))
 
 			// Add remove button in Actions column
 			removeButton := "[red]Remove[-]"
-			instancesTable.SetCell(i+1, 2, tview.NewTableCell(removeButton).SetSelectable(true))
+			instancesTable.SetCell(i+1, 3, tview.NewTableCell(removeButton).SetSelectable(true))
 		}
 	}
 
@@ -169,7 +172,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 			instance := instances[row-1]
 
 			// Handle Actions column (Remove button)
-			if column == 2 {
+			if column == 3 {
 				// Show confirmation modal
 				contentContainer.PushContent(common.CreateConfirmationModal(
 					"Remove Instance",

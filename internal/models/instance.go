@@ -140,3 +140,86 @@ func (r *InstanceRepository) ListByDomainId(tx *gorm.DB, domainID uuid.UUID) ([]
 	}
 	return instances, nil
 }
+
+// InstanceWithThreatStats represents an instance with threat assignment statistics
+type InstanceWithThreatStats struct {
+	Instance
+	UnresolvedThreatCount int `json:"unresolved_threat_count"`
+}
+
+func (r *InstanceRepository) ListByDomainIdWithThreatStats(tx *gorm.DB, domainID uuid.UUID) ([]InstanceWithThreatStats, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var results []InstanceWithThreatStats
+	
+	// Complex query to get instances with their unresolved threat counts
+	// Count threat assignments that either:
+	// 1. Reference the instance ID directly, OR
+	// 2. Reference the product ID of the instance
+	// But only count those that either have no resolution OR have resolution status not in ('accepted', 'resolved')
+	
+	query := `
+		SELECT 
+			i.id,
+			i.name,
+			i.instance_of,
+			p.id as "Product__id",
+			p.name as "Product__name", 
+			p.description as "Product__description",
+			COALESCE(
+				(SELECT COUNT(DISTINCT ta.id)
+				 FROM threat_assignments ta
+				 LEFT JOIN threat_assignment_resolutions tar ON ta.id = tar.threat_assignment_id
+				 WHERE (ta.instance_id = i.id OR ta.product_id = i.instance_of)
+				   AND (tar.id IS NULL OR tar.status NOT IN ('accepted', 'resolved'))
+				), 0
+			) as unresolved_threat_count
+		FROM instances i
+		JOIN domain_instances di ON i.id = di.instance_id
+		LEFT JOIN products p ON i.instance_of = p.id
+		WHERE di.domain_id = ?
+	`
+	
+	rows, err := tx.Raw(query, domainID).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result InstanceWithThreatStats
+		var productID, productName, productDescription *string
+		
+		err := rows.Scan(
+			&result.ID,
+			&result.Name,
+			&result.InstanceOf,
+			&productID,
+			&productName,
+			&productDescription,
+			&result.UnresolvedThreatCount,
+		)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Set product details if they exist
+		if productID != nil {
+			if err := result.Product.ID.UnmarshalText([]byte(*productID)); err != nil {
+				return nil, err
+			}
+		}
+		if productName != nil {
+			result.Product.Name = *productName
+		}
+		if productDescription != nil {
+			result.Product.Description = *productDescription
+		}
+		
+		results = append(results, result)
+	}
+
+	return results, nil
+}

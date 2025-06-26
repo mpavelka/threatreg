@@ -345,3 +345,333 @@ func TestDomainService_Integration(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestGetInstancesByDomainIdWithThreatStats(t *testing.T) {
+
+	// Create shared test entities at top level
+	cleanupShared := testutil.SetupTestDatabase(t)
+	defer cleanupShared()
+
+	var err error
+	var domain *models.Domain
+	var product1, product2 *models.Product
+	var instance1, instance2, instance3 *models.Instance
+	var threat1, threat2, threat3, threat4, threat5 *models.Threat
+
+	var setUp = func() {
+		// Create test domain
+		domain, err = CreateDomain("Test Domain for Stats", "Domain for threat stats testing")
+		require.NoError(t, err)
+
+		// Create test products
+		product1, err = CreateProduct("Product 1", "First test product")
+		require.NoError(t, err)
+
+		product2, err = CreateProduct("Product 2", "Second test product")
+		require.NoError(t, err)
+
+		// Create test instances
+		instance1, err = CreateInstance("Instance 1", product1.ID)
+		require.NoError(t, err)
+
+		instance2, err = CreateInstance("Instance 2", product1.ID)
+		require.NoError(t, err)
+
+		instance3, err = CreateInstance("Instance 3", product2.ID)
+		require.NoError(t, err)
+
+		// Add instances to domain
+		err = AddInstanceToDomain(domain.ID, instance1.ID)
+		require.NoError(t, err)
+		err = AddInstanceToDomain(domain.ID, instance2.ID)
+		require.NoError(t, err)
+		err = AddInstanceToDomain(domain.ID, instance3.ID)
+		require.NoError(t, err)
+
+		// Create test threats
+		threat1, err = CreateThreat("Threat 1", "First test threat")
+		require.NoError(t, err)
+
+		threat2, err = CreateThreat("Threat 2", "Second test threat")
+		require.NoError(t, err)
+
+		threat3, err = CreateThreat("Threat 3", "Third test threat")
+		require.NoError(t, err)
+
+		threat4, err = CreateThreat("Threat 4", "Fourth test threat")
+		require.NoError(t, err)
+
+		threat5, err = CreateThreat("Threat 5", "Fifth test threat")
+		require.NoError(t, err)
+	}
+
+	t.Run("MixedInstanceAndProductThreats", func(t *testing.T) {
+		setUp()
+		// Instance1 has direct threat assignments:
+		// - threat1: no resolution (unresolved)
+		// - threat2: awaiting status (unresolved)
+		// - threat3: resolved status (resolved - NOT counted)
+		_, err := AssignThreatToInstance(instance1.ID, threat1.ID)
+		require.NoError(t, err)
+
+		assignment2, err := AssignThreatToInstance(instance1.ID, threat2.ID)
+		require.NoError(t, err)
+
+		assignment3, err := AssignThreatToInstance(instance1.ID, threat3.ID)
+		require.NoError(t, err)
+
+		// Create resolutions
+		_, err = CreateThreatResolution(
+			assignment2.ID,
+			&instance1.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusAwaiting,
+			"Awaiting resolution",
+		)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			assignment3.ID,
+			&instance1.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Resolved threat",
+		)
+		require.NoError(t, err)
+
+		// Product1 threats (inherited by instance1 and instance2):
+		// - threat4: no resolution (unresolved)
+		// - threat5: accepted status (resolved - NOT counted)
+		_, err = AssignThreatToProduct(product1.ID, threat4.ID)
+		require.NoError(t, err)
+
+		prodAssignment, err := AssignThreatToProduct(product1.ID, threat5.ID)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			prodAssignment.ID,
+			nil,
+			&product1.ID,
+			models.ThreatAssignmentResolutionStatusAccepted,
+			"Accepted risk",
+		)
+		require.NoError(t, err)
+
+		// Instance3 has both instance and product threats:
+		// - threat1: instance-level, no resolution (unresolved)
+		// - threat4: product-level, no resolution (unresolved)
+		_, err = AssignThreatToInstance(instance3.ID, threat1.ID)
+		require.NoError(t, err)
+
+		_, err = AssignThreatToProduct(product2.ID, threat4.ID)
+		require.NoError(t, err)
+
+		// Test the function
+		instances, err := GetInstancesByDomainIdWithThreatStats(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, instances, 3)
+
+		// Create a map for easier assertions
+		instanceMap := make(map[uuid.UUID]models.InstanceWithThreatStats)
+		for _, inst := range instances {
+			instanceMap[inst.ID] = inst
+		}
+
+		// Instance1: 3 unresolved threats (threat1 + threat2 + threat4)
+		inst1, exists := instanceMap[instance1.ID]
+		assert.True(t, exists)
+		assert.Equal(t, "Instance 1", inst1.Name)
+		assert.Equal(t, 3, inst1.UnresolvedThreatCount)
+
+		// Instance2: 1 unresolved threat (threat4 from product)
+		inst2, exists := instanceMap[instance2.ID]
+		assert.True(t, exists)
+		assert.Equal(t, "Instance 2", inst2.Name)
+		assert.Equal(t, 1, inst2.UnresolvedThreatCount)
+
+		// Instance3: 2 unresolved threats (threat1 + threat4)
+		inst3, exists := instanceMap[instance3.ID]
+		assert.True(t, exists)
+		assert.Equal(t, "Instance 3", inst3.Name)
+		assert.Equal(t, 2, inst3.UnresolvedThreatCount)
+
+		// Verify product information is properly loaded
+		assert.Equal(t, product1.Name, inst1.Product.Name)
+		assert.Equal(t, product1.Name, inst2.Product.Name)
+		assert.Equal(t, product2.Name, inst3.Product.Name)
+	})
+
+	t.Run("EmptyDomain", func(t *testing.T) {
+		// Test with domain that has no instances
+		emptyDomain, err := CreateDomain("Empty Domain", "Domain with no instances")
+		require.NoError(t, err)
+
+		instances, err := GetInstancesByDomainIdWithThreatStats(emptyDomain.ID)
+		require.NoError(t, err)
+		assert.Len(t, instances, 0)
+	})
+
+	t.Run("NoThreats", func(t *testing.T) {
+		setUp()
+		// Test instances with no threat assignments
+		instances, err := GetInstancesByDomainIdWithThreatStats(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, instances, 3)
+
+		// All instances should have 0 unresolved threats
+		for _, inst := range instances {
+			assert.Equal(t, 0, inst.UnresolvedThreatCount)
+		}
+	})
+
+	t.Run("AllThreatsResolved", func(t *testing.T) {
+		// Assign threats and resolve all of them
+
+		// Instance threat assignments
+		instAssignment1, err := AssignThreatToInstance(instance1.ID, threat1.ID)
+		require.NoError(t, err)
+		instAssignment2, err := AssignThreatToInstance(instance2.ID, threat2.ID)
+		require.NoError(t, err)
+
+		// Product threat assignments
+		prodAssignment1, err := AssignThreatToProduct(product1.ID, threat3.ID)
+		require.NoError(t, err)
+		prodAssignment2, err := AssignThreatToProduct(product2.ID, threat4.ID)
+		require.NoError(t, err)
+
+		// Resolve all threats with "resolved" or "accepted" status
+		_, err = CreateThreatResolution(
+			instAssignment1.ID,
+			&instance1.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Instance threat resolved",
+		)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			instAssignment2.ID,
+			&instance2.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusAccepted,
+			"Instance threat accepted",
+		)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			prodAssignment1.ID,
+			nil,
+			&product1.ID,
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Product threat resolved",
+		)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			prodAssignment2.ID,
+			nil,
+			&product2.ID,
+			models.ThreatAssignmentResolutionStatusAccepted,
+			"Product threat accepted",
+		)
+		require.NoError(t, err)
+
+		instances, err := GetInstancesByDomainIdWithThreatStats(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, instances, 3)
+
+		// All instances should have 0 unresolved threats since all are resolved/accepted
+		for _, inst := range instances {
+			assert.Equal(t, 0, inst.UnresolvedThreatCount)
+		}
+	})
+
+	t.Run("NonExistentDomain", func(t *testing.T) {
+		nonExistentDomainID := uuid.New()
+		instances, err := GetInstancesByDomainIdWithThreatStats(nonExistentDomainID)
+		require.NoError(t, err)
+		assert.Len(t, instances, 0)
+	})
+
+	t.Run("ComplexMixedResolutionStates", func(t *testing.T) {
+		setUp()
+		// Complex scenario testing various resolution states and inheritance patterns
+
+		// Product1 threats (affect instance1 and instance2):
+		// - threat1: resolved (should NOT count)
+		// - threat2: accepted (should NOT count)
+		prodAssignment1, err := AssignThreatToProduct(product1.ID, threat1.ID)
+		require.NoError(t, err)
+		prodAssignment2, err := AssignThreatToProduct(product1.ID, threat2.ID)
+		require.NoError(t, err)
+
+		// Product2 threats (affect instance3):
+		// - threat3: no resolution (should count)
+		_, err = AssignThreatToProduct(product2.ID, threat3.ID)
+		require.NoError(t, err)
+
+		// Instance-specific threats:
+		// - instance1 + threat4: no resolution (should count)
+		// - instance3 + threat5: awaiting (should count)
+		_, err = AssignThreatToInstance(instance1.ID, threat4.ID)
+		require.NoError(t, err)
+		instAssignment, err := AssignThreatToInstance(instance3.ID, threat5.ID)
+		require.NoError(t, err)
+
+		// Create resolutions
+		_, err = CreateThreatResolution(
+			prodAssignment1.ID,
+			nil,
+			&product1.ID,
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Product1 threat1 resolved",
+		)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			prodAssignment2.ID,
+			nil,
+			&product1.ID,
+			models.ThreatAssignmentResolutionStatusAccepted,
+			"Product1 threat2 accepted",
+		)
+		require.NoError(t, err)
+
+		_, err = CreateThreatResolution(
+			instAssignment.ID,
+			&instance3.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusAwaiting,
+			"Instance3 threat5 awaiting",
+		)
+		require.NoError(t, err)
+
+		instances, err := GetInstancesByDomainIdWithThreatStats(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, instances, 3)
+
+		instanceMap := make(map[uuid.UUID]models.InstanceWithThreatStats)
+		for _, inst := range instances {
+			instanceMap[inst.ID] = inst
+		}
+
+		// Instance1: 1 unresolved (threat4 instance-level)
+		// Product threats (threat1, threat2) are resolved/accepted
+		inst1, exists := instanceMap[instance1.ID]
+		assert.True(t, exists)
+		assert.Equal(t, 1, inst1.UnresolvedThreatCount)
+
+		// Instance2: 0 unresolved
+		// Product threats (threat1, threat2) are resolved/accepted, no instance-specific threats
+		inst2, exists := instanceMap[instance2.ID]
+		assert.True(t, exists)
+		assert.Equal(t, 0, inst2.UnresolvedThreatCount)
+
+		// Instance3: 2 unresolved
+		// 1 product threat (threat3) + 1 instance threat (threat5 awaiting)
+		inst3, exists := instanceMap[instance3.ID]
+		assert.True(t, exists)
+		assert.Equal(t, 2, inst3.UnresolvedThreatCount)
+	})
+
+}
