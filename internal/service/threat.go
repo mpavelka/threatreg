@@ -223,3 +223,12 @@ func DeleteThreatResolution(id uuid.UUID) error {
 
 	return resolutionRepository.Delete(nil, id)
 }
+
+func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByInstancesCount, error) {
+	threatRepository, err := getThreatRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatRepository.ListByDomainWithUnresolvedByInstancesCount(nil, domainID)
+}
