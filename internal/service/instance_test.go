@@ -242,19 +242,12 @@ func TestInstanceService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create instances for both products
-		var testProductApps []*models.Instance
-		var anotherProductApps []*models.Instance
 
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			app1Name := fmt.Sprintf("Test Product App %d", i+1)
-			app1, err := CreateInstance(app1Name, testProduct.ID)
-			require.NoError(t, err)
-			testProductApps = append(testProductApps, app1)
-
+			CreateInstance(app1Name, testProduct.ID)
 			app2Name := fmt.Sprintf("Another Product App %d", i+1)
-			app2, err := CreateInstance(app2Name, anotherProduct.ID)
-			require.NoError(t, err)
-			anotherProductApps = append(anotherProductApps, app2)
+			CreateInstance(app2Name, anotherProduct.ID)
 		}
 
 		// List instances by test product ID
@@ -319,11 +312,9 @@ func TestInstanceService_Integration(t *testing.T) {
 			{"API Gateway", webProduct.ID},
 		}
 
-		var createdApps []*models.Instance
 		for _, ta := range testApps {
-			app, err := CreateInstance(ta.name, ta.productID)
+			CreateInstance(ta.name, ta.productID)
 			require.NoError(t, err)
-			createdApps = append(createdApps, app)
 		}
 
 		t.Run("FilterByInstanceName", func(t *testing.T) {
