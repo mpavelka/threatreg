@@ -1,7 +1,7 @@
 package tviewapp
 
 import (
-	"threatreg/tviewapp/products"
+	products "threatreg/tviewapp/products/views"
 
 	"github.com/rivo/tview"
 )

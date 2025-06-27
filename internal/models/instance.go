@@ -153,13 +153,13 @@ func (r *InstanceRepository) ListByDomainIdWithThreatStats(tx *gorm.DB, domainID
 	}
 
 	var results []InstanceWithThreatStats
-	
+
 	// Complex query to get instances with their unresolved threat counts
 	// Count threat assignments that either:
 	// 1. Reference the instance ID directly, OR
 	// 2. Reference the product ID of the instance
 	// But only count those that either have no resolution OR have resolution status not in ('accepted', 'resolved')
-	
+
 	query := `
 		SELECT 
 			i.id,
@@ -181,7 +181,7 @@ func (r *InstanceRepository) ListByDomainIdWithThreatStats(tx *gorm.DB, domainID
 		LEFT JOIN products p ON i.instance_of = p.id
 		WHERE di.domain_id = ?
 	`
-	
+
 	rows, err := tx.Raw(query, domainID).Rows()
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (r *InstanceRepository) ListByDomainIdWithThreatStats(tx *gorm.DB, domainID
 	for rows.Next() {
 		var result InstanceWithThreatStats
 		var productID, productName, productDescription *string
-		
+
 		err := rows.Scan(
 			&result.ID,
 			&result.Name,
@@ -204,7 +204,7 @@ func (r *InstanceRepository) ListByDomainIdWithThreatStats(tx *gorm.DB, domainID
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Set product details if they exist
 		if productID != nil {
 			if err := result.Product.ID.UnmarshalText([]byte(*productID)); err != nil {
@@ -217,7 +217,7 @@ func (r *InstanceRepository) ListByDomainIdWithThreatStats(tx *gorm.DB, domainID
 		if productDescription != nil {
 			result.Product.Description = *productDescription
 		}
-		
+
 		results = append(results, result)
 	}
 

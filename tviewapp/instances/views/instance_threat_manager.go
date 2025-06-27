@@ -1,108 +1,16 @@
-package instances
+package views
 
 import (
 	"fmt"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
-	"threatreg/tviewapp/common"
-	"threatreg/tviewapp/products"
-	"threatreg/tviewapp/threats"
+	instancesModals "threatreg/tviewapp/instances/modals"
+	productsModals "threatreg/tviewapp/products/modals"
+	threatsViews "threatreg/tviewapp/threats/views"
 
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
-
-var (
-	filterForm     *tview.Form
-	instancesTable *tview.Table
-	instancesList  []models.Instance
-)
-
-// NewInstancesView creates a tview.Primitive that lists all instances
-func NewInstancesView(contentContainer ContentContainer) tview.Primitive {
-	initFilter()
-	reloadInstances()
-	initInstancesTable(contentContainer)
-	updateInstancesTable()
-
-	// Create layout
-	grid := tview.NewGrid().
-		SetRows(0).
-		SetColumns(30, 0).
-		AddItem(filterForm, 0, 0, 1, 1, 0, 0, true).
-		AddItem(instancesTable, 0, 1, 1, 2, 0, 0, true)
-	return grid
-}
-
-func reloadInstances() {
-	instances, err := service.FilterInstances(
-		filterForm.GetFormItemByLabel("Name").(*tview.InputField).GetText(),
-		filterForm.GetFormItemByLabel("Product").(*tview.InputField).GetText(),
-	)
-	if err != nil {
-		instancesTable.SetCell(1, 0, tview.NewTableCell(fmt.Sprintf("Error loading instances: %v", err)))
-		return
-	}
-	instancesList = instances
-}
-
-func initFilter() {
-	filterForm = tview.NewForm().SetHorizontal(false)
-	filterForm.SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
-	filterForm.AddInputField("Name", "", 0, nil, nil)
-	filterForm.AddInputField("Product", "", 0, nil, nil)
-	filterForm.AddButton("Filter", func() {
-		// Apply filters
-		reloadInstances()
-		updateInstancesTable()
-	})
-	filterForm.AddButton("Reset", func() {
-		// Reset filters
-		filterForm.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
-		filterForm.GetFormItemByLabel("Product").(*tview.InputField).SetText("")
-		reloadInstances()
-		updateInstancesTable()
-	})
-}
-
-func initInstancesTable(contentContainer ContentContainer) {
-	instancesTable = tview.NewTable().SetBorders(true)
-	instancesTable.SetTitle("Instances").SetTitleAlign(tview.AlignLeft).SetBorder(true)
-
-	// Header (use color for bold effect)
-	instancesTable.SetFixed(1, 0) // Keep header fixed
-	instancesTable.SetSelectable(true, true)
-	instancesTable.SetSelectedFunc(func(row, column int) {
-		if row == 0 {
-			return // header
-		}
-		if column == 2 {
-			// Remove button clicked
-			instance := instancesList[row-1]
-			contentContainer.PushContent(common.CreateConfirmationModal(
-				"Remove Instance",
-				fmt.Sprintf("Are you sure you want to remove instance '%s'?", instance.Name),
-				func() {
-					err := service.DeleteInstance(instance.ID)
-					if err != nil {
-						return
-					}
-					reloadInstances()
-					updateInstancesTable()
-					contentContainer.PopContent()
-				},
-				func() {
-					contentContainer.PopContent()
-				},
-			))
-		} else {
-			// Navigate to threat manager
-			contentContainer.PushContentWithFactory(func() tview.Primitive {
-				return NewInstanceThreatManager(instancesList[row-1].ID, contentContainer)
-			})
-		}
-	})
-}
 
 // NewInstanceThreatManager creates a threat management view for an instance
 func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentContainer) tview.Primitive {
@@ -117,7 +25,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	instanceText.SetText(fmt.Sprintf("Name: %s\n", instance.Name))
 
 	instanceButton := tview.NewButton("Edit Instance").SetSelectedFunc(func() {
-		contentContainer.PushContent(CreateEditInstanceModal(
+		contentContainer.PushContent(instancesModals.CreateEditInstanceModal(
 			instance.Name,
 			func(name string) {
 				_, err := service.UpdateInstance(instance.ID, &name, nil)
@@ -148,7 +56,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	productText.SetText(fmt.Sprintf("Name: %s\nDescription: %s", instance.Product.Name, instance.Product.Description))
 
 	productButton := tview.NewButton("Edit Product").SetSelectedFunc(func() {
-		contentContainer.PushContent(products.CreateEditProductModal(
+		contentContainer.PushContent(productsModals.CreateEditProductModal(
 			instance.Product.Name,
 			instance.Product.Description,
 			func(name, description string) {
@@ -184,12 +92,12 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	actionBar.SetTitle("Actions").SetBorder(true)
 
 	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {
-		contentContainer.PushContent(createInstanceSelectThreatModal(instance.ID, func() {
+		contentContainer.PushContent(instancesModals.CreateInstanceSelectThreatModal(instance.ID, func() {
 			contentContainer.PopContent()
 		}))
 	}), 0, 1, false)
 	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {
-		contentContainer.PushContent(createProductSelectThreatModal(instance.Product.ID, func() {
+		contentContainer.PushContent(instancesModals.CreateProductSelectThreatModal(instance.Product.ID, func() {
 			contentContainer.PopContent()
 		}))
 	}), 0, 1, false)
@@ -247,7 +155,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 			if row > 0 && row-1 < len(allAssignments) {
 				assignment := allAssignments[row-1]
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return threats.NewInstanceLevelThreatResolverManager(assignment, instanceID, contentContainer)
+					return threatsViews.NewInstanceLevelThreatResolverManager(assignment, instanceID, contentContainer)
 				})
 			}
 		})
@@ -285,24 +193,6 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	return mainLayout
 }
 
-func updateInstancesTable() {
-	instancesTable.Clear()
-
-	// Header
-	instancesTable.SetCell(0, 0, tview.NewTableCell("[::b]Name"))
-	instancesTable.SetCell(0, 1, tview.NewTableCell("[::b]Product"))
-	instancesTable.SetCell(0, 2, tview.NewTableCell("[::b]Actions"))
-
-	// Data
-	for i, instance := range instancesList {
-		instancesTable.SetCell(i+1, 0, tview.NewTableCell(instance.Name))
-		instancesTable.SetCell(i+1, 1, tview.NewTableCell(instance.Product.Name))
-		removeButton := "[red]Remove[-]"
-		instancesTable.SetCell(i+1, 2, tview.NewTableCell(removeButton).SetSelectable(true))
-	}
-}
-
-// getResolutionStatus returns the resolution status for a threat assignment
 func getResolutionStatus(assignment models.ThreatAssignment) string {
 	resolution, err := service.GetThreatResolutionByThreatAssignmentID(assignment.ID)
 	if err != nil || resolution == nil {

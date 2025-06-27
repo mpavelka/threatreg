@@ -1,10 +1,10 @@
-package controls
+package modals
 
 import (
 	"github.com/rivo/tview"
 )
 
-func createEditControlModal(
+func CreateEditControlModal(
 	title string,
 	description string,
 	onSave func(

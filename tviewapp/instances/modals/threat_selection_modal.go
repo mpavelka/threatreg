@@ -1,21 +1,20 @@
-package domains
+package modals
 
 import (
+	instancesForms "threatreg/tviewapp/instances/forms"
+
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
 
-func createSelectInstanceModal(domainID uuid.UUID, onClose func()) tview.Primitive {
+// createThreatSelectionModal creates a modal with tabbed interface for threat selection
+func createThreatSelectionModal(title string, selectExistingForm, createNewForm tview.Primitive) tview.Primitive {
 	// Create tabs
 	tabs := tview.NewPages()
-	tabs.SetBorder(true).SetTitle("Select Instance")
+	tabs.SetBorder(true).SetTitle(title)
 
-	// Create Select Existing tab
-	selectExistingForm := createSelectExistingInstanceForm(domainID, onClose)
+	// Add tabs
 	tabs.AddPage("Select Existing", selectExistingForm, true, true)
-
-	// Create New tab
-	createNewForm := createNewInstanceForm(domainID, onClose)
 	tabs.AddPage("Create New", createNewForm, true, false)
 
 	// Create tab navigation
@@ -52,44 +51,14 @@ func createSelectInstanceModal(domainID uuid.UUID, onClose func()) tview.Primiti
 	return modalContainer
 }
 
-func createEditDomainModal(
-	name string,
-	description string,
-	onSave func(
-		name string,
-		description string,
-	),
-	onClose func(),
-) tview.Primitive {
-	form := tview.NewForm()
-	form.SetBorder(true).SetTitle("Edit Domain")
+func CreateInstanceSelectThreatModal(instanceID uuid.UUID, onClose func()) tview.Primitive {
+	selectExistingForm := instancesForms.CreateInstanceSelectExistingThreatForm(instanceID, onClose)
+	createNewForm := instancesForms.CreateNewThreatForInstanceForm(instanceID, onClose)
+	return createThreatSelectionModal("Select Threat", selectExistingForm, createNewForm)
+}
 
-	form.AddInputField("Name", name, 50, nil, func(text string) {
-		name = text
-	})
-	form.AddInputField("Description", description, 50, nil, func(text string) {
-		description = text
-	})
-
-	form.AddButton("Save", func() {
-		onSave(name, description)
-	})
-
-	form.AddButton("Close", func() {
-		onClose()
-	})
-
-	// Create a centered modal-like container
-	modalContainer := tview.NewFlex().SetDirection(tview.FlexRow)
-	modalContainer.AddItem(tview.NewBox(), 0, 1, false) // Top spacer
-
-	centerFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	centerFlex.AddItem(tview.NewBox(), 0, 1, false) // Left spacer
-	centerFlex.AddItem(form, 80, 0, true)           // Form with fixed width
-	centerFlex.AddItem(tview.NewBox(), 0, 1, false) // Right spacer
-
-	modalContainer.AddItem(centerFlex, 15, 0, true)     // Form area
-	modalContainer.AddItem(tview.NewBox(), 0, 1, false) // Bottom spacer
-
-	return modalContainer
+func CreateProductSelectThreatModal(productID uuid.UUID, onClose func()) tview.Primitive {
+	selectExistingForm := instancesForms.CreateProductSelectExistingThreatForm(productID, onClose)
+	createNewForm := instancesForms.CreateNewThreatForProductForm(productID, onClose)
+	return createThreatSelectionModal("Select Threat for Product", selectExistingForm, createNewForm)
 }

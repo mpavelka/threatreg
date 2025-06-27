@@ -1,11 +1,11 @@
 package tviewapp
 
 import (
-	"threatreg/tviewapp/controls"
-	"threatreg/tviewapp/domains"
-	"threatreg/tviewapp/instances"
-	"threatreg/tviewapp/products"
-	"threatreg/tviewapp/threats"
+	controls "threatreg/tviewapp/controls/views"
+	domains "threatreg/tviewapp/domains/views"
+	instances "threatreg/tviewapp/instances/views"
+	products "threatreg/tviewapp/products/views"
+	threats "threatreg/tviewapp/threats/views"
 
 	"github.com/rivo/tview"
 )
