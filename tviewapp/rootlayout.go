@@ -1,7 +1,7 @@
 package tviewapp
 
 import (
-	products "threatreg/tviewapp/products/views"
+	domainsViews "threatreg/tviewapp/domains/views"
 
 	"github.com/rivo/tview"
 )
@@ -15,7 +15,7 @@ type RootLayout struct {
 // NewRootLayout creates the main application layout with content and navbar
 func NewRootLayout() *RootLayout {
 	contentContainer := NewContentContainer(nil)
-	mainContent := products.NewProductsView(contentContainer)
+	mainContent := domainsViews.NewDomainsView(contentContainer)
 	contentContainer.SetContent(mainContent)
 
 	navbar := NewNavbar(
