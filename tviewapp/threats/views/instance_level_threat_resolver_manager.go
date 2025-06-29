@@ -51,21 +51,33 @@ func buildThreatInfoSection(assignment models.ThreatAssignment) *tview.TextView 
 	info := tview.NewTextView()
 	info.SetBorder(true).SetTitle("Threat Assignment Information")
 
-	instanceName := "(Inherited from Product)"
+	var instanceName string
 	if assignment.InstanceID != uuid.Nil {
 		instanceName = assignment.Instance.Name
+		info.SetText(fmt.Sprintf("Instance: %s\nThreat: %s\n\n%s",
+			instanceName,
+			assignment.Threat.Title,
+			assignment.Threat.Description))
+	} else if assignment.ProductID != uuid.Nil {
+		info.SetText(fmt.Sprintf("Product: %s\nThreat: %s\n\n%s",
+			assignment.Product.Name,
+			assignment.Threat.Title,
+			assignment.Threat.Description))
+	} else {
+		info.SetText(fmt.Sprintf("Threat: %s\n\n%s",
+			assignment.Threat.Title,
+			assignment.Threat.Description))
 	}
-
-	info.SetText(fmt.Sprintf("Instance: %s\nThreat: %s\n\n%s",
-		instanceName,
-		assignment.Threat.Title,
-		assignment.Threat.Description))
 
 	return info
 }
 
 // buildResolverColumn creates the right column with resolver info, resolution, and actions
-func buildResolverColumn(assignment models.ThreatAssignment, resolver *models.Instance, contentContainer ContentContainer) *tview.Flex {
+func buildResolverColumn(
+	assignment models.ThreatAssignment,
+	resolver *models.Instance,
+	contentContainer ContentContainer,
+) *tview.Flex {
 	column := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	// Resolver information
