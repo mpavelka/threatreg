@@ -194,6 +194,9 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 }
 
 func getResolutionStatus(assignment models.ThreatAssignment) string {
+	// TODO: If this is a product-level assignment, we need to check both instance- and product-level resolutions
+	// For now, we only check the first available resolution, which is obviously wrong (it might be instance or product)
+
 	resolution, err := service.GetThreatResolutionByThreatAssignmentID(assignment.ID)
 	if err != nil || resolution == nil {
 		return "-"

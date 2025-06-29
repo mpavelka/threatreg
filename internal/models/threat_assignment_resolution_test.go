@@ -229,7 +229,7 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 		assert.Equal(t, resolution.Description, retrieved.Description)
 
 		// Get by ThreatAssignmentID
-		byThreatAssignment, err := repo.GetByThreatAssignmentID(nil, threatAssignment.ID)
+		byThreatAssignment, err := repo.GetOneByThreatAssignmentID(nil, threatAssignment.ID)
 		require.NoError(t, err)
 		assert.Equal(t, resolution.ID, byThreatAssignment.ID)
 

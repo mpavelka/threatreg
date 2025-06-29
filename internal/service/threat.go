@@ -194,7 +194,25 @@ func GetThreatResolutionByThreatAssignmentID(threatAssignmentID int) (*models.Th
 		return nil, err
 	}
 
-	return resolutionRepository.GetByThreatAssignmentID(nil, threatAssignmentID)
+	return resolutionRepository.GetOneByThreatAssignmentID(nil, threatAssignmentID)
+}
+
+func GetInstanceLevelThreatResolution(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
+	resolutionRepository, err := getThreatAssignmentResolutionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return resolutionRepository.GetOneByThreatAssignmentIDAndInstanceID(nil, threatAssignmentID, instanceID)
+}
+
+func GetProductLevelThreatResolution(threatAssignmentID int, productID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
+	resolutionRepository, err := getThreatAssignmentResolutionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return resolutionRepository.GetOneByAssignmentIDAndProductID(nil, threatAssignmentID, productID)
 }
 
 func ListThreatResolutionsByProductID(productID uuid.UUID) ([]models.ThreatAssignmentResolution, error) {

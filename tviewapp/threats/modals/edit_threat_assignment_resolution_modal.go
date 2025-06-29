@@ -12,9 +12,17 @@ import (
 func CreateEditThreatAssignmentResolutionModal(
 	assignment models.ThreatAssignment,
 	existingResolution *models.ThreatAssignmentResolution,
+	resolverInstanceId *uuid.UUID,
+	resolverProductId *uuid.UUID,
 	onSave func(),
 	onClose func(),
 ) tview.Primitive {
+	resolverInstanceIdIsNil := resolverInstanceId == nil
+	resolverProductIdIsNil := resolverProductId == nil
+	if resolverInstanceIdIsNil == resolverProductIdIsNil {
+		return tview.NewTextView().SetText("Either resolver instance or product must be specified")
+	}
+
 	form := tview.NewForm()
 
 	// Set title based on whether we're creating or editing
@@ -62,20 +70,10 @@ func CreateEditThreatAssignmentResolutionModal(
 	form.AddButton("Save", func() {
 		// Determine if we're creating or updating
 		if existingResolution == nil {
-			// Create new resolution
-			var instanceID *uuid.UUID
-			var productID *uuid.UUID
-
-			if assignment.InstanceID != uuid.Nil {
-				instanceID = &assignment.InstanceID
-			} else {
-				productID = &assignment.ProductID
-			}
-
 			_, err := service.CreateThreatResolution(
 				assignment.ID,
-				instanceID,
-				productID,
+				resolverInstanceId,
+				resolverProductId,
 				models.ThreatAssignmentResolutionStatus(status),
 				description,
 			)

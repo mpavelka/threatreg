@@ -115,13 +115,41 @@ func (r *ThreatAssignmentResolutionRepository) Delete(tx *gorm.DB, id uuid.UUID)
 	return tx.Delete(&ThreatAssignmentResolution{}, "id = ?", id).Error
 }
 
-func (r *ThreatAssignmentResolutionRepository) GetByThreatAssignmentID(tx *gorm.DB, threatAssignmentID int) (*ThreatAssignmentResolution, error) {
+func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentID(tx *gorm.DB, threatAssignmentID int) (*ThreatAssignmentResolution, error) {
 	if tx == nil {
 		tx = r.db
 	}
 	var resolution ThreatAssignmentResolution
 	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
 		First(&resolution, "threat_assignment_id = ?", threatAssignmentID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &resolution, nil
+}
+
+func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentIDAndInstanceID(tx *gorm.DB, threatAssignmentID int, instanceID uuid.UUID) (*ThreatAssignmentResolution, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var resolution ThreatAssignmentResolution
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+		First(&resolution, "threat_assignment_id = ? AND instance_id = ?", threatAssignmentID, instanceID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &resolution, nil
+}
+
+func (r *ThreatAssignmentResolutionRepository) GetOneByAssignmentIDAndProductID(tx *gorm.DB, threatAssignmentID int, productID uuid.UUID) (*ThreatAssignmentResolution, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var resolution ThreatAssignmentResolution
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+		First(&resolution, "threat_assignment_id = ? AND product_id = ?", threatAssignmentID, productID).Error
 	if err != nil {
 		return nil, err
 	}

@@ -75,7 +75,7 @@ func buildThreatInfoSection(assignment models.ThreatAssignment) *tview.TextView 
 // buildResolverColumn creates the right column with resolver info, resolution, and actions
 func buildResolverColumn(
 	assignment models.ThreatAssignment,
-	resolver *models.Instance,
+	resolverInstance *models.Instance,
 	contentContainer ContentContainer,
 ) *tview.Flex {
 	column := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -84,13 +84,13 @@ func buildResolverColumn(
 	resolverInfo := tview.NewTextView()
 	resolverInfo.SetBorder(true).SetTitle("Resolver Information")
 	resolverInfo.SetText(fmt.Sprintf("Instance: %s\nProduct: %s",
-		resolver.Name, resolver.Product.Name))
+		resolverInstance.Name, resolverInstance.Product.Name))
 
 	// Resolution status
-	resolutionInfo := buildResolutionSection(assignment)
+	resolutionInfo := buildResolutionSection(assignment, resolverInstance)
 
 	// Action buttons
-	actions := buildActionBar(assignment, contentContainer)
+	actions := buildActionBar(assignment, resolverInstance, contentContainer)
 
 	column.AddItem(resolverInfo, 3, 0, false)
 	column.AddItem(resolutionInfo, 5, 0, false)
@@ -100,11 +100,11 @@ func buildResolverColumn(
 }
 
 // buildResolutionSection creates the resolution information display
-func buildResolutionSection(assignment models.ThreatAssignment) *tview.TextView {
+func buildResolutionSection(assignment models.ThreatAssignment, resolverInstance *models.Instance) *tview.TextView {
 	section := tview.NewTextView()
 	section.SetBorder(true).SetTitle("Resolution")
 
-	resolution, err := service.GetThreatResolutionByThreatAssignmentID(assignment.ID)
+	resolution, err := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
 	if err == nil && resolution != nil {
 		section.SetText(fmt.Sprintf("Status: %s\nDescription: %s",
 			string(resolution.Status), resolution.Description))
@@ -116,14 +116,16 @@ func buildResolutionSection(assignment models.ThreatAssignment) *tview.TextView 
 }
 
 // buildActionBar creates the action buttons bar
-func buildActionBar(assignment models.ThreatAssignment, contentContainer ContentContainer) *tview.Flex {
+func buildActionBar(assignment models.ThreatAssignment, resolverInstance *models.Instance, contentContainer ContentContainer) *tview.Flex {
 	bar := tview.NewFlex().SetDirection(tview.FlexColumn)
 	bar.SetTitle("Actions").SetBorder(true)
 
 	editBtn := tview.NewButton("Edit Resolution").SetSelectedFunc(func() {
-		resolution, _ := service.GetThreatResolutionByThreatAssignmentID(assignment.ID)
+		resolution, _ := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
 		contentContainer.PushContent(modals.CreateEditThreatAssignmentResolutionModal(
 			assignment, resolution,
+			&resolverInstance.ID,
+			nil, // resolverProductId is nil for instance-level resolution
 			func() { contentContainer.PopContent() },
 			func() { contentContainer.PopContent() },
 		))
