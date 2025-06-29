@@ -472,4 +472,105 @@ func TestThreatService_Integration(t *testing.T) {
 		// Should return empty slice
 		assert.Len(t, results, 0)
 	})
+
+	t.Run("ListByDomainWithUnresolvedByInstancesCount_AffectedByInstanceLevelResolution", func(t *testing.T) {
+		// Scenario: Threat1 assigned to Product1, Threat1 assigned to Instance2 (different product)
+		// Expected: UnresolvedByInstancesCount = 2
+		// Then resolve both with instance-level resolutions
+		// Expected: Threat1 should not appear in results (count = 0)
+
+		// Create domain
+		domain, _ := CreateDomain("Test Domain Mixed", "Domain for testing mixed assignments")
+
+		// Create Threat1
+		threat1, _ := CreateThreat("Authentication Bypass", "Bypassing authentication mechanisms")
+
+		// Create Product1 and Instance1
+		product1, _ := CreateProduct("Test Product Mixed 1", "First product for mixed assignment test")
+		instance1, _ := CreateInstance("Test Instance Mixed 1", product1.ID)
+
+		// Create Product2 and Instance2
+		product2, _ := CreateProduct("Test Product Mixed 2", "Second product for mixed assignment test")
+		instance2, _ := CreateInstance("Test Instance Mixed 2", product2.ID)
+
+		// Add both instances to domain
+		_ = AddInstanceToDomain(domain.ID, instance1.ID)
+		_ = AddInstanceToDomain(domain.ID, instance2.ID)
+
+		// Assign Threat1 to Product1 (affects Instance1)
+		productAssignment, _ := AssignThreatToProduct(product1.ID, threat1.ID)
+
+		// Assign Threat1 to Instance2 directly
+		instanceAssignment, _ := AssignThreatToInstance(instance2.ID, threat1.ID)
+
+		// Test initial state - should show 2 unresolved instances
+		results, err := ListByDomainWithUnresolvedByInstancesCount(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, results, 1)
+		assert.Equal(t, threat1.ID, results[0].ID)
+		assert.Equal(t, 2, results[0].UnresolvedByInstancesCount, "Should show 2 unresolved instances (one from product assignment, one from instance assignment)")
+
+		// Resolve the product-level assignment with instance-level resolution for Instance1
+		_, _ = CreateThreatResolution(
+			productAssignment.ID,
+			&instance1.ID, // Instance-level resolution
+			nil,           // ProductID is nil
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Resolved product-level assignment for instance1 at instance level",
+		)
+
+		// Test after first resolution - should still show 1 unresolved instance
+		results, err = ListByDomainWithUnresolvedByInstancesCount(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, results, 1)
+		assert.Equal(t, threat1.ID, results[0].ID)
+		assert.Equal(t, 1, results[0].UnresolvedByInstancesCount, "Should show 1 unresolved instance after resolving product assignment")
+
+		// Resolve the instance-level assignment with instance-level resolution for Instance2
+		_, _ = CreateThreatResolution(
+			instanceAssignment.ID,
+			&instance2.ID, // Instance-level resolution
+			nil,           // ProductID is nil
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Resolved instance-level assignment for instance2",
+		)
+
+		// Test after both resolutions - should show no threats (completely resolved)
+		results, err = ListByDomainWithUnresolvedByInstancesCount(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, results, 0, "Should show no unresolved threats after both instance-level resolutions")
+	})
+
+	t.Run("ListByDomainWithUnresolvedByInstancesCount_AffectedByProductLevelResolution", func(t *testing.T) {
+		// Create new product and instance
+		domain, _ := CreateDomain("Domain", "Domain for testing ToCoNefunguje")
+		product, _ := CreateProduct("Product", "Product for ToCoNefunguje")
+		instance, _ := CreateInstance("Instance", product.ID)
+		_ = AddInstanceToDomain(domain.ID, instance.ID)
+
+		// Assign threat to instance
+		threat, _ := CreateThreat("Threat", "Threat for ToCoNefunguje")
+		threatAssignment, _ := AssignThreatToProduct(product.ID, threat.ID)
+
+		// Test initial state - should show 1 unresolved instance
+		results, err := ListByDomainWithUnresolvedByInstancesCount(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, results, 1)
+		assert.Equal(t, threat.ID, results[0].ID)
+		assert.Equal(t, 1, results[0].UnresolvedByInstancesCount, "Should show 1 unresolved instance")
+
+		// Resolve the product-level threat in the product (product-level resolution)
+		_, _ = CreateThreatResolution(
+			threatAssignment.ID,
+			nil,
+			&product.ID,
+			models.ThreatAssignmentResolutionStatusResolved,
+			"Resolved instance-level assignment",
+		)
+
+		// Test after resolution - should show no threats (completely resolved)
+		results, err = ListByDomainWithUnresolvedByInstancesCount(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, results, 0, "Should show no unresolved threats after resolution")
+	})
 }
