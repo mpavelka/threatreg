@@ -105,7 +105,9 @@ func (r *ThreatRepository) ListByDomainWithUnresolvedByInstancesCount(tx *gorm.D
 			SELECT DISTINCT 
 				ta.threat_id,
 				dim.instance_id,
-				ta.id as assignment_id
+				ta.id as assignment_id,
+				dim.product_id,
+				ta.product_id as assignment_product_id
 			FROM threat_assignments ta
 			INNER JOIN domain_instance_mapping dim ON ta.instance_id = dim.instance_id
 			WHERE ta.instance_id IS NOT NULL AND ta.instance_id != '00000000-0000-0000-0000-000000000000'
@@ -116,7 +118,9 @@ func (r *ThreatRepository) ListByDomainWithUnresolvedByInstancesCount(tx *gorm.D
 			SELECT DISTINCT 
 				ta.threat_id,
 				dim.instance_id,
-				ta.id as assignment_id
+				ta.id as assignment_id,
+				dim.product_id,
+				ta.product_id as assignment_product_id
 			FROM threat_assignments ta
 			INNER JOIN domain_instance_mapping dim ON ta.product_id = dim.product_id
 			WHERE ta.product_id IS NOT NULL AND ta.product_id != '00000000-0000-0000-0000-000000000000'
@@ -136,7 +140,10 @@ func (r *ThreatRepository) ListByDomainWithUnresolvedByInstancesCount(tx *gorm.D
 			FROM threat_assignments_in_domain tad
 			LEFT JOIN threat_assignment_resolutions tar ON (
 				tar.threat_assignment_id = tad.assignment_id 
-				AND tar.instance_id = tad.instance_id
+				AND (
+					tar.instance_id = tad.instance_id  -- Instance-level resolution
+					OR (tar.product_id = tad.assignment_product_id AND (tar.instance_id IS NULL OR tar.instance_id = '00000000-0000-0000-0000-000000000000'))  -- Product-level resolution
+				)
 			)
 			GROUP BY tad.threat_id, tad.instance_id
 		)
