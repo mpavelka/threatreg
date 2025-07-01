@@ -9,8 +9,8 @@ import (
 
 type ThreatAssignmentResolutionDelegation struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey"`
-	DelegatedBy uuid.UUID `gorm:"type:uuid;not null"`
-	DelegatedTo uuid.UUID `gorm:"type:uuid;not null"`
+	DelegatedBy uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_delegation_unique"`
+	DelegatedTo uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_delegation_unique"`
 }
 
 // BeforeCreate generates a UUID for the ID if not set
@@ -85,4 +85,11 @@ func (r *ThreatAssignmentResolutionDelegationRepository) GetThreatAssignmentReso
 		return nil, err
 	}
 	return delegations, nil
+}
+
+func (r *ThreatAssignmentResolutionDelegationRepository) DeleteThreatAssignmentResolutionDelegationBySourceId(tx *gorm.DB, delegatedBy uuid.UUID) error {
+	if tx == nil {
+		tx = r.db
+	}
+	return tx.Delete(&ThreatAssignmentResolutionDelegation{}, "delegated_by = ?", delegatedBy).Error
 }

@@ -24,6 +24,11 @@ func CreateThreatResolution(
 	status models.ThreatAssignmentResolutionStatus,
 	description string,
 ) (*models.ThreatAssignmentResolution, error) {
+	// Prevent direct setting of delegated status
+	if status == models.ThreatAssignmentResolutionStatusDelegated {
+		return nil, fmt.Errorf("Use DelegateResolution instead")
+	}
+
 	resolution := &models.ThreatAssignmentResolution{
 		ThreatAssignmentID: threatAssignmentID,
 		Status:             status,
@@ -59,6 +64,11 @@ func UpdateThreatResolution(
 	status *models.ThreatAssignmentResolutionStatus,
 	description *string,
 ) (*models.ThreatAssignmentResolution, error) {
+	// Prevent direct setting of delegated status
+	if status != nil && *status == models.ThreatAssignmentResolutionStatusDelegated {
+		return nil, fmt.Errorf("Use DelegateResolution instead")
+	}
+
 	var updatedResolution *models.ThreatAssignmentResolution
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 		resolutionRepository, err := getThreatAssignmentResolutionRepository()
@@ -160,4 +170,35 @@ func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.Th
 	}
 
 	return threatRepository.ListByDomainWithUnresolvedByInstancesCount(nil, domainID)
+}
+
+func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targetThreatResolution models.ThreatAssignmentResolution) error {
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		resolutionRepository, err := getThreatAssignmentResolutionRepository()
+		if err != nil {
+			return err
+		}
+
+		delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
+
+		// Create the delegation record
+		delegation := &models.ThreatAssignmentResolutionDelegation{
+			DelegatedBy: threatResolution.ID,
+			DelegatedTo: targetThreatResolution.ID,
+		}
+
+		err = delegationRepository.CreateThreatAssignmentResolutionDelegation(tx, delegation)
+		if err != nil {
+			return fmt.Errorf("error creating delegation: %w", err)
+		}
+
+		// Update the threat resolution status to delegated
+		threatResolution.Status = models.ThreatAssignmentResolutionStatusDelegated
+		err = resolutionRepository.Update(tx, &threatResolution)
+		if err != nil {
+			return fmt.Errorf("error updating threat resolution status: %w", err)
+		}
+
+		return nil
+	})
 }

@@ -45,6 +45,7 @@ func setupTestDBWithResolution(t *testing.T) func() {
 		&ControlAssignment{},
 		&ThreatControl{},
 		&ThreatAssignmentResolution{},
+		&ThreatAssignmentResolutionDelegation{},
 	)
 	require.NoError(t, err, "Failed to run migrations")
 
@@ -166,6 +167,7 @@ func TestThreatAssignmentResolutionConstraints_Integration(t *testing.T) {
 			ThreatAssignmentResolutionStatusResolved,
 			ThreatAssignmentResolutionStatusAwaiting,
 			ThreatAssignmentResolutionStatusAccepted,
+			ThreatAssignmentResolutionStatusDelegated,
 		}
 
 		repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
@@ -369,4 +371,151 @@ func createTestThreatAssignment(t *testing.T, threatID, productID, instanceID uu
 
 func getTestDB(t *testing.T) *gorm.DB {
 	return database.GetDB()
+}
+
+func TestThreatAssignmentResolutionDelegation_Integration(t *testing.T) {
+	cleanup := setupTestDBWithResolution(t)
+	defer cleanup()
+
+	// Create test data
+	product := createTestProduct(t)
+	threat := createTestThreat(t)
+	threatAssignment := createTestThreatAssignment(t, threat.ID, product.ID, uuid.Nil)
+
+	// Create two threat resolutions for delegation
+	resolution1 := &ThreatAssignmentResolution{
+		ThreatAssignmentID: threatAssignment.ID,
+		ProductID:          product.ID,
+		InstanceID:         uuid.Nil,
+		Status:             ThreatAssignmentResolutionStatusAwaiting,
+		Description:        "Source resolution",
+	}
+	
+	threat2 := createTestThreat(t)
+	threatAssignment2 := createTestThreatAssignment(t, threat2.ID, product.ID, uuid.Nil)
+	resolution2 := &ThreatAssignmentResolution{
+		ThreatAssignmentID: threatAssignment2.ID,
+		ProductID:          product.ID,
+		InstanceID:         uuid.Nil,
+		Status:             ThreatAssignmentResolutionStatusAwaiting,
+		Description:        "Target resolution",
+	}
+
+	resolutionRepo := NewThreatAssignmentResolutionRepository(getTestDB(t))
+	delegationRepo := NewThreatAssignmentResolutionDelegationRepository(getTestDB(t))
+
+	// Create resolutions
+	err := resolutionRepo.Create(nil, resolution1)
+	require.NoError(t, err)
+	err = resolutionRepo.Create(nil, resolution2)
+	require.NoError(t, err)
+
+	t.Run("TestDelegationDeletionOnStatusChange", func(t *testing.T) {
+		// Create delegation
+		delegation := &ThreatAssignmentResolutionDelegation{
+			DelegatedBy: resolution1.ID,
+			DelegatedTo: resolution2.ID,
+		}
+
+		err := delegationRepo.CreateThreatAssignmentResolutionDelegation(nil, delegation)
+		require.NoError(t, err)
+
+		// Set resolution1 status to delegated
+		resolution1.Status = ThreatAssignmentResolutionStatusDelegated
+		err = resolutionRepo.Update(nil, resolution1)
+		require.NoError(t, err)
+
+		// Verify delegation exists
+		retrieved, err := delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
+		require.NoError(t, err)
+		assert.Equal(t, delegation.DelegatedBy, retrieved.DelegatedBy)
+
+		// Change status to resolved - should delete delegation
+		resolution1.Status = ThreatAssignmentResolutionStatusResolved
+		err = resolutionRepo.Update(nil, resolution1)
+		require.NoError(t, err)
+
+		// Verify delegation is deleted
+		_, err = delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
+		assert.Error(t, err, "Delegation should be deleted when status changes from delegated")
+	})
+
+	t.Run("TestDelegationDeletionOnResolutionDelete", func(t *testing.T) {
+		// Create new resolutions for this test
+		threat3 := createTestThreat(t)
+		threatAssignment3 := createTestThreatAssignment(t, threat3.ID, product.ID, uuid.Nil)
+		resolution3 := &ThreatAssignmentResolution{
+			ThreatAssignmentID: threatAssignment3.ID,
+			ProductID:          product.ID,
+			InstanceID:         uuid.Nil,
+			Status:             ThreatAssignmentResolutionStatusDelegated,
+			Description:        "Resolution to be deleted",
+		}
+
+		err := resolutionRepo.Create(nil, resolution3)
+		require.NoError(t, err)
+
+		// Create delegation
+		delegation := &ThreatAssignmentResolutionDelegation{
+			DelegatedBy: resolution3.ID,
+			DelegatedTo: resolution2.ID,
+		}
+
+		err = delegationRepo.CreateThreatAssignmentResolutionDelegation(nil, delegation)
+		require.NoError(t, err)
+
+		// Verify delegation exists
+		_, err = delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
+		require.NoError(t, err)
+
+		// Delete resolution - should delete delegation
+		err = resolutionRepo.Delete(nil, resolution3.ID)
+		require.NoError(t, err)
+
+		// Verify delegation is deleted
+		_, err = delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
+		assert.Error(t, err, "Delegation should be deleted when source resolution is deleted")
+	})
+
+	t.Run("TestUniqueDelegationConstraint", func(t *testing.T) {
+		// Create new resolutions for this test
+		threat4 := createTestThreat(t)
+		threatAssignment4 := createTestThreatAssignment(t, threat4.ID, product.ID, uuid.Nil)
+		resolution4 := &ThreatAssignmentResolution{
+			ThreatAssignmentID: threatAssignment4.ID,
+			ProductID:          product.ID,
+			InstanceID:         uuid.Nil,
+			Status:             ThreatAssignmentResolutionStatusAwaiting,
+			Description:        "Resolution for unique test",
+		}
+
+		err := resolutionRepo.Create(nil, resolution4)
+		require.NoError(t, err)
+
+		// Create first delegation
+		delegation1 := &ThreatAssignmentResolutionDelegation{
+			DelegatedBy: resolution4.ID,
+			DelegatedTo: resolution2.ID,
+		}
+
+		err = delegationRepo.CreateThreatAssignmentResolutionDelegation(nil, delegation1)
+		require.NoError(t, err)
+
+		// Try to create duplicate delegation - should fail
+		delegation2 := &ThreatAssignmentResolutionDelegation{
+			DelegatedBy: resolution4.ID,
+			DelegatedTo: resolution2.ID,
+		}
+
+		err = delegationRepo.CreateThreatAssignmentResolutionDelegation(nil, delegation2)
+		assert.Error(t, err, "Should not allow duplicate delegations")
+
+		// Cleanup
+		delegationRepo.DeleteThreatAssignmentResolutionDelegation(nil, delegation1.ID)
+		resolutionRepo.Delete(nil, resolution4.ID)
+	})
+
+	// Cleanup
+	resolutionRepo.Delete(nil, resolution1.ID)
+	resolutionRepo.Delete(nil, resolution2.ID)
 }

@@ -10,9 +10,10 @@ import (
 type ThreatAssignmentResolutionStatus string
 
 const (
-	ThreatAssignmentResolutionStatusResolved ThreatAssignmentResolutionStatus = "resolved"
-	ThreatAssignmentResolutionStatusAwaiting ThreatAssignmentResolutionStatus = "awaiting"
-	ThreatAssignmentResolutionStatusAccepted ThreatAssignmentResolutionStatus = "accepted"
+	ThreatAssignmentResolutionStatusResolved  ThreatAssignmentResolutionStatus = "resolved"
+	ThreatAssignmentResolutionStatusAwaiting  ThreatAssignmentResolutionStatus = "awaiting"
+	ThreatAssignmentResolutionStatusAccepted  ThreatAssignmentResolutionStatus = "accepted"
+	ThreatAssignmentResolutionStatusDelegated ThreatAssignmentResolutionStatus = "delegated"
 )
 
 type ThreatAssignmentResolution struct {
@@ -55,7 +56,7 @@ func (tar *ThreatAssignmentResolution) validateResolution() error {
 
 	// Validate status
 	if !tar.isValidStatus() {
-		return errors.New("invalid status: must be 'resolved', 'awaiting', or 'accepted'")
+		return errors.New("invalid status: must be 'resolved', 'awaiting', 'accepted', or 'delegated'")
 	}
 
 	return nil
@@ -66,7 +67,8 @@ func (tar *ThreatAssignmentResolution) isValidStatus() bool {
 	switch tar.Status {
 	case ThreatAssignmentResolutionStatusResolved,
 		ThreatAssignmentResolutionStatusAwaiting,
-		ThreatAssignmentResolutionStatusAccepted:
+		ThreatAssignmentResolutionStatusAccepted,
+		ThreatAssignmentResolutionStatusDelegated:
 		return true
 	default:
 		return false
@@ -105,6 +107,16 @@ func (r *ThreatAssignmentResolutionRepository) Update(tx *gorm.DB, resolution *T
 	if tx == nil {
 		tx = r.db
 	}
+
+	// If status is being changed and not to delegated, delete any existing delegations
+	if resolution.Status != ThreatAssignmentResolutionStatusDelegated {
+		delegationRepo := NewThreatAssignmentResolutionDelegationRepository(r.db)
+		err := delegationRepo.DeleteThreatAssignmentResolutionDelegationBySourceId(tx, resolution.ID)
+		if err != nil {
+			return err
+		}
+	}
+
 	return tx.Save(resolution).Error
 }
 
@@ -112,6 +124,14 @@ func (r *ThreatAssignmentResolutionRepository) Delete(tx *gorm.DB, id uuid.UUID)
 	if tx == nil {
 		tx = r.db
 	}
+
+	// Delete any existing delegations first
+	delegationRepo := NewThreatAssignmentResolutionDelegationRepository(r.db)
+	err := delegationRepo.DeleteThreatAssignmentResolutionDelegationBySourceId(tx, id)
+	if err != nil {
+		return err
+	}
+
 	return tx.Delete(&ThreatAssignmentResolution{}, "id = ?", id).Error
 }
 
