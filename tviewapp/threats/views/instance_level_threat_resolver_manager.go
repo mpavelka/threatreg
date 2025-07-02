@@ -106,8 +106,21 @@ func buildResolutionSection(assignment models.ThreatAssignment, resolverInstance
 
 	resolution, err := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
 	if err == nil && resolution != nil {
-		section.SetText(fmt.Sprintf("Status: %s\nDescription: %s",
-			string(resolution.Status), resolution.Description))
+		if resolution.Status == models.ThreatAssignmentResolutionStatusDelegated {
+			// Get delegation information
+			targetResolution, err := service.GetDelegationInfo(resolution.ID)
+			if err == nil && targetResolution != nil {
+				section.SetText(fmt.Sprintf("Delegated to: %s (%s)",
+					targetResolution.Instance.Name,
+					targetResolution.ThreatAssignment.Threat.Title))
+			} else {
+				section.SetText(fmt.Sprintf("Status: %s\nDescription: %s",
+					string(resolution.Status), resolution.Description))
+			}
+		} else {
+			section.SetText(fmt.Sprintf("Status: %s\nDescription: %s",
+				string(resolution.Status), resolution.Description))
+		}
 	} else {
 		section.SetText("No resolution assigned yet. Click 'Edit Resolution' to create one.")
 	}
@@ -135,8 +148,30 @@ func buildActionBar(assignment models.ThreatAssignment, resolverInstance *models
 		// TODO: Implement add control functionality
 	})
 
+	delegateBtn := tview.NewButton("Delegate").SetSelectedFunc(func() {
+		resolution, err := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
+		if err != nil || resolution == nil {
+			// TODO: Show error message that resolution must exist to delegate
+			return
+		}
+
+		contentContainer.PushContent(modals.CreateThreatAssignmentDelegationModal(
+			*resolution,
+			func(targetResolution models.ThreatAssignmentResolution) {
+				// Perform delegation using the service
+				err := service.DelegateResolution(*resolution, targetResolution)
+				if err == nil {
+					contentContainer.PopContent() // Close modal on success
+				}
+				// TODO: Handle error case
+			},
+			func() { contentContainer.PopContent() }, // Close modal
+		))
+	})
+
 	bar.AddItem(editBtn, 0, 1, false)
 	bar.AddItem(addControlBtn, 0, 1, false)
+	bar.AddItem(delegateBtn, 0, 1, false)
 	bar.AddItem(tview.NewBox(), 0, 1, false) // Spacer
 
 	return bar

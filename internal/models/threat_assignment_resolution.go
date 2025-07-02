@@ -95,7 +95,7 @@ func (r *ThreatAssignmentResolutionRepository) GetByID(tx *gorm.DB, id uuid.UUID
 		tx = r.db
 	}
 	var resolution ThreatAssignmentResolution
-	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").Preload("ThreatAssignment.Threat").
 		First(&resolution, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentID(tx *go
 		tx = r.db
 	}
 	var resolution ThreatAssignmentResolution
-	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").Preload("ThreatAssignment.Threat").
 		First(&resolution, "threat_assignment_id = ?", threatAssignmentID).Error
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentIDAndInst
 	}
 
 	var resolution ThreatAssignmentResolution
-	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").Preload("ThreatAssignment.Threat").
 		First(&resolution, "threat_assignment_id = ? AND instance_id = ?", threatAssignmentID, instanceID).Error
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (r *ThreatAssignmentResolutionRepository) GetOneByAssignmentIDAndProductID(
 	}
 
 	var resolution ThreatAssignmentResolution
-	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").Preload("ThreatAssignment.Threat").
 		First(&resolution, "threat_assignment_id = ? AND product_id = ?", threatAssignmentID, productID).Error
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (r *ThreatAssignmentResolutionRepository) ListByProductID(tx *gorm.DB, prod
 	}
 
 	var resolutions []ThreatAssignmentResolution
-	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").Preload("ThreatAssignment.Threat").
 		Where("product_id = ?", productID).Find(&resolutions).Error
 	if err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func (r *ThreatAssignmentResolutionRepository) ListByInstanceID(tx *gorm.DB, ins
 	}
 
 	var resolutions []ThreatAssignmentResolution
-	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").
+	err := tx.Preload("ThreatAssignment").Preload("Instance").Preload("Product").Preload("ThreatAssignment.Threat").
 		Where("instance_id = ?", instanceID).Find(&resolutions).Error
 	if err != nil {
 		return nil, err

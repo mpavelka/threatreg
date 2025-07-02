@@ -202,3 +202,30 @@ func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targ
 		return nil
 	})
 }
+
+func GetDelegationInfo(sourceResolutionID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
+	delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
+
+	// Get delegation by source resolution ID
+	delegations, err := delegationRepository.GetThreatAssignmentResolutionDelegations(nil, &sourceResolutionID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting delegation: %w", err)
+	}
+
+	if len(delegations) == 0 {
+		return nil, nil // No delegation found
+	}
+
+	// Get the target resolution
+	resolutionRepository, err := getThreatAssignmentResolutionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	targetResolution, err := resolutionRepository.GetByID(nil, delegations[0].DelegatedTo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting target resolution: %w", err)
+	}
+
+	return targetResolution, nil
+}

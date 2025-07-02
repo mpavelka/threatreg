@@ -390,7 +390,7 @@ func TestThreatAssignmentResolutionDelegation_Integration(t *testing.T) {
 		Status:             ThreatAssignmentResolutionStatusAwaiting,
 		Description:        "Source resolution",
 	}
-	
+
 	threat2 := createTestThreat(t)
 	threatAssignment2 := createTestThreatAssignment(t, threat2.ID, product.ID, uuid.Nil)
 	resolution2 := &ThreatAssignmentResolution{
