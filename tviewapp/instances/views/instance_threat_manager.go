@@ -209,8 +209,6 @@ func getResolutionStatus(assignment models.ThreatAssignment) string {
 		return "[yellow]Awaiting[-]"
 	case models.ThreatAssignmentResolutionStatusAccepted:
 		return "[blue]Accepted[-]"
-	case models.ThreatAssignmentResolutionStatusDelegated:
-		return "[cyan]Delegated[-]"
 	default:
 		return "Unknown"
 	}

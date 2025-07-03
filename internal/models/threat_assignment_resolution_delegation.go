@@ -93,3 +93,17 @@ func (r *ThreatAssignmentResolutionDelegationRepository) DeleteThreatAssignmentR
 	}
 	return tx.Delete(&ThreatAssignmentResolutionDelegation{}, "delegated_by = ?", delegatedBy).Error
 }
+
+func (r *ThreatAssignmentResolutionDelegationRepository) DeleteByDelegatedTo(tx *gorm.DB, delegatedTo uuid.UUID) error {
+	if tx == nil {
+		tx = r.db
+	}
+	return tx.Delete(&ThreatAssignmentResolutionDelegation{}, "delegated_to = ?", delegatedTo).Error
+}
+
+func (r *ThreatAssignmentResolutionDelegationRepository) DeleteByDelegatedBy(tx *gorm.DB, delegatedBy uuid.UUID) error {
+	if tx == nil {
+		tx = r.db
+	}
+	return tx.Delete(&ThreatAssignmentResolutionDelegation{}, "delegated_by = ?", delegatedBy).Error
+}

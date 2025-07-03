@@ -24,10 +24,6 @@ func CreateThreatResolution(
 	status models.ThreatAssignmentResolutionStatus,
 	description string,
 ) (*models.ThreatAssignmentResolution, error) {
-	// Prevent direct setting of delegated status
-	if status == models.ThreatAssignmentResolutionStatusDelegated {
-		return nil, fmt.Errorf("Use DelegateResolution instead")
-	}
 
 	resolution := &models.ThreatAssignmentResolution{
 		ThreatAssignmentID: threatAssignmentID,
@@ -64,10 +60,6 @@ func UpdateThreatResolution(
 	status *models.ThreatAssignmentResolutionStatus,
 	description *string,
 ) (*models.ThreatAssignmentResolution, error) {
-	// Prevent direct setting of delegated status
-	if status != nil && *status == models.ThreatAssignmentResolutionStatusDelegated {
-		return nil, fmt.Errorf("Use DelegateResolution instead")
-	}
 
 	var updatedResolution *models.ThreatAssignmentResolution
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
@@ -94,6 +86,8 @@ func UpdateThreatResolution(
 			return err
 		}
 		updatedResolution = resolution
+
+		updateUpstreamResolutionsStatus(*resolution, resolution.Status, tx)
 		return nil
 	})
 
@@ -155,12 +149,34 @@ func ListThreatResolutionsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAss
 }
 
 func DeleteThreatResolution(id uuid.UUID) error {
-	resolutionRepository, err := getThreatAssignmentResolutionRepository()
-	if err != nil {
-		return err
-	}
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		resolutionRepository, err := getThreatAssignmentResolutionRepository()
+		if err != nil {
+			return err
+		}
 
-	return resolutionRepository.Delete(nil, id)
+		// Get the resolution to be deleted
+		resolution, err := resolutionRepository.GetByID(tx, id)
+		if err != nil {
+			return nil // Not found, nothing to delete
+		}
+
+		// Update upstream resolutions to "awaiting" status before deletion
+		err = updateUpstreamResolutionsStatus(*resolution, models.ThreatAssignmentResolutionStatusAwaiting, tx)
+		if err != nil {
+			return fmt.Errorf("error updating upstream resolutions: %w", err)
+		}
+
+		// Delete any delegations associated with this resolution
+		delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(tx)
+		err = delegationRepository.DeleteByDelegatedTo(tx, id)
+		if err != nil {
+			return fmt.Errorf("error deleting delegations for resolution: %w", err)
+		}
+
+		// Delete the resolution
+		return resolutionRepository.Delete(tx, id)
+	})
 }
 
 func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByInstancesCount, error) {
@@ -174,10 +190,6 @@ func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.Th
 
 func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targetThreatResolution models.ThreatAssignmentResolution) error {
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
-		resolutionRepository, err := getThreatAssignmentResolutionRepository()
-		if err != nil {
-			return err
-		}
 
 		delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
 
@@ -187,17 +199,17 @@ func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targ
 			DelegatedTo: targetThreatResolution.ID,
 		}
 
-		err = delegationRepository.CreateThreatAssignmentResolutionDelegation(tx, delegation)
+		err := delegationRepository.CreateThreatAssignmentResolutionDelegation(tx, delegation)
 		if err != nil {
 			return fmt.Errorf("error creating delegation: %w", err)
 		}
 
-		// Update the threat resolution status to delegated
-		threatResolution.Status = models.ThreatAssignmentResolutionStatusDelegated
-		err = resolutionRepository.Update(tx, &threatResolution)
-		if err != nil {
-			return fmt.Errorf("error updating threat resolution status: %w", err)
+		// Update the resolution delegation chain
+		rootResolution, e := FindResolutionRoot(targetThreatResolution, tx)
+		if e != nil {
+			return fmt.Errorf("error finding root resolution for delegation: %w", e)
 		}
+		updateUpstreamResolutionsStatus(*rootResolution, targetThreatResolution.Status, tx)
 
 		return nil
 	})
@@ -228,4 +240,86 @@ func GetDelegationInfo(sourceResolutionID uuid.UUID) (*models.ThreatAssignmentRe
 	}
 
 	return targetResolution, nil
+}
+
+// updateUpstreamResolutionsStatus recursively updates all resolutions that delegate to the rootResolution
+func updateUpstreamResolutionsStatus(rootResolution models.ThreatAssignmentResolution, status models.ThreatAssignmentResolutionStatus, tx *gorm.DB) error {
+	delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
+	resolutionRepository, err := getThreatAssignmentResolutionRepository()
+	if err != nil {
+		return err
+	}
+
+	// Find all resolutions that delegate TO this rootResolution
+	delegations, err := delegationRepository.GetThreatAssignmentResolutionDelegations(tx, nil, &rootResolution.ID)
+	if err != nil {
+		return fmt.Errorf("error getting upstream delegations: %w", err)
+	}
+
+	// For each resolution that delegates to this one, update its status and continue recursively
+	for _, delegation := range delegations {
+		// Get the upstream resolution (the one that delegated to rootResolution)
+		upstreamResolution, err := resolutionRepository.GetByID(tx, delegation.DelegatedBy)
+		if err != nil {
+			return fmt.Errorf("error getting upstream resolution: %w", err)
+		}
+
+		// Update the upstream resolution's status to the provided status
+		upstreamResolution.Status = status
+		err = resolutionRepository.Update(tx, upstreamResolution)
+		if err != nil {
+			return fmt.Errorf("error updating upstream resolution: %w", err)
+		}
+
+		// Recursively update any resolutions that delegate to this upstream resolution
+		err = updateUpstreamResolutionsStatus(*upstreamResolution, status, tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// FindResolutionRoot traverses the delegation chain to find the root resolution
+func FindResolutionRoot(resolution models.ThreatAssignmentResolution, tx *gorm.DB) (*models.ThreatAssignmentResolution, error) {
+	if tx == nil {
+		tx = database.GetDB()
+	}
+	delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(tx)
+	resolutionRepository, err := getThreatAssignmentResolutionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	currentResolution := resolution
+	visited := make(map[uuid.UUID]bool) // To detect cycles
+
+	for {
+		// Check if we've seen this resolution before (cycle detection)
+		if visited[currentResolution.ID] {
+			return nil, fmt.Errorf("cycle detected in delegation chain")
+		}
+		visited[currentResolution.ID] = true
+
+		// Find if this resolution delegates to another resolution
+		delegations, err := delegationRepository.GetThreatAssignmentResolutionDelegations(nil, &currentResolution.ID, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error getting delegations: %w", err)
+		}
+
+		// If no delegation found, this is the root
+		if len(delegations) == 0 {
+			return &currentResolution, nil
+		}
+
+		// Get the target resolution (the one this resolution delegates to)
+		targetResolution, err := resolutionRepository.GetByID(nil, delegations[0].DelegatedTo)
+		if err != nil {
+			return nil, fmt.Errorf("error getting target resolution: %w", err)
+		}
+
+		// Continue with the target resolution
+		currentResolution = *targetResolution
+	}
 }

@@ -167,7 +167,6 @@ func TestThreatAssignmentResolutionConstraints_Integration(t *testing.T) {
 			ThreatAssignmentResolutionStatusResolved,
 			ThreatAssignmentResolutionStatusAwaiting,
 			ThreatAssignmentResolutionStatusAccepted,
-			ThreatAssignmentResolutionStatusDelegated,
 		}
 
 		repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
@@ -409,73 +408,6 @@ func TestThreatAssignmentResolutionDelegation_Integration(t *testing.T) {
 	require.NoError(t, err)
 	err = resolutionRepo.Create(nil, resolution2)
 	require.NoError(t, err)
-
-	t.Run("TestDelegationDeletionOnStatusChange", func(t *testing.T) {
-		// Create delegation
-		delegation := &ThreatAssignmentResolutionDelegation{
-			DelegatedBy: resolution1.ID,
-			DelegatedTo: resolution2.ID,
-		}
-
-		err := delegationRepo.CreateThreatAssignmentResolutionDelegation(nil, delegation)
-		require.NoError(t, err)
-
-		// Set resolution1 status to delegated
-		resolution1.Status = ThreatAssignmentResolutionStatusDelegated
-		err = resolutionRepo.Update(nil, resolution1)
-		require.NoError(t, err)
-
-		// Verify delegation exists
-		retrieved, err := delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
-		require.NoError(t, err)
-		assert.Equal(t, delegation.DelegatedBy, retrieved.DelegatedBy)
-
-		// Change status to resolved - should delete delegation
-		resolution1.Status = ThreatAssignmentResolutionStatusResolved
-		err = resolutionRepo.Update(nil, resolution1)
-		require.NoError(t, err)
-
-		// Verify delegation is deleted
-		_, err = delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
-		assert.Error(t, err, "Delegation should be deleted when status changes from delegated")
-	})
-
-	t.Run("TestDelegationDeletionOnResolutionDelete", func(t *testing.T) {
-		// Create new resolutions for this test
-		threat3 := createTestThreat(t)
-		threatAssignment3 := createTestThreatAssignment(t, threat3.ID, product.ID, uuid.Nil)
-		resolution3 := &ThreatAssignmentResolution{
-			ThreatAssignmentID: threatAssignment3.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
-			Status:             ThreatAssignmentResolutionStatusDelegated,
-			Description:        "Resolution to be deleted",
-		}
-
-		err := resolutionRepo.Create(nil, resolution3)
-		require.NoError(t, err)
-
-		// Create delegation
-		delegation := &ThreatAssignmentResolutionDelegation{
-			DelegatedBy: resolution3.ID,
-			DelegatedTo: resolution2.ID,
-		}
-
-		err = delegationRepo.CreateThreatAssignmentResolutionDelegation(nil, delegation)
-		require.NoError(t, err)
-
-		// Verify delegation exists
-		_, err = delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
-		require.NoError(t, err)
-
-		// Delete resolution - should delete delegation
-		err = resolutionRepo.Delete(nil, resolution3.ID)
-		require.NoError(t, err)
-
-		// Verify delegation is deleted
-		_, err = delegationRepo.GetThreatAssignmentResolutionDelegationById(nil, delegation.ID)
-		assert.Error(t, err, "Delegation should be deleted when source resolution is deleted")
-	})
 
 	t.Run("TestUniqueDelegationConstraint", func(t *testing.T) {
 		// Create new resolutions for this test

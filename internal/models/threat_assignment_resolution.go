@@ -10,10 +10,9 @@ import (
 type ThreatAssignmentResolutionStatus string
 
 const (
-	ThreatAssignmentResolutionStatusResolved  ThreatAssignmentResolutionStatus = "resolved"
-	ThreatAssignmentResolutionStatusAwaiting  ThreatAssignmentResolutionStatus = "awaiting"
-	ThreatAssignmentResolutionStatusAccepted  ThreatAssignmentResolutionStatus = "accepted"
-	ThreatAssignmentResolutionStatusDelegated ThreatAssignmentResolutionStatus = "delegated"
+	ThreatAssignmentResolutionStatusResolved ThreatAssignmentResolutionStatus = "resolved"
+	ThreatAssignmentResolutionStatusAwaiting ThreatAssignmentResolutionStatus = "awaiting"
+	ThreatAssignmentResolutionStatusAccepted ThreatAssignmentResolutionStatus = "accepted"
 )
 
 type ThreatAssignmentResolution struct {
@@ -67,8 +66,7 @@ func (tar *ThreatAssignmentResolution) isValidStatus() bool {
 	switch tar.Status {
 	case ThreatAssignmentResolutionStatusResolved,
 		ThreatAssignmentResolutionStatusAwaiting,
-		ThreatAssignmentResolutionStatusAccepted,
-		ThreatAssignmentResolutionStatusDelegated:
+		ThreatAssignmentResolutionStatusAccepted:
 		return true
 	default:
 		return false
@@ -108,28 +106,12 @@ func (r *ThreatAssignmentResolutionRepository) Update(tx *gorm.DB, resolution *T
 		tx = r.db
 	}
 
-	// If status is being changed and not to delegated, delete any existing delegations
-	if resolution.Status != ThreatAssignmentResolutionStatusDelegated {
-		delegationRepo := NewThreatAssignmentResolutionDelegationRepository(r.db)
-		err := delegationRepo.DeleteThreatAssignmentResolutionDelegationBySourceId(tx, resolution.ID)
-		if err != nil {
-			return err
-		}
-	}
-
 	return tx.Save(resolution).Error
 }
 
 func (r *ThreatAssignmentResolutionRepository) Delete(tx *gorm.DB, id uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
-	}
-
-	// Delete any existing delegations first
-	delegationRepo := NewThreatAssignmentResolutionDelegationRepository(r.db)
-	err := delegationRepo.DeleteThreatAssignmentResolutionDelegationBySourceId(tx, id)
-	if err != nil {
-		return err
 	}
 
 	return tx.Delete(&ThreatAssignmentResolution{}, "id = ?", id).Error
