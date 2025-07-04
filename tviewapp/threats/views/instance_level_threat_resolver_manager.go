@@ -107,7 +107,7 @@ func buildResolutionSection(assignment models.ThreatAssignment, resolverInstance
 	resolution, err := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
 	if err == nil && resolution != nil {
 		// Check if this resolution has been delegated by looking for delegation info
-		targetResolution, err := service.GetDelegationInfo(resolution.ID)
+		targetResolution, err := service.GetDelegatedToResolutionByDelegatedByID(resolution.ID)
 		if err == nil && targetResolution != nil {
 			section.SetText(fmt.Sprintf("Delegated to: %s (%s)",
 				targetResolution.Instance.Name,

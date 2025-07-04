@@ -87,7 +87,17 @@ func UpdateThreatResolution(
 		}
 		updatedResolution = resolution
 
-		updateUpstreamResolutionsStatus(*resolution, resolution.Status, tx)
+		// Delete any existing delegation for this resolution
+		delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(tx)
+		err = delegationRepository.DeleteThreatAssignmentResolutionDelegationBySourceId(tx, resolution.ID)
+		if err != nil {
+			return fmt.Errorf("error deleting existing delegation: %w", err)
+		}
+
+		err = updateUpstreamResolutionsStatus(*resolution, resolution.Status, tx)
+		if err != nil {
+			return fmt.Errorf("error updating upstream resolutions: %w", err)
+		}
 		return nil
 	})
 
@@ -199,6 +209,10 @@ func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targ
 			DelegatedTo: targetThreatResolution.ID,
 		}
 
+		// Remove existing delegation if it exists
+		delegationRepository.DeleteThreatAssignmentResolutionDelegationBySourceId(tx, threatResolution.ID)
+
+		// Create the new delegation
 		err := delegationRepository.CreateThreatAssignmentResolutionDelegation(tx, delegation)
 		if err != nil {
 			return fmt.Errorf("error creating delegation: %w", err)
@@ -215,11 +229,11 @@ func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targ
 	})
 }
 
-func GetDelegationInfo(sourceResolutionID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
+func GetDelegatedToResolutionByDelegatedByID(delegatedByID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
 
 	// Get delegation by source resolution ID
-	delegations, err := delegationRepository.GetThreatAssignmentResolutionDelegations(nil, &sourceResolutionID, nil)
+	delegations, err := delegationRepository.GetThreatAssignmentResolutionDelegations(nil, &delegatedByID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting delegation: %w", err)
 	}

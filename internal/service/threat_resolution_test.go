@@ -301,3 +301,145 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestDelegationFunctionality(t *testing.T) {
+	cleanup := testutil.SetupTestDatabase(t)
+	defer cleanup()
+
+	t.Run("DelegateResolution_UpdatesStatus", func(t *testing.T) {
+		product, _ := CreateProduct("Test Product", "A test product")
+		instance1, _ := CreateInstance("Instance 1", product.ID)
+		instance2, _ := CreateInstance("Instance 2", product.ID)
+		threat, _ := CreateThreat("Test Threat", "A test threat")
+		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
+		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+
+		source, _ := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
+		target, _ := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target")
+		defer func() { DeleteThreatResolution(source.ID); DeleteThreatResolution(target.ID) }()
+
+		err := DelegateResolution(*source, *target)
+		require.NoError(t, err)
+
+		updatedSource, _ := GetThreatResolution(source.ID)
+		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, updatedSource.Status)
+	})
+
+	t.Run("DelegateResolution_MultipleTimes", func(t *testing.T) {
+		product, _ := CreateProduct("Test Product 2", "A test product")
+		instance1, _ := CreateInstance("Instance 1", product.ID)
+		instance2, _ := CreateInstance("Instance 2", product.ID)
+		instance3, _ := CreateInstance("Instance 3", product.ID)
+		threat, _ := CreateThreat("Test Threat 2", "A test threat")
+		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
+		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+		assignment3, _ := AssignThreatToInstance(threat.ID, instance3.ID)
+
+		source, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
+		require.NoError(t, err)
+		target1, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusAccepted, "Target1")
+		require.NoError(t, err)
+		target2, err := CreateThreatResolution(assignment3.ID, &instance3.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target2")
+		require.NoError(t, err)
+		defer func() { DeleteThreatResolution(source.ID); DeleteThreatResolution(target1.ID); DeleteThreatResolution(target2.ID) }()
+
+		err = DelegateResolution(*source, *target1)
+		require.NoError(t, err)
+		
+		delegated1, err := GetDelegatedToResolutionByDelegatedByID(source.ID)
+		require.NoError(t, err)
+		require.NotNil(t, delegated1)
+		assert.Equal(t, target1.ID, delegated1.ID)
+
+		err = DelegateResolution(*source, *target2)
+		require.NoError(t, err)
+
+		delegated2, err := GetDelegatedToResolutionByDelegatedByID(source.ID)
+		require.NoError(t, err)
+		require.NotNil(t, delegated2)
+		assert.Equal(t, target2.ID, delegated2.ID)
+
+		updatedSource, err := GetThreatResolution(source.ID)
+		require.NoError(t, err)
+		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, updatedSource.Status)
+	})
+
+	t.Run("UpdateThreatResolution_RemovesDelegation", func(t *testing.T) {
+		product, _ := CreateProduct("Test Product 3", "A test product")
+		instance1, _ := CreateInstance("Instance 1", product.ID)
+		instance2, _ := CreateInstance("Instance 2", product.ID)
+		threat, _ := CreateThreat("Test Threat 3", "A test threat")
+		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
+		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+
+		source, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
+		require.NoError(t, err)
+		target, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target")
+		require.NoError(t, err)
+		defer func() { DeleteThreatResolution(source.ID); DeleteThreatResolution(target.ID) }()
+
+		err = DelegateResolution(*source, *target)
+		require.NoError(t, err)
+		
+		delegated, err := GetDelegatedToResolutionByDelegatedByID(source.ID)
+		require.NoError(t, err)
+		require.NotNil(t, delegated)
+
+		newStatus := models.ThreatAssignmentResolutionStatusAccepted
+		newDesc := "Updated"
+		_, err = UpdateThreatResolution(source.ID, &newStatus, &newDesc)
+		require.NoError(t, err)
+
+		delegatedAfter, err := GetDelegatedToResolutionByDelegatedByID(source.ID)
+		require.NoError(t, err)
+		assert.Nil(t, delegatedAfter)
+
+		updated, err := GetThreatResolution(source.ID)
+		require.NoError(t, err)
+		assert.Equal(t, newStatus, updated.Status)
+		assert.Equal(t, newDesc, updated.Description)
+	})
+
+	t.Run("DelegationChain_StatusPropagation", func(t *testing.T) {
+		product, _ := CreateProduct("Test Product 4", "A test product")
+		instance1, _ := CreateInstance("Instance 1", product.ID)
+		instance2, _ := CreateInstance("Instance 2", product.ID)
+		instance3, _ := CreateInstance("Instance 3", product.ID)
+		threat, _ := CreateThreat("Test Threat 4", "A test threat")
+		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
+		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+		assignment3, _ := AssignThreatToInstance(threat.ID, instance3.ID)
+
+		// Create chain: resA -> resB -> resC
+		resA, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "ResA")
+		require.NoError(t, err)
+		resB, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "ResB")
+		require.NoError(t, err)
+		resC, err := CreateThreatResolution(assignment3.ID, &instance3.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "ResC")
+		require.NoError(t, err)
+		defer func() { DeleteThreatResolution(resA.ID); DeleteThreatResolution(resB.ID); DeleteThreatResolution(resC.ID) }()
+
+		// Create delegation chain: A -> B -> C
+		err = DelegateResolution(*resA, *resB)
+		require.NoError(t, err)
+		err = DelegateResolution(*resB, *resC)
+		require.NoError(t, err)
+
+		// Update final resolution (C) status
+		newStatus := models.ThreatAssignmentResolutionStatusResolved
+		_, err = UpdateThreatResolution(resC.ID, &newStatus, nil)
+		require.NoError(t, err)
+
+		// Verify all resolutions in chain have updated status
+		updatedA, err := GetThreatResolution(resA.ID)
+		require.NoError(t, err)
+		updatedB, err := GetThreatResolution(resB.ID)
+		require.NoError(t, err)
+		updatedC, err := GetThreatResolution(resC.ID)
+		require.NoError(t, err)
+
+		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, updatedA.Status, "ResA should inherit status from chain end")
+		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, updatedB.Status, "ResB should inherit status from chain end")
+		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, updatedC.Status, "ResC should have updated status")
+	})
+}
