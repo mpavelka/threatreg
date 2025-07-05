@@ -185,3 +185,9 @@ func (r *ThreatAssignmentResolutionRepository) ListByInstanceID(tx *gorm.DB, ins
 	}
 	return resolutions, nil
 }
+
+// ThreatAssignmentResolutionWithDelegation extends ThreatAssignmentResolution with delegation info
+type ThreatAssignmentResolutionWithDelegation struct {
+	Resolution ThreatAssignmentResolution
+	Delegation *ThreatAssignmentResolutionDelegation
+}

@@ -134,7 +134,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 		// Add instance-specific threats
 		for _, assignment := range instanceAssignments {
 			threatTable.SetCell(row, 0, tview.NewTableCell("Instance"))
-			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment)))
+			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment, instance.ID)))
 			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Title))
 			threatTable.SetCell(row, 3, tview.NewTableCell(assignment.Threat.Description))
 			row++
@@ -143,7 +143,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 		// Add product-level threats (inherited)
 		for _, assignment := range productAssignments {
 			threatTable.SetCell(row, 0, tview.NewTableCell("Product"))
-			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment)))
+			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment, instance.ID)))
 			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Title))
 			threatTable.SetCell(row, 3, tview.NewTableCell(assignment.Threat.Description))
 			row++
@@ -193,22 +193,27 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	return mainLayout
 }
 
-func getResolutionStatus(assignment models.ThreatAssignment) string {
-	// TODO: If this is a product-level assignment, we need to check both instance- and product-level resolutions
-	// For now, we only check the first available resolution, which is obviously wrong (it might be instance or product)
+func getResolutionStatus(assignment models.ThreatAssignment, instanceId uuid.UUID) string {
 
-	resolution, err := service.GetThreatResolutionByThreatAssignmentID(assignment.ID)
-	if err != nil || resolution == nil {
+	resolutionWithDelegation, err := service.GetInstanceLevelThreatResolutionWithDelegation(assignment.ID, instanceId)
+	if err != nil || resolutionWithDelegation == nil {
 		return "-"
 	}
 
-	switch resolution.Status {
+	var delegationStr string
+	if resolutionWithDelegation.Delegation != nil {
+		delegationStr = " (Delegated)"
+	} else {
+		delegationStr = ""
+	}
+
+	switch resolutionWithDelegation.Resolution.Status {
 	case models.ThreatAssignmentResolutionStatusResolved:
-		return "[green]Resolved[-]"
+		return "[green]Resolved[-]" + delegationStr
 	case models.ThreatAssignmentResolutionStatusAwaiting:
-		return "[yellow]Awaiting[-]"
+		return "[yellow]Awaiting[-]" + delegationStr
 	case models.ThreatAssignmentResolutionStatusAccepted:
-		return "[blue]Accepted[-]"
+		return "[blue]Accepted[-]" + delegationStr
 	default:
 		return "Unknown"
 	}

@@ -129,9 +129,9 @@ func buildActionBar(assignment models.ThreatAssignment, resolverInstance *models
 	bar.SetTitle("Actions").SetBorder(true)
 
 	editBtn := tview.NewButton("Edit Resolution").SetSelectedFunc(func() {
-		resolution, _ := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
+		resolutionWithDelegation, _ := service.GetInstanceLevelThreatResolutionWithDelegation(assignment.ID, resolverInstance.ID)
 		contentContainer.PushContent(modals.CreateEditThreatAssignmentResolutionModal(
-			assignment, resolution,
+			assignment, &resolutionWithDelegation.Resolution,
 			&resolverInstance.ID,
 			nil, // resolverProductId is nil for instance-level resolution
 			func() { contentContainer.PopContent() },

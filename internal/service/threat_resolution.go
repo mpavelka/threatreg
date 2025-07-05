@@ -131,6 +131,37 @@ func GetInstanceLevelThreatResolution(threatAssignmentID int, instanceID uuid.UU
 	return resolutionRepository.GetOneByThreatAssignmentIDAndInstanceID(nil, threatAssignmentID, instanceID)
 }
 
+func GetInstanceLevelThreatResolutionWithDelegation(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolutionWithDelegation, error) {
+	resolutionRepository, err := getThreatAssignmentResolutionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	// First get the resolution
+	resolution, err := resolutionRepository.GetOneByThreatAssignmentIDAndInstanceID(nil, threatAssignmentID, instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then get the delegation if it exists
+	delegationRepo := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
+	delegations, err := delegationRepo.GetThreatAssignmentResolutionDelegations(nil, &resolution.ID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &models.ThreatAssignmentResolutionWithDelegation{
+		Resolution: *resolution,
+		Delegation: nil,
+	}
+
+	if len(delegations) > 0 {
+		result.Delegation = &delegations[0]
+	}
+
+	return result, nil
+}
+
 func GetProductLevelThreatResolution(threatAssignmentID int, productID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
