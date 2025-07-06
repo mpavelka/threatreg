@@ -1,4 +1,4 @@
-h1:NZV1Uw+nBv/t5zo9hSTLd5b753/o5sl064mNfmXqx5o=
+h1:bhyqVe16xUpWqqxHg51jeh3g5ympqTFhGDCtEz4/VDs=
 20250603062251.sql h1:DmEiM6OlQr1BpUmcFNforPy9yw5ERxhWMAUBwAvZdUI=
 20250605210736_add_name_to_applications.sql h1:Enb5WdHnfRX0iiqEZ+gx/SKyPZI9/zxMx+7J2bfFQyE=
 20250607222039_add_indices.sql h1:dCeb825BODSCSo2Pws4YaqSR8q9UpKU7InFUyyxenEc=
@@ -8,3 +8,4 @@ h1:NZV1Uw+nBv/t5zo9hSTLd5b753/o5sl064mNfmXqx5o=
 20250621074749_add_threat_assignment_resolution.sql h1:ZQt8bJ1xB1EtbAwCxCW3UnOZGvh2I6gL0lGR+GJiVfs=
 20250701191130_add_migration_delegation.sql h1:o67GYsYUmTFwGSr+inbVt9oabrEPJgcWi5CdQNFwenw=
 20250706221916_relationships.sql h1:YiF1qkuSVDotx7fUY4/Dbl5xGpCOgSBTtlVNfe5+yCU=
+20250706224220_tags.sql h1:TJfOEa8KJf+uimkJXE2AUMo7iLuEUSaCkaB6ZK+5ABQ=
