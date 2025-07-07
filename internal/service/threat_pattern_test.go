@@ -335,8 +335,8 @@ func TestThreatPatternService_CreatePatternCondition(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create pattern condition
-		conditionType := "TAG"
-		operator := "CONTAINS"
+		conditionType := models.ConditionTypeTag.String()
+		operator := models.OperatorContains.String()
 		value := "test-tag"
 		relationshipType := ""
 
@@ -364,16 +364,16 @@ func TestThreatPatternService_CreatePatternCondition(t *testing.T) {
 		// Create relationship-based condition
 		condition, err := CreatePatternCondition(
 			pattern.ID,
-			"RELATIONSHIP_TARGET_TAG",
-			"HAS_RELATIONSHIP_WITH",
+			models.ConditionTypeRelationshipTargetTag.String(),
+			models.OperatorHasRelationshipWith.String(),
 			"privileged",
 			"connects_to",
 		)
 
 		// Assertions
 		require.NoError(t, err)
-		assert.Equal(t, "RELATIONSHIP_TARGET_TAG", condition.ConditionType)
-		assert.Equal(t, "HAS_RELATIONSHIP_WITH", condition.Operator)
+		assert.Equal(t, models.ConditionTypeRelationshipTargetTag.String(), condition.ConditionType)
+		assert.Equal(t, models.OperatorHasRelationshipWith.String(), condition.Operator)
 		assert.Equal(t, "privileged", condition.Value)
 		assert.Equal(t, "connects_to", condition.RelationshipType)
 	})
@@ -381,7 +381,7 @@ func TestThreatPatternService_CreatePatternCondition(t *testing.T) {
 	t.Run("InvalidPattern", func(t *testing.T) {
 		// Try to create condition for non-existent pattern
 		nonExistentPatternID := uuid.New()
-		condition, err := CreatePatternCondition(nonExistentPatternID, "TAG", "CONTAINS", "test", "")
+		condition, err := CreatePatternCondition(nonExistentPatternID, models.ConditionTypeTag.String(), models.OperatorContains.String(), "test", "")
 
 		assert.Error(t, err)
 		assert.Nil(t, condition)
@@ -397,7 +397,7 @@ func TestThreatPatternService_CreatePatternCondition(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to create invalid condition (missing relationship_type for relationship condition)
-		condition, err := CreatePatternCondition(pattern.ID, "RELATIONSHIP_TARGET_TAG", "HAS_RELATIONSHIP_WITH", "test", "")
+		condition, err := CreatePatternCondition(pattern.ID, models.ConditionTypeRelationshipTargetTag.String(), models.OperatorHasRelationshipWith.String(), "test", "")
 
 		assert.Error(t, err)
 		assert.Nil(t, condition)
@@ -421,12 +421,12 @@ func TestThreatPatternService_UpdatePatternCondition(t *testing.T) {
 		pattern, err := CreateThreatPattern("Update Condition Pattern", "Pattern for update condition test", threat.ID, true)
 		require.NoError(t, err)
 
-		createdCondition, err := CreatePatternCondition(pattern.ID, "TAG", "CONTAINS", "original-tag", "")
+		createdCondition, err := CreatePatternCondition(pattern.ID, models.ConditionTypeTag.String(), models.OperatorContains.String(), "original-tag", "")
 		require.NoError(t, err)
 
 		// Update the condition
-		newConditionType := "PRODUCT_TAG"
-		newOperator := "NOT_CONTAINS"
+		newConditionType := models.ConditionTypeProductTag.String()
+		newOperator := models.OperatorNotContains.String()
 		newValue := "updated-tag"
 		newRelationshipType := ""
 
@@ -469,19 +469,19 @@ func TestThreatPatternService_CreateThreatPatternWithConditions(t *testing.T) {
 		// Define conditions
 		conditions := []models.PatternCondition{
 			{
-				ConditionType: "TAG",
-				Operator:      "CONTAINS",
+				ConditionType: models.ConditionTypeTag.String(),
+				Operator:      models.OperatorContains.String(),
 				Value:         "internet-facing",
 			},
 			{
-				ConditionType:    "RELATIONSHIP_TARGET_TAG",
-				Operator:         "HAS_RELATIONSHIP_WITH",
+				ConditionType:    models.ConditionTypeRelationshipTargetTag.String(),
+				Operator:         models.OperatorHasRelationshipWith.String(),
 				Value:            "database",
 				RelationshipType: "connects_to",
 			},
 			{
-				ConditionType: "PRODUCT_TAG",
-				Operator:      "NOT_CONTAINS",
+				ConditionType: models.ConditionTypeProductTag.String(),
+				Operator:      models.OperatorNotContains.String(),
 				Value:         "high-security",
 			},
 		}
@@ -521,13 +521,13 @@ func TestThreatPatternService_CreateThreatPatternWithConditions(t *testing.T) {
 		// Define conditions with one invalid condition
 		conditions := []models.PatternCondition{
 			{
-				ConditionType: "TAG",
-				Operator:      "CONTAINS",
+				ConditionType: models.ConditionTypeTag.String(),
+				Operator:      models.OperatorContains.String(),
 				Value:         "valid-tag",
 			},
 			{
-				ConditionType:    "RELATIONSHIP_TARGET_TAG",
-				Operator:         "HAS_RELATIONSHIP_WITH",
+				ConditionType:    models.ConditionTypeRelationshipTargetTag.String(),
+				Operator:         models.OperatorHasRelationshipWith.String(),
 				Value:            "test-tag",
 				RelationshipType: "", // Missing required relationship_type
 			},
@@ -570,9 +570,9 @@ func TestThreatPatternService_ListPatternConditions(t *testing.T) {
 			operator      string
 			value         string
 		}{
-			{"TAG", "CONTAINS", "tag1"},
-			{"PRODUCT", "EQUALS", "product1"},
-			{"PRODUCT_TAG", "NOT_CONTAINS", "tag2"},
+			{models.ConditionTypeTag.String(), models.OperatorContains.String(), "tag1"},
+			{models.ConditionTypeProduct.String(), models.OperatorEquals.String(), "product1"},
+			{models.ConditionTypeProductTag.String(), models.OperatorNotContains.String(), "tag2"},
 		}
 
 		var createdConditions []*models.PatternCondition
@@ -621,7 +621,7 @@ func TestThreatPatternService_DeletePatternCondition(t *testing.T) {
 		pattern, err := CreateThreatPattern("Delete Condition Pattern", "Pattern for delete condition test", threat.ID, true)
 		require.NoError(t, err)
 
-		condition, err := CreatePatternCondition(pattern.ID, "TAG", "CONTAINS", "delete-test", "")
+		condition, err := CreatePatternCondition(pattern.ID, models.ConditionTypeTag.String(), models.OperatorContains.String(), "delete-test", "")
 		require.NoError(t, err)
 
 		// Delete the condition

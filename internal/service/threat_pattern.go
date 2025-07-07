@@ -375,56 +375,42 @@ func validatePatternCondition(condition *models.PatternCondition) error {
 		return fmt.Errorf("operator is required")
 	}
 
-	// Validate condition type
-	validConditionTypes := []string{
-		"PRODUCT", "TAG", "RELATIONSHIP", "RELATIONSHIP_TARGET_ID",
-		"RELATIONSHIP_TARGET_TAG", "PRODUCT_TAG", "PRODUCT_ID",
-	}
-	valid := false
-	for _, vct := range validConditionTypes {
-		if condition.ConditionType == vct {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	// Validate condition type using enum
+	conditionType, validConditionType := models.ParsePatternConditionType(condition.ConditionType)
+	if !validConditionType {
 		return fmt.Errorf("invalid condition_type: %s", condition.ConditionType)
 	}
 
-	// Validate operator
-	validOperators := []string{
-		"EQUALS", "CONTAINS", "NOT_CONTAINS", "NOT_EQUALS", "EXISTS", "NOT_EXISTS",
-		"HAS_RELATIONSHIP_WITH", "NOT_HAS_RELATIONSHIP_WITH",
-	}
-	valid = false
-	for _, vo := range validOperators {
-		if condition.Operator == vo {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	// Validate operator using enum
+	operator, validOperator := models.ParsePatternOperator(condition.Operator)
+	if !validOperator {
 		return fmt.Errorf("invalid operator: %s", condition.Operator)
 	}
 
 	// Validate condition-specific requirements
-	relationshipConditionTypes := []string{
-		"RELATIONSHIP_TARGET_ID", "RELATIONSHIP_TARGET_TAG", "RELATIONSHIP",
+	relationshipConditionTypes := []models.PatternConditionType{
+		models.ConditionTypeRelationshipTargetID,
+		models.ConditionTypeRelationshipTargetTag,
+		models.ConditionTypeRelationship,
 	}
 	for _, rct := range relationshipConditionTypes {
-		if condition.ConditionType == rct && condition.RelationshipType == "" {
+		if conditionType == rct && condition.RelationshipType == "" {
 			return fmt.Errorf("relationship_type is required for %s condition", condition.ConditionType)
 		}
 	}
 
 	// Most conditions require a value (except EXISTS/NOT_EXISTS)
-	valueRequiredTypes := []string{
-		"PRODUCT", "TAG", "PRODUCT_TAG", "PRODUCT_ID",
-		"RELATIONSHIP_TARGET_ID", "RELATIONSHIP_TARGET_TAG",
+	valueRequiredTypes := []models.PatternConditionType{
+		models.ConditionTypeProduct,
+		models.ConditionTypeTag,
+		models.ConditionTypeProductTag,
+		models.ConditionTypeProductID,
+		models.ConditionTypeRelationshipTargetID,
+		models.ConditionTypeRelationshipTargetTag,
 	}
 	for _, vrt := range valueRequiredTypes {
-		if condition.ConditionType == vrt {
-			if condition.Operator != "EXISTS" && condition.Operator != "NOT_EXISTS" && condition.Value == "" {
+		if conditionType == vrt {
+			if operator != models.OperatorExists && operator != models.OperatorNotExists && condition.Value == "" {
 				return fmt.Errorf("value is required for %s condition with %s operator", condition.ConditionType, condition.Operator)
 			}
 		}

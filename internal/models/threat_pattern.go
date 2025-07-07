@@ -5,6 +5,152 @@ import (
 	"gorm.io/gorm"
 )
 
+// PatternConditionType represents the type of pattern condition
+type PatternConditionType int
+
+const (
+	ConditionTypeProduct PatternConditionType = iota
+	ConditionTypeTag
+	ConditionTypeRelationship
+	ConditionTypeRelationshipTargetID
+	ConditionTypeRelationshipTargetTag
+	ConditionTypeProductTag
+	ConditionTypeProductID
+)
+
+// String returns the string representation of the condition type
+func (ct PatternConditionType) String() string {
+	switch ct {
+	case ConditionTypeProduct:
+		return "PRODUCT"
+	case ConditionTypeTag:
+		return "TAG"
+	case ConditionTypeRelationship:
+		return "RELATIONSHIP"
+	case ConditionTypeRelationshipTargetID:
+		return "RELATIONSHIP_TARGET_ID"
+	case ConditionTypeRelationshipTargetTag:
+		return "RELATIONSHIP_TARGET_TAG"
+	case ConditionTypeProductTag:
+		return "PRODUCT_TAG"
+	case ConditionTypeProductID:
+		return "PRODUCT_ID"
+	default:
+		return ""
+	}
+}
+
+// ParsePatternConditionType parses a string to PatternConditionType
+func ParsePatternConditionType(s string) (PatternConditionType, bool) {
+	switch s {
+	case "PRODUCT":
+		return ConditionTypeProduct, true
+	case "TAG":
+		return ConditionTypeTag, true
+	case "RELATIONSHIP":
+		return ConditionTypeRelationship, true
+	case "RELATIONSHIP_TARGET_ID":
+		return ConditionTypeRelationshipTargetID, true
+	case "RELATIONSHIP_TARGET_TAG":
+		return ConditionTypeRelationshipTargetTag, true
+	case "PRODUCT_TAG":
+		return ConditionTypeProductTag, true
+	case "PRODUCT_ID":
+		return ConditionTypeProductID, true
+	default:
+		return 0, false
+	}
+}
+
+// PatternOperator represents the operator for pattern conditions
+type PatternOperator int
+
+const (
+	OperatorEquals PatternOperator = iota
+	OperatorContains
+	OperatorNotContains
+	OperatorNotEquals
+	OperatorExists
+	OperatorNotExists
+	OperatorHasRelationshipWith
+	OperatorNotHasRelationshipWith
+)
+
+// String returns the string representation of the operator
+func (op PatternOperator) String() string {
+	switch op {
+	case OperatorEquals:
+		return "EQUALS"
+	case OperatorContains:
+		return "CONTAINS"
+	case OperatorNotContains:
+		return "NOT_CONTAINS"
+	case OperatorNotEquals:
+		return "NOT_EQUALS"
+	case OperatorExists:
+		return "EXISTS"
+	case OperatorNotExists:
+		return "NOT_EXISTS"
+	case OperatorHasRelationshipWith:
+		return "HAS_RELATIONSHIP_WITH"
+	case OperatorNotHasRelationshipWith:
+		return "NOT_HAS_RELATIONSHIP_WITH"
+	default:
+		return ""
+	}
+}
+
+// ParsePatternOperator parses a string to PatternOperator
+func ParsePatternOperator(s string) (PatternOperator, bool) {
+	switch s {
+	case "EQUALS":
+		return OperatorEquals, true
+	case "CONTAINS":
+		return OperatorContains, true
+	case "NOT_CONTAINS":
+		return OperatorNotContains, true
+	case "NOT_EQUALS":
+		return OperatorNotEquals, true
+	case "EXISTS":
+		return OperatorExists, true
+	case "NOT_EXISTS":
+		return OperatorNotExists, true
+	case "HAS_RELATIONSHIP_WITH":
+		return OperatorHasRelationshipWith, true
+	case "NOT_HAS_RELATIONSHIP_WITH":
+		return OperatorNotHasRelationshipWith, true
+	default:
+		return 0, false
+	}
+}
+
+// GetAllConditionTypes returns all valid pattern condition types
+func GetAllConditionTypes() []PatternConditionType {
+	return []PatternConditionType{
+		ConditionTypeProduct,
+		ConditionTypeTag,
+		ConditionTypeRelationship,
+		ConditionTypeRelationshipTargetID,
+		ConditionTypeRelationshipTargetTag,
+		ConditionTypeProductTag,
+		ConditionTypeProductID,
+	}
+}
+
+// GetAllOperators returns all valid pattern operators
+func GetAllOperators() []PatternOperator {
+	return []PatternOperator{
+		OperatorEquals,
+		OperatorContains,
+		OperatorNotContains,
+		OperatorNotEquals,
+		OperatorExists,
+		OperatorNotExists,
+		OperatorHasRelationshipWith,
+		OperatorNotHasRelationshipWith,
+	}
+}
+
 type ThreatPattern struct {
 	ID          uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
 	Name        string             `gorm:"type:varchar(255);not null"`
