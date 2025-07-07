@@ -1,0 +1,434 @@
+package service
+
+import (
+	"fmt"
+	"threatreg/internal/database"
+	"threatreg/internal/models"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+func getThreatPatternRepository() (*models.ThreatPatternRepository, error) {
+	db, err := database.GetDBOrError()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database connection: %w", err)
+	}
+	return models.NewThreatPatternRepository(db), nil
+}
+
+func getPatternConditionRepository() (*models.PatternConditionRepository, error) {
+	db, err := database.GetDBOrError()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database connection: %w", err)
+	}
+	return models.NewPatternConditionRepository(db), nil
+}
+
+func CreateThreatPattern(name, description string, threatID uuid.UUID, isActive bool) (*models.ThreatPattern, error) {
+	pattern := &models.ThreatPattern{
+		Name:        name,
+		Description: description,
+		ThreatID:    threatID,
+		IsActive:    isActive,
+	}
+
+	var result *models.ThreatPattern
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		patternRepository, err := getThreatPatternRepository()
+		if err != nil {
+			return err
+		}
+
+		// Verify threat exists
+		threatRepository, err := getThreatRepository()
+		if err != nil {
+			return err
+		}
+		_, err = threatRepository.GetByID(tx, threatID)
+		if err != nil {
+			return fmt.Errorf("threat not found: %w", err)
+		}
+
+		err = patternRepository.Create(tx, pattern)
+		if err != nil {
+			return fmt.Errorf("error creating threat pattern: %w", err)
+		}
+
+		result = pattern
+		return nil
+	})
+
+	return result, err
+}
+
+func GetThreatPattern(id uuid.UUID) (*models.ThreatPattern, error) {
+	patternRepository, err := getThreatPatternRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return patternRepository.GetByID(nil, id)
+}
+
+func UpdateThreatPattern(id uuid.UUID, name, description *string, threatID *uuid.UUID, isActive *bool) (*models.ThreatPattern, error) {
+	var result *models.ThreatPattern
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		patternRepository, err := getThreatPatternRepository()
+		if err != nil {
+			return err
+		}
+
+		pattern, err := patternRepository.GetByID(tx, id)
+		if err != nil {
+			return err
+		}
+
+		// Update fields if provided
+		if name != nil {
+			pattern.Name = *name
+		}
+		if description != nil {
+			pattern.Description = *description
+		}
+		if threatID != nil {
+			// Verify threat exists
+			threatRepository, err := getThreatRepository()
+			if err != nil {
+				return err
+			}
+			_, err = threatRepository.GetByID(tx, *threatID)
+			if err != nil {
+				return fmt.Errorf("threat not found: %w", err)
+			}
+			pattern.ThreatID = *threatID
+		}
+		if isActive != nil {
+			pattern.IsActive = *isActive
+		}
+
+		err = patternRepository.Update(tx, pattern)
+		if err != nil {
+			return err
+		}
+
+		// Reload the pattern to get the updated relationships
+		updatedPattern, err := patternRepository.GetByID(tx, pattern.ID)
+		if err != nil {
+			return err
+		}
+
+		result = updatedPattern
+		return nil
+	})
+
+	return result, err
+}
+
+func DeleteThreatPattern(id uuid.UUID) error {
+	patternRepository, err := getThreatPatternRepository()
+	if err != nil {
+		return err
+	}
+
+	return patternRepository.Delete(nil, id)
+}
+
+func ListThreatPatterns() ([]models.ThreatPattern, error) {
+	patternRepository, err := getThreatPatternRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return patternRepository.List(nil)
+}
+
+func ListActiveThreatPatterns() ([]models.ThreatPattern, error) {
+	patternRepository, err := getThreatPatternRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return patternRepository.ListActive(nil)
+}
+
+func ListThreatPatternsByThreatID(threatID uuid.UUID) ([]models.ThreatPattern, error) {
+	patternRepository, err := getThreatPatternRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return patternRepository.ListByThreatID(nil, threatID)
+}
+
+func SetThreatPatternActive(id uuid.UUID, isActive bool) error {
+	patternRepository, err := getThreatPatternRepository()
+	if err != nil {
+		return err
+	}
+
+	return patternRepository.SetActive(nil, id, isActive)
+}
+
+func CreatePatternCondition(patternID uuid.UUID, conditionType, operator, value, relationshipType string) (*models.PatternCondition, error) {
+	condition := &models.PatternCondition{
+		PatternID:        patternID,
+		ConditionType:    conditionType,
+		Operator:         operator,
+		Value:            value,
+		RelationshipType: relationshipType,
+	}
+
+	var result *models.PatternCondition
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		conditionRepository, err := getPatternConditionRepository()
+		if err != nil {
+			return err
+		}
+
+		// Verify pattern exists
+		patternRepository, err := getThreatPatternRepository()
+		if err != nil {
+			return err
+		}
+		_, err = patternRepository.GetByID(tx, patternID)
+		if err != nil {
+			return fmt.Errorf("threat pattern not found: %w", err)
+		}
+
+		// Validate condition
+		if err := validatePatternCondition(condition); err != nil {
+			return fmt.Errorf("invalid pattern condition: %w", err)
+		}
+
+		err = conditionRepository.Create(tx, condition)
+		if err != nil {
+			return fmt.Errorf("error creating pattern condition: %w", err)
+		}
+
+		result = condition
+		return nil
+	})
+
+	return result, err
+}
+
+func GetPatternCondition(id uuid.UUID) (*models.PatternCondition, error) {
+	conditionRepository, err := getPatternConditionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return conditionRepository.GetByID(nil, id)
+}
+
+func UpdatePatternCondition(id uuid.UUID, conditionType, operator, value, relationshipType *string) (*models.PatternCondition, error) {
+	var result *models.PatternCondition
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		conditionRepository, err := getPatternConditionRepository()
+		if err != nil {
+			return err
+		}
+
+		condition, err := conditionRepository.GetByID(tx, id)
+		if err != nil {
+			return err
+		}
+
+		// Update fields if provided
+		if conditionType != nil {
+			condition.ConditionType = *conditionType
+		}
+		if operator != nil {
+			condition.Operator = *operator
+		}
+		if value != nil {
+			condition.Value = *value
+		}
+		if relationshipType != nil {
+			condition.RelationshipType = *relationshipType
+		}
+
+		// Validate updated condition
+		if err := validatePatternCondition(condition); err != nil {
+			return fmt.Errorf("invalid pattern condition: %w", err)
+		}
+
+		err = conditionRepository.Update(tx, condition)
+		if err != nil {
+			return err
+		}
+
+		result = condition
+		return nil
+	})
+
+	return result, err
+}
+
+func DeletePatternCondition(id uuid.UUID) error {
+	conditionRepository, err := getPatternConditionRepository()
+	if err != nil {
+		return err
+	}
+
+	return conditionRepository.Delete(nil, id)
+}
+
+func ListPatternConditionsByPatternID(patternID uuid.UUID) ([]models.PatternCondition, error) {
+	conditionRepository, err := getPatternConditionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return conditionRepository.ListByPatternID(nil, patternID)
+}
+
+func DeletePatternConditionsByPatternID(patternID uuid.UUID) error {
+	conditionRepository, err := getPatternConditionRepository()
+	if err != nil {
+		return err
+	}
+
+	return conditionRepository.DeleteByPatternID(nil, patternID)
+}
+
+func ListAllPatternConditions() ([]models.PatternCondition, error) {
+	conditionRepository, err := getPatternConditionRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return conditionRepository.List(nil)
+}
+
+func CreateThreatPatternWithConditions(name, description string, threatID uuid.UUID, isActive bool, conditions []models.PatternCondition) (*models.ThreatPattern, error) {
+	var result *models.ThreatPattern
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		// Create the pattern first
+		pattern := &models.ThreatPattern{
+			Name:        name,
+			Description: description,
+			ThreatID:    threatID,
+			IsActive:    isActive,
+		}
+
+		patternRepository, err := getThreatPatternRepository()
+		if err != nil {
+			return err
+		}
+
+		// Verify threat exists
+		threatRepository, err := getThreatRepository()
+		if err != nil {
+			return err
+		}
+		_, err = threatRepository.GetByID(tx, threatID)
+		if err != nil {
+			return fmt.Errorf("threat not found: %w", err)
+		}
+
+		err = patternRepository.Create(tx, pattern)
+		if err != nil {
+			return fmt.Errorf("error creating threat pattern: %w", err)
+		}
+
+		// Create conditions
+		conditionRepository, err := getPatternConditionRepository()
+		if err != nil {
+			return err
+		}
+
+		for i := range conditions {
+			conditions[i].PatternID = pattern.ID
+
+			// Validate condition
+			if err := validatePatternCondition(&conditions[i]); err != nil {
+				return fmt.Errorf("invalid pattern condition %d: %w", i, err)
+			}
+
+			err = conditionRepository.Create(tx, &conditions[i])
+			if err != nil {
+				return fmt.Errorf("error creating pattern condition %d: %w", i, err)
+			}
+		}
+
+		// Load the pattern with its conditions
+		fullPattern, err := patternRepository.GetByID(tx, pattern.ID)
+		if err != nil {
+			return err
+		}
+
+		result = fullPattern
+		return nil
+	})
+
+	return result, err
+}
+
+func validatePatternCondition(condition *models.PatternCondition) error {
+	// Validate required fields
+	if condition.ConditionType == "" {
+		return fmt.Errorf("condition_type is required")
+	}
+	if condition.Operator == "" {
+		return fmt.Errorf("operator is required")
+	}
+
+	// Validate condition type
+	validConditionTypes := []string{
+		"PRODUCT", "TAG", "RELATIONSHIP", "RELATIONSHIP_TARGET_ID",
+		"RELATIONSHIP_TARGET_TAG", "PRODUCT_TAG", "PRODUCT_ID",
+	}
+	valid := false
+	for _, vct := range validConditionTypes {
+		if condition.ConditionType == vct {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return fmt.Errorf("invalid condition_type: %s", condition.ConditionType)
+	}
+
+	// Validate operator
+	validOperators := []string{
+		"EQUALS", "CONTAINS", "NOT_CONTAINS", "NOT_EQUALS", "EXISTS", "NOT_EXISTS",
+		"HAS_RELATIONSHIP_WITH", "NOT_HAS_RELATIONSHIP_WITH",
+	}
+	valid = false
+	for _, vo := range validOperators {
+		if condition.Operator == vo {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return fmt.Errorf("invalid operator: %s", condition.Operator)
+	}
+
+	// Validate condition-specific requirements
+	relationshipConditionTypes := []string{
+		"RELATIONSHIP_TARGET_ID", "RELATIONSHIP_TARGET_TAG", "RELATIONSHIP",
+	}
+	for _, rct := range relationshipConditionTypes {
+		if condition.ConditionType == rct && condition.RelationshipType == "" {
+			return fmt.Errorf("relationship_type is required for %s condition", condition.ConditionType)
+		}
+	}
+
+	// Most conditions require a value (except EXISTS/NOT_EXISTS)
+	valueRequiredTypes := []string{
+		"PRODUCT", "TAG", "PRODUCT_TAG", "PRODUCT_ID",
+		"RELATIONSHIP_TARGET_ID", "RELATIONSHIP_TARGET_TAG",
+	}
+	for _, vrt := range valueRequiredTypes {
+		if condition.ConditionType == vrt {
+			if condition.Operator != "EXISTS" && condition.Operator != "NOT_EXISTS" && condition.Value == "" {
+				return fmt.Errorf("value is required for %s condition with %s operator", condition.ConditionType, condition.Operator)
+			}
+		}
+	}
+
+	return nil
+}
