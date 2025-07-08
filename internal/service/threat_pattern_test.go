@@ -636,3 +636,401 @@ func TestThreatPatternService_DeletePatternCondition(t *testing.T) {
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
 	})
 }
+
+func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
+	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
+		&models.Product{},
+		&models.Instance{},
+		&models.Tag{},
+		&models.Threat{},
+		&models.ThreatPattern{},
+		&models.PatternCondition{},
+		&models.Relationship{},
+	)
+	defer cleanup()
+
+	t.Run("ComplexPatternMatching", func(t *testing.T) {
+		// Create products
+		webProduct, err := CreateProduct("Web Application", "A web application")
+		require.NoError(t, err)
+
+		dbProduct, err := CreateProduct("Database", "A database system")
+		require.NoError(t, err)
+
+		apiProduct, err := CreateProduct("API Service", "An API service")
+		require.NoError(t, err)
+
+		// Create instances
+		webServer, err := CreateInstance("Web Server", webProduct.ID)
+		require.NoError(t, err)
+
+		database, err := CreateInstance("Database", dbProduct.ID)
+		require.NoError(t, err)
+
+		apiServer, err := CreateInstance("API Server", apiProduct.ID)
+		require.NoError(t, err)
+
+		adminPanel, err := CreateInstance("Admin Panel", webProduct.ID)
+		require.NoError(t, err)
+
+		// Create tags
+		internetFacingTag, err := CreateTag("internet-facing", "Internet facing component", "#FF0000")
+		require.NoError(t, err)
+
+		databaseTag, err := CreateTag("database", "Database component", "#00FF00")
+		require.NoError(t, err)
+
+		privilegedTag, err := CreateTag("privileged", "Privileged component", "#0000FF")
+		require.NoError(t, err)
+
+		highSecurityTag, err := CreateTag("high-security", "High security component", "#FFA500")
+		require.NoError(t, err)
+
+		// Assign tags to instances
+		err = AssignTagToInstance(internetFacingTag.ID, webServer.ID)
+		require.NoError(t, err)
+
+		err = AssignTagToInstance(databaseTag.ID, database.ID)
+		require.NoError(t, err)
+
+		err = AssignTagToInstance(privilegedTag.ID, adminPanel.ID)
+		require.NoError(t, err)
+
+		// Assign tags to products
+		err = AssignTagToProduct(highSecurityTag.ID, dbProduct.ID)
+		require.NoError(t, err)
+
+		// Create relationships
+		err = AddRelationship(&webServer.ID, nil, &database.ID, nil, "connects_to", "")
+		require.NoError(t, err)
+
+		err = AddRelationship(&adminPanel.ID, nil, &database.ID, nil, "reads_from", "")
+		require.NoError(t, err)
+
+		err = AddRelationship(&apiServer.ID, nil, &database.ID, nil, "connects_to", "")
+		require.NoError(t, err)
+
+		// Create threats
+		sqlInjectionThreat, err := CreateThreat("SQL Injection", "SQL injection vulnerability")
+		require.NoError(t, err)
+
+		privilegeEscalationThreat, err := CreateThreat("Privilege Escalation", "Privilege escalation threat")
+		require.NoError(t, err)
+
+		dataExposureThreat, err := CreateThreat("Data Exposure", "Data exposure threat")
+		require.NoError(t, err)
+
+		// Create threat patterns
+
+		// Pattern 1: Internet-facing instances that connect to database
+		pattern1, err := CreateThreatPatternWithConditions(
+			"Internet-facing DB Connection",
+			"Internet-facing components that connect to database",
+			sqlInjectionThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "internet-facing",
+				},
+				{
+					ConditionType:    models.ConditionTypeRelationshipTargetTag.String(),
+					Operator:         models.OperatorHasRelationshipWith.String(),
+					Value:            "database",
+					RelationshipType: "connects_to",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Pattern 2: Privileged instances
+		pattern2, err := CreateThreatPatternWithConditions(
+			"Privileged Components",
+			"Components with privileged access",
+			privilegeEscalationThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "privileged",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Pattern 3: Instances of products with high-security tag
+		pattern3, err := CreateThreatPatternWithConditions(
+			"High Security Products",
+			"Instances of products with high security requirements",
+			dataExposureThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeProductTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "high-security",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Pattern 4: Specific product by name
+		pattern4, err := CreateThreatPatternWithConditions(
+			"Web Application Product",
+			"Instances of web application product",
+			dataExposureThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeProduct.String(),
+					Operator:      models.OperatorEquals.String(),
+					Value:         "Web Application",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Pattern 5: Specific instance by relationship to specific target ID
+		pattern5, err := CreateThreatPatternWithConditions(
+			"Direct Database Connection",
+			"Instances that connect directly to the database instance",
+			sqlInjectionThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType:    models.ConditionTypeRelationshipTargetID.String(),
+					Operator:         models.OperatorHasRelationshipWith.String(),
+					Value:            database.ID.String(),
+					RelationshipType: "connects_to",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Execute pattern matching
+		matches, err := GetInstanceThreatsByThreatPattern()
+		require.NoError(t, err)
+
+		// Verify matches
+
+		// Web Server should match pattern1 (internet-facing + connects to database) and pattern4 (web application product) and pattern5 (connects to database)
+		webServerMatches, exists := matches[webServer.ID]
+		require.True(t, exists, "Web Server should have matches")
+		require.Len(t, webServerMatches, 3, "Web Server should have 3 matches")
+
+		matchedPatterns := make(map[uuid.UUID]bool)
+		for _, match := range webServerMatches {
+			matchedPatterns[match.PatternID] = true
+		}
+		assert.True(t, matchedPatterns[pattern1.ID], "Web Server should match pattern1")
+		assert.True(t, matchedPatterns[pattern4.ID], "Web Server should match pattern4")
+		assert.True(t, matchedPatterns[pattern5.ID], "Web Server should match pattern5")
+
+		// Database should match pattern3 (high-security product)
+		databaseMatches, exists := matches[database.ID]
+		require.True(t, exists, "Database should have matches")
+		require.Len(t, databaseMatches, 1, "Database should have 1 match")
+		assert.Equal(t, pattern3.ID, databaseMatches[0].PatternID, "Database should match pattern3")
+
+		// Admin Panel should match pattern2 (privileged) and pattern4 (web application product)
+		adminMatches, exists := matches[adminPanel.ID]
+		require.True(t, exists, "Admin Panel should have matches")
+		require.Len(t, adminMatches, 2, "Admin Panel should have 2 matches")
+
+		adminMatchedPatterns := make(map[uuid.UUID]bool)
+		for _, match := range adminMatches {
+			adminMatchedPatterns[match.PatternID] = true
+		}
+		assert.True(t, adminMatchedPatterns[pattern2.ID], "Admin Panel should match pattern2")
+		assert.True(t, adminMatchedPatterns[pattern4.ID], "Admin Panel should match pattern4")
+
+		// API Server should match pattern5 (connects to database)
+		apiMatches, exists := matches[apiServer.ID]
+		require.True(t, exists, "API Server should have matches")
+		require.Len(t, apiMatches, 1, "API Server should have 1 match")
+		assert.Equal(t, pattern5.ID, apiMatches[0].PatternID, "API Server should match pattern5")
+	})
+
+	t.Run("NoMatches", func(t *testing.T) {
+		// Create a product and instance with no matching patterns
+		isolatedProduct, err := CreateProduct("Isolated Service", "An isolated service")
+		require.NoError(t, err)
+
+		isolatedInstance, err := CreateInstance("Isolated Instance", isolatedProduct.ID)
+		require.NoError(t, err)
+
+		// Create a threat and pattern that won't match
+		threat, err := CreateThreat("Isolated Threat", "A threat for isolated components")
+		require.NoError(t, err)
+
+		_, err = CreateThreatPatternWithConditions(
+			"Non-matching Pattern",
+			"A pattern that won't match anything",
+			threat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "non-existent-tag",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Execute pattern matching
+		matches, err := GetInstanceThreatsByThreatPattern()
+		require.NoError(t, err)
+
+		// Verify no matches for isolated instance
+		_, exists := matches[isolatedInstance.ID]
+		assert.False(t, exists, "Isolated instance should have no matches")
+	})
+
+	t.Run("InactivePattern", func(t *testing.T) {
+		// Create a product and instance
+		testProduct, err := CreateProduct("Test Product", "A test product")
+		require.NoError(t, err)
+
+		testInstance, err := CreateInstance("Test Instance", testProduct.ID)
+		require.NoError(t, err)
+
+		// Create a tag and assign it to the instance
+		testTag, err := CreateTag("test-tag", "Test tag", "#FFFFFF")
+		require.NoError(t, err)
+
+		err = AssignTagToInstance(testTag.ID, testInstance.ID)
+		require.NoError(t, err)
+
+		// Create a threat and inactive pattern
+		threat, err := CreateThreat("Test Threat", "A test threat")
+		require.NoError(t, err)
+
+		_, err = CreateThreatPatternWithConditions(
+			"Inactive Pattern",
+			"An inactive pattern",
+			threat.ID,
+			false, // Inactive
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "test-tag",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Execute pattern matching
+		matches, err := GetInstanceThreatsByThreatPattern()
+		require.NoError(t, err)
+
+		// Verify no matches for instance with inactive pattern
+		_, exists := matches[testInstance.ID]
+		assert.False(t, exists, "Instance should have no matches from inactive pattern")
+	})
+
+	t.Run("TagExistsCondition", func(t *testing.T) {
+		// Create product and instances
+		product, err := CreateProduct("Tag Exists Product", "Product for testing tag existence")
+		require.NoError(t, err)
+
+		taggedInstance, err := CreateInstance("Tagged Instance", product.ID)
+		require.NoError(t, err)
+
+		untaggedInstance, err := CreateInstance("Untagged Instance", product.ID)
+		require.NoError(t, err)
+
+		// Create and assign a tag to one instance
+		tag, err := CreateTag("any-tag", "Any tag", "#000000")
+		require.NoError(t, err)
+
+		err = AssignTagToInstance(tag.ID, taggedInstance.ID)
+		require.NoError(t, err)
+
+		// Create threat and pattern that matches instances with any tag
+		threat, err := CreateThreat("Tagged Threat", "Threat for tagged instances")
+		require.NoError(t, err)
+
+		_, err = CreateThreatPatternWithConditions(
+			"Any Tag Pattern",
+			"Pattern that matches instances with any tag",
+			threat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorExists.String(),
+					Value:         "", // Value not used for EXISTS
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Execute pattern matching
+		matches, err := GetInstanceThreatsByThreatPattern()
+		require.NoError(t, err)
+
+		// Verify tagged instance matches but untagged doesn't
+		_, taggedExists := matches[taggedInstance.ID]
+		assert.True(t, taggedExists, "Tagged instance should match")
+
+		_, untaggedExists := matches[untaggedInstance.ID]
+		assert.False(t, untaggedExists, "Untagged instance should not match")
+	})
+
+	t.Run("RelationshipExistsCondition", func(t *testing.T) {
+		// Create products and instances
+		product1, err := CreateProduct("Product 1", "First product")
+		require.NoError(t, err)
+
+		product2, err := CreateProduct("Product 2", "Second product")
+		require.NoError(t, err)
+
+		instance1, err := CreateInstance("Instance 1", product1.ID)
+		require.NoError(t, err)
+
+		instance2, err := CreateInstance("Instance 2", product2.ID)
+		require.NoError(t, err)
+
+		isolatedInstance, err := CreateInstance("Isolated Instance", product1.ID)
+		require.NoError(t, err)
+
+		// Create relationship between instance1 and instance2
+		err = AddRelationship(&instance1.ID, nil, &instance2.ID, nil, "depends_on", "")
+		require.NoError(t, err)
+
+		// Create threat and pattern that matches instances with depends_on relationship
+		threat, err := CreateThreat("Dependency Threat", "Threat for instances with dependencies")
+		require.NoError(t, err)
+
+		_, err = CreateThreatPatternWithConditions(
+			"Dependency Pattern",
+			"Pattern that matches instances with depends_on relationship",
+			threat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType:    models.ConditionTypeRelationship.String(),
+					Operator:         models.OperatorExists.String(),
+					Value:            "", // Value not used for EXISTS
+					RelationshipType: "depends_on",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Execute pattern matching
+		matches, err := GetInstanceThreatsByThreatPattern()
+		require.NoError(t, err)
+
+		// Verify instance1 matches but isolated instance doesn't
+		_, instance1Exists := matches[instance1.ID]
+		assert.True(t, instance1Exists, "Instance1 should match (has depends_on relationship)")
+
+		_, isolatedExists := matches[isolatedInstance.ID]
+		assert.False(t, isolatedExists, "Isolated instance should not match (no depends_on relationship)")
+	})
+}
