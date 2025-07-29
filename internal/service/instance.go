@@ -17,6 +17,8 @@ func getInstanceRepository() (*models.InstanceRepository, error) {
 	return models.NewInstanceRepository(db), nil
 }
 
+// GetInstance retrieves an instance by its unique identifier.
+// Returns the instance with its associated product information, or an error if not found.
 func GetInstance(id uuid.UUID) (*models.Instance, error) {
 	instanceRepository, err := getInstanceRepository()
 	if err != nil {
@@ -26,6 +28,8 @@ func GetInstance(id uuid.UUID) (*models.Instance, error) {
 	return instanceRepository.GetByID(nil, id)
 }
 
+// CreateInstance creates a new instance with the specified name and product reference.
+// The instanceOf parameter must reference an existing product. Returns the created instance or an error.
 func CreateInstance(name string, instanceOf uuid.UUID) (*models.Instance, error) {
 	instance := &models.Instance{
 		Name:       name,
@@ -45,6 +49,8 @@ func CreateInstance(name string, instanceOf uuid.UUID) (*models.Instance, error)
 	return instance, nil
 }
 
+// UpdateInstance updates an existing instance's name and/or product reference within a transaction.
+// Only non-nil fields are updated. Returns the updated instance with refreshed relationships or an error.
 func UpdateInstance(
 	id uuid.UUID,
 	name *string,
@@ -82,6 +88,8 @@ func UpdateInstance(
 	return updatedInstance, err
 }
 
+// DeleteInstance removes an instance from the system by its unique identifier.
+// Returns an error if the instance does not exist or if deletion fails.
 func DeleteInstance(id uuid.UUID) error {
 	instanceRepository, err := getInstanceRepository()
 	if err != nil {
@@ -91,6 +99,8 @@ func DeleteInstance(id uuid.UUID) error {
 	return instanceRepository.Delete(nil, id)
 }
 
+// ListInstances retrieves all instances in the system with their associated product information.
+// Returns a slice of instances or an error if database access fails.
 func ListInstances() ([]models.Instance, error) {
 	instanceRepository, err := getInstanceRepository()
 	if err != nil {
@@ -100,6 +110,8 @@ func ListInstances() ([]models.Instance, error) {
 	return instanceRepository.List(nil)
 }
 
+// ListInstancesByProductID retrieves all instances that belong to a specific product.
+// Returns a slice of instances for the given product or an error if database access fails.
 func ListInstancesByProductID(productID uuid.UUID) ([]models.Instance, error) {
 	instanceRepository, err := getInstanceRepository()
 	if err != nil {
@@ -109,6 +121,8 @@ func ListInstancesByProductID(productID uuid.UUID) ([]models.Instance, error) {
 	return instanceRepository.ListByProductID(nil, productID)
 }
 
+// FilterInstances searches for instances by name and/or product name using case-insensitive partial matching.
+// Both parameters support partial matches. Returns matching instances or an error if database access fails.
 func FilterInstances(instanceName, productName string) ([]models.Instance, error) {
 	instanceRepository, err := getInstanceRepository()
 	if err != nil {
@@ -126,6 +140,8 @@ func getThreatAssignmentRepositoryForInstance() (*models.ThreatAssignmentReposit
 	return models.NewThreatAssignmentRepository(db), nil
 }
 
+// AssignThreatToInstance creates a threat assignment linking a threat to a specific instance.
+// Returns the created threat assignment or an error if the assignment already exists or creation fails.
 func AssignThreatToInstance(instanceID, threatID uuid.UUID) (*models.ThreatAssignment, error) {
 	threatAssignmentRepository, err := getThreatAssignmentRepositoryForInstance()
 	if err != nil {
@@ -135,6 +151,8 @@ func AssignThreatToInstance(instanceID, threatID uuid.UUID) (*models.ThreatAssig
 	return threatAssignmentRepository.AssignThreatToInstance(nil, threatID, instanceID)
 }
 
+// ListThreatAssignmentsByInstanceID retrieves all threat assignments for a specific instance.
+// Returns a slice of threat assignments with threat details or an error if database access fails.
 func ListThreatAssignmentsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAssignment, error) {
 	threatAssignmentRepository, err := getThreatAssignmentRepositoryForInstance()
 	if err != nil {

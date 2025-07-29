@@ -17,6 +17,8 @@ func getProductRepository() (*models.ProductRepository, error) {
 	return models.NewProductRepository(db), nil
 }
 
+// GetProduct retrieves a product by its unique identifier.
+// Returns the product if found, or an error if the product does not exist or database access fails.
 func GetProduct(id uuid.UUID) (*models.Product, error) {
 	productRepository, err := getProductRepository()
 	if err != nil {
@@ -26,6 +28,8 @@ func GetProduct(id uuid.UUID) (*models.Product, error) {
 	return productRepository.GetByID(nil, id)
 }
 
+// CreateProduct creates a new product with the specified name and description.
+// Returns the created product with its assigned ID, or an error if creation fails.
 func CreateProduct(
 	Name string,
 	Description string,
@@ -49,6 +53,8 @@ func CreateProduct(
 	return product, nil
 }
 
+// UpdateProduct updates an existing product's name and/or description within a transaction.
+// Only non-nil fields are updated. Returns the updated product or an error if the update fails.
 func UpdateProduct(
 	id uuid.UUID,
 	Name *string,
@@ -84,6 +90,8 @@ func UpdateProduct(
 	return updatedProduct, err
 }
 
+// DeleteProduct removes a product from the system by its unique identifier.
+// Returns an error if the product does not exist or if deletion fails.
 func DeleteProduct(id uuid.UUID) error {
 	productRepository, err := getProductRepository()
 	if err != nil {
@@ -93,6 +101,8 @@ func DeleteProduct(id uuid.UUID) error {
 	return productRepository.Delete(nil, id)
 }
 
+// ListProducts retrieves all products in the system.
+// Returns a slice of products or an error if database access fails.
 func ListProducts() ([]models.Product, error) {
 	productRepository, err := getProductRepository()
 	if err != nil {
@@ -110,6 +120,8 @@ func getThreatAssignmentRepository() (*models.ThreatAssignmentRepository, error)
 	return models.NewThreatAssignmentRepository(db), nil
 }
 
+// AssignThreatToProduct creates a threat assignment linking a threat to a specific product.
+// Returns the created threat assignment or an error if the assignment already exists or creation fails.
 func AssignThreatToProduct(productID, threatID uuid.UUID) (*models.ThreatAssignment, error) {
 	threatAssignmentRepository, err := getThreatAssignmentRepository()
 	if err != nil {
@@ -119,6 +131,8 @@ func AssignThreatToProduct(productID, threatID uuid.UUID) (*models.ThreatAssignm
 	return threatAssignmentRepository.AssignThreatToProduct(nil, threatID, productID)
 }
 
+// ListThreatAssignmentsByProductID retrieves all threat assignments for a specific product.
+// Returns a slice of threat assignments with threat details or an error if database access fails.
 func ListThreatAssignmentsByProductID(productID uuid.UUID) ([]models.ThreatAssignment, error) {
 	threatAssignmentRepository, err := getThreatAssignmentRepository()
 	if err != nil {

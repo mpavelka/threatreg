@@ -17,6 +17,8 @@ func getThreatPatternRepository() (*models.ThreatPatternRepository, error) {
 	return models.NewThreatPatternRepository(db), nil
 }
 
+// CreateThreatPattern creates a new threat pattern with validation that the associated threat exists.
+// Returns the created pattern with its assigned ID, or an error if creation fails or the threat doesn't exist.
 func CreateThreatPattern(name, description string, threatID uuid.UUID, isActive bool) (*models.ThreatPattern, error) {
 	pattern := &models.ThreatPattern{
 		Name:        name,
@@ -54,6 +56,8 @@ func CreateThreatPattern(name, description string, threatID uuid.UUID, isActive 
 	return result, err
 }
 
+// GetThreatPattern retrieves a threat pattern by its unique identifier.
+// Returns the pattern with its conditions, or an error if the pattern does not exist or database access fails.
 func GetThreatPattern(id uuid.UUID) (*models.ThreatPattern, error) {
 	patternRepository, err := getThreatPatternRepository()
 	if err != nil {
@@ -63,6 +67,8 @@ func GetThreatPattern(id uuid.UUID) (*models.ThreatPattern, error) {
 	return patternRepository.GetByID(nil, id)
 }
 
+// UpdateThreatPattern updates an existing threat pattern's fields within a transaction.
+// Only non-nil fields are updated. Validates threat existence if threatID is provided. Returns the updated pattern.
 func UpdateThreatPattern(id uuid.UUID, name, description *string, threatID *uuid.UUID, isActive *bool) (*models.ThreatPattern, error) {
 	var result *models.ThreatPattern
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
@@ -117,6 +123,8 @@ func UpdateThreatPattern(id uuid.UUID, name, description *string, threatID *uuid
 	return result, err
 }
 
+// DeleteThreatPattern removes a threat pattern from the system by its unique identifier.
+// Returns an error if the pattern does not exist or if deletion fails.
 func DeleteThreatPattern(id uuid.UUID) error {
 	patternRepository, err := getThreatPatternRepository()
 	if err != nil {
@@ -126,6 +134,8 @@ func DeleteThreatPattern(id uuid.UUID) error {
 	return patternRepository.Delete(nil, id)
 }
 
+// ListThreatPatterns retrieves all threat patterns in the system.
+// Returns a slice of patterns with their conditions, or an error if database access fails.
 func ListThreatPatterns() ([]models.ThreatPattern, error) {
 	patternRepository, err := getThreatPatternRepository()
 	if err != nil {
@@ -135,6 +145,8 @@ func ListThreatPatterns() ([]models.ThreatPattern, error) {
 	return patternRepository.List(nil)
 }
 
+// ListActiveThreatPatterns retrieves only active threat patterns in the system.
+// Returns a slice of active patterns with their conditions, or an error if database access fails.
 func ListActiveThreatPatterns() ([]models.ThreatPattern, error) {
 	patternRepository, err := getThreatPatternRepository()
 	if err != nil {
@@ -144,6 +156,8 @@ func ListActiveThreatPatterns() ([]models.ThreatPattern, error) {
 	return patternRepository.ListActive(nil)
 }
 
+// ListThreatPatternsByThreatID retrieves all threat patterns associated with a specific threat.
+// Returns a slice of patterns for the given threat, or an error if database access fails.
 func ListThreatPatternsByThreatID(threatID uuid.UUID) ([]models.ThreatPattern, error) {
 	patternRepository, err := getThreatPatternRepository()
 	if err != nil {
@@ -153,6 +167,8 @@ func ListThreatPatternsByThreatID(threatID uuid.UUID) ([]models.ThreatPattern, e
 	return patternRepository.ListByThreatID(nil, threatID)
 }
 
+// SetThreatPatternActive updates the active status of a threat pattern.
+// Returns an error if the pattern does not exist or if the update fails.
 func SetThreatPatternActive(id uuid.UUID, isActive bool) error {
 	patternRepository, err := getThreatPatternRepository()
 	if err != nil {
@@ -162,6 +178,8 @@ func SetThreatPatternActive(id uuid.UUID, isActive bool) error {
 	return patternRepository.SetActive(nil, id, isActive)
 }
 
+// CreateThreatPatternWithConditions creates a threat pattern and its conditions in a single transaction.
+// Validates all conditions and creates them atomically with the pattern. Returns the created pattern or an error.
 func CreateThreatPatternWithConditions(name, description string, threatID uuid.UUID, isActive bool, conditions []models.PatternCondition) (*models.ThreatPattern, error) {
 	var result *models.ThreatPattern
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {

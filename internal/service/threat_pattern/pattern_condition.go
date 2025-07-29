@@ -17,6 +17,8 @@ func getPatternConditionRepository() (*models.PatternConditionRepository, error)
 	return models.NewPatternConditionRepository(db), nil
 }
 
+// CreatePatternCondition creates a new pattern condition with validation of enum values.
+// Validates that conditionType and operator are valid enum values. Returns the created condition or an error.
 func CreatePatternCondition(patternID uuid.UUID, conditionType, operator, value, relationshipType string) (*models.PatternCondition, error) {
 	condition := &models.PatternCondition{
 		PatternID:        patternID,
@@ -60,6 +62,8 @@ func CreatePatternCondition(patternID uuid.UUID, conditionType, operator, value,
 	return result, err
 }
 
+// GetPatternCondition retrieves a pattern condition by its unique identifier.
+// Returns the condition if found, or an error if the condition does not exist or database access fails.
 func GetPatternCondition(id uuid.UUID) (*models.PatternCondition, error) {
 	conditionRepository, err := getPatternConditionRepository()
 	if err != nil {
@@ -69,6 +73,8 @@ func GetPatternCondition(id uuid.UUID) (*models.PatternCondition, error) {
 	return conditionRepository.GetByID(nil, id)
 }
 
+// UpdatePatternCondition updates an existing pattern condition with validation within a transaction.
+// Only non-nil fields are updated. Validates enum values before updating. Returns the updated condition or an error.
 func UpdatePatternCondition(id uuid.UUID, conditionType, operator, value, relationshipType *string) (*models.PatternCondition, error) {
 	var result *models.PatternCondition
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
@@ -113,6 +119,8 @@ func UpdatePatternCondition(id uuid.UUID, conditionType, operator, value, relati
 	return result, err
 }
 
+// DeletePatternCondition removes a pattern condition from the system by its unique identifier.
+// Returns an error if the condition does not exist or if deletion fails.
 func DeletePatternCondition(id uuid.UUID) error {
 	conditionRepository, err := getPatternConditionRepository()
 	if err != nil {
@@ -122,6 +130,8 @@ func DeletePatternCondition(id uuid.UUID) error {
 	return conditionRepository.Delete(nil, id)
 }
 
+// ListPatternConditionsByPatternID retrieves all conditions associated with a specific threat pattern.
+// Returns a slice of conditions or an error if database access fails.
 func ListPatternConditionsByPatternID(patternID uuid.UUID) ([]models.PatternCondition, error) {
 	conditionRepository, err := getPatternConditionRepository()
 	if err != nil {
@@ -131,6 +141,8 @@ func ListPatternConditionsByPatternID(patternID uuid.UUID) ([]models.PatternCond
 	return conditionRepository.ListByPatternID(nil, patternID)
 }
 
+// DeletePatternConditionsByPatternID removes all conditions associated with a specific threat pattern.
+// Used when deleting a pattern to clean up its conditions. Returns an error if deletion fails.
 func DeletePatternConditionsByPatternID(patternID uuid.UUID) error {
 	conditionRepository, err := getPatternConditionRepository()
 	if err != nil {
@@ -140,6 +152,8 @@ func DeletePatternConditionsByPatternID(patternID uuid.UUID) error {
 	return conditionRepository.DeleteByPatternID(nil, patternID)
 }
 
+// ListAllPatternConditions retrieves all pattern conditions in the system.
+// Returns a slice of all conditions or an error if database access fails.
 func ListAllPatternConditions() ([]models.PatternCondition, error) {
 	conditionRepository, err := getPatternConditionRepository()
 	if err != nil {

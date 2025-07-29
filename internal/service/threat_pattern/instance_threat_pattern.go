@@ -337,22 +337,33 @@ func hasRelationshipToTarget(relationships []models.Relationship, relationshipTy
 }
 
 // Helper functions to call service functions from the main service package
+
+// ListInstances is a wrapper around the main service package function to list all instances.
+// Returns all instances with their product information or an error if database access fails.
 func ListInstances() ([]models.Instance, error) {
 	return service.ListInstances()
 }
 
+// GetProduct is a wrapper around the main service package function to retrieve a product by ID.
+// Returns the product if found, or an error if the product does not exist or database access fails.
 func GetProduct(productID uuid.UUID) (*models.Product, error) {
 	return service.GetProduct(productID)
 }
 
+// ListTagsByProductID is a wrapper around the main service package function to list tags by product.
+// Returns all tags assigned to the specified product or an error if database access fails.
 func ListTagsByProductID(productID uuid.UUID) ([]models.Tag, error) {
 	return service.ListTagsByProductID(productID)
 }
 
+// ListTagsByInstanceID is a wrapper around the main service package function to list tags by instance.
+// Returns all tags assigned to the specified instance or an error if database access fails.
 func ListTagsByInstanceID(instanceID uuid.UUID) ([]models.Tag, error) {
 	return service.ListTagsByInstanceID(instanceID)
 }
 
+// ListRelationshipsByFromInstanceID is a wrapper around the main service package function to list relationships.
+// Returns all relationships originating from the specified instance or an error if database access fails.
 func ListRelationshipsByFromInstanceID(instanceID uuid.UUID) ([]models.Relationship, error) {
 	return service.ListRelationshipsByFromInstanceID(instanceID)
 }

@@ -17,6 +17,8 @@ func getRelationshipRepository() (*models.RelationshipRepository, error) {
 	return models.NewRelationshipRepository(db), nil
 }
 
+// AddRelationshipConsumesApiOf creates bidirectional API consumption relationships between instances or products.
+// Creates 'consumes_api_of' and 'provides_api_to' relationships. Exactly one pair (instances or products) must be provided.
 func AddRelationshipConsumesApiOf(fromInstanceID, toInstanceID *uuid.UUID, fromProductID, toProductID *uuid.UUID) error {
 	// Validate that relationship is between two instances or two products, but not mixed
 	if fromInstanceID != nil && toInstanceID != nil {
@@ -71,6 +73,8 @@ func AddRelationshipConsumesApiOf(fromInstanceID, toInstanceID *uuid.UUID, fromP
 	})
 }
 
+// AddRelationship creates relationships between instances or products with optional reverse relationship.
+// If viceVersaType is provided, creates a bidirectional relationship. Validates entity consistency and existence.
 func AddRelationship(fromInstanceID, fromProductID, toInstanceID, toProductID *uuid.UUID, relType, viceVersaType string) error {
 	// Validate that only one "from" attribute is passed
 	fromCount := 0
@@ -136,6 +140,8 @@ func AddRelationship(fromInstanceID, fromProductID, toInstanceID, toProductID *u
 	})
 }
 
+// DeleteRelationshipById removes a relationship from the system by its unique identifier.
+// Returns an error if the relationship does not exist or if deletion fails.
 func DeleteRelationshipById(id uuid.UUID) error {
 	relationshipRepository, err := getRelationshipRepository()
 	if err != nil {
@@ -145,6 +151,8 @@ func DeleteRelationshipById(id uuid.UUID) error {
 	return relationshipRepository.Delete(nil, id)
 }
 
+// GetRelationship retrieves a relationship by its unique identifier.
+// Returns the relationship if found, or an error if the relationship does not exist or database access fails.
 func GetRelationship(id uuid.UUID) (*models.Relationship, error) {
 	relationshipRepository, err := getRelationshipRepository()
 	if err != nil {
@@ -154,6 +162,8 @@ func GetRelationship(id uuid.UUID) (*models.Relationship, error) {
 	return relationshipRepository.GetByID(nil, id)
 }
 
+// ListRelationships retrieves all relationships in the system.
+// Returns a slice of relationships or an error if database access fails.
 func ListRelationships() ([]models.Relationship, error) {
 	relationshipRepository, err := getRelationshipRepository()
 	if err != nil {
@@ -163,6 +173,8 @@ func ListRelationships() ([]models.Relationship, error) {
 	return relationshipRepository.List(nil)
 }
 
+// ListRelationshipsByFromInstanceID retrieves all relationships originating from a specific instance.
+// Returns a slice of relationships or an error if database access fails.
 func ListRelationshipsByFromInstanceID(fromInstanceID uuid.UUID) ([]models.Relationship, error) {
 	relationshipRepository, err := getRelationshipRepository()
 	if err != nil {
@@ -172,6 +184,8 @@ func ListRelationshipsByFromInstanceID(fromInstanceID uuid.UUID) ([]models.Relat
 	return relationshipRepository.ListByFromInstanceID(nil, fromInstanceID)
 }
 
+// ListRelationshipsByFromProductID retrieves all relationships originating from a specific product.
+// Returns a slice of relationships or an error if database access fails.
 func ListRelationshipsByFromProductID(fromProductID uuid.UUID) ([]models.Relationship, error) {
 	relationshipRepository, err := getRelationshipRepository()
 	if err != nil {
@@ -181,6 +195,8 @@ func ListRelationshipsByFromProductID(fromProductID uuid.UUID) ([]models.Relatio
 	return relationshipRepository.ListByFromProductID(nil, fromProductID)
 }
 
+// ListRelationshipsByType retrieves all relationships of a specific type.
+// Returns a slice of relationships matching the type or an error if database access fails.
 func ListRelationshipsByType(relType string) ([]models.Relationship, error) {
 	relationshipRepository, err := getRelationshipRepository()
 	if err != nil {

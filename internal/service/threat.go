@@ -17,6 +17,8 @@ func getThreatRepository() (*models.ThreatRepository, error) {
 	return models.NewThreatRepository(db), nil
 }
 
+// GetThreat retrieves a threat by its unique identifier.
+// Returns the threat if found, or an error if the threat does not exist or database access fails.
 func GetThreat(id uuid.UUID) (*models.Threat, error) {
 	threatRepository, err := getThreatRepository()
 	if err != nil {
@@ -26,6 +28,8 @@ func GetThreat(id uuid.UUID) (*models.Threat, error) {
 	return threatRepository.GetByID(nil, id)
 }
 
+// CreateThreat creates a new threat with the specified title and description.
+// Returns the created threat with its assigned ID, or an error if creation fails.
 func CreateThreat(title string, description string) (*models.Threat, error) {
 	threat := &models.Threat{
 		Title:       title,
@@ -45,6 +49,8 @@ func CreateThreat(title string, description string) (*models.Threat, error) {
 	return threat, nil
 }
 
+// UpdateThreat updates an existing threat's title and/or description within a transaction.
+// Only non-nil fields are updated. Returns the updated threat or an error if the update fails.
 func UpdateThreat(
 	id uuid.UUID,
 	title *string,
@@ -80,6 +86,8 @@ func UpdateThreat(
 	return updatedThreat, err
 }
 
+// DeleteThreat removes a threat from the system by its unique identifier.
+// Returns an error if the threat does not exist or if deletion fails.
 func DeleteThreat(id uuid.UUID) error {
 	threatRepository, err := getThreatRepository()
 	if err != nil {
@@ -89,6 +97,8 @@ func DeleteThreat(id uuid.UUID) error {
 	return threatRepository.Delete(nil, id)
 }
 
+// ListThreats retrieves all threats in the system.
+// Returns a slice of threats or an error if database access fails.
 func ListThreats() ([]models.Threat, error) {
 	threatRepository, err := getThreatRepository()
 	if err != nil {

@@ -17,6 +17,8 @@ func getThreatAssignmentResolutionRepository() (*models.ThreatAssignmentResoluti
 	return models.NewThreatAssignmentResolutionRepository(db), nil
 }
 
+// CreateThreatResolution creates a new threat resolution for either an instance or product.
+// Exactly one of instanceID or productID must be provided. Returns the created resolution or an error.
 func CreateThreatResolution(
 	threatAssignmentID int,
 	instanceID *uuid.UUID,
@@ -55,6 +57,8 @@ func CreateThreatResolution(
 	return resolution, nil
 }
 
+// UpdateThreatResolution updates an existing threat resolution's status and/or description within a transaction.
+// Automatically removes any delegation when the resolution is updated. Only non-nil fields are updated.
 func UpdateThreatResolution(
 	id uuid.UUID,
 	status *models.ThreatAssignmentResolutionStatus,
@@ -104,6 +108,8 @@ func UpdateThreatResolution(
 	return updatedResolution, err
 }
 
+// GetThreatResolution retrieves a threat resolution by its unique identifier.
+// Returns the resolution if found, or an error if the resolution does not exist or database access fails.
 func GetThreatResolution(id uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -113,6 +119,8 @@ func GetThreatResolution(id uuid.UUID) (*models.ThreatAssignmentResolution, erro
 	return resolutionRepository.GetByID(nil, id)
 }
 
+// GetThreatResolutionByThreatAssignmentID retrieves a threat resolution by its threat assignment ID.
+// Returns the resolution if found, or an error if the resolution does not exist or database access fails.
 func GetThreatResolutionByThreatAssignmentID(threatAssignmentID int) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -122,6 +130,8 @@ func GetThreatResolutionByThreatAssignmentID(threatAssignmentID int) (*models.Th
 	return resolutionRepository.GetOneByThreatAssignmentID(nil, threatAssignmentID)
 }
 
+// GetInstanceLevelThreatResolution retrieves a threat resolution for a specific instance and threat assignment.
+// Returns the instance-level resolution if found, or an error if it does not exist or database access fails.
 func GetInstanceLevelThreatResolution(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -131,6 +141,8 @@ func GetInstanceLevelThreatResolution(threatAssignmentID int, instanceID uuid.UU
 	return resolutionRepository.GetOneByThreatAssignmentIDAndInstanceID(nil, threatAssignmentID, instanceID)
 }
 
+// GetInstanceLevelThreatResolutionWithDelegation retrieves a threat resolution with delegation information.
+// Returns the resolution with associated delegation data, or nil if no resolution exists.
 func GetInstanceLevelThreatResolutionWithDelegation(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolutionWithDelegation, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -167,6 +179,8 @@ func GetInstanceLevelThreatResolutionWithDelegation(threatAssignmentID int, inst
 	return result, nil
 }
 
+// GetProductLevelThreatResolution retrieves a threat resolution for a specific product and threat assignment.
+// Returns the product-level resolution if found, or an error if it does not exist or database access fails.
 func GetProductLevelThreatResolution(threatAssignmentID int, productID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -176,6 +190,8 @@ func GetProductLevelThreatResolution(threatAssignmentID int, productID uuid.UUID
 	return resolutionRepository.GetOneByAssignmentIDAndProductID(nil, threatAssignmentID, productID)
 }
 
+// ListThreatResolutionsByProductID retrieves all threat resolutions for a specific product.
+// Returns a slice of resolutions or an error if database access fails.
 func ListThreatResolutionsByProductID(productID uuid.UUID) ([]models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -185,6 +201,8 @@ func ListThreatResolutionsByProductID(productID uuid.UUID) ([]models.ThreatAssig
 	return resolutionRepository.ListByProductID(nil, productID)
 }
 
+// ListThreatResolutionsByInstanceID retrieves all threat resolutions for a specific instance.
+// Returns a slice of resolutions or an error if database access fails.
 func ListThreatResolutionsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
@@ -194,6 +212,8 @@ func ListThreatResolutionsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAss
 	return resolutionRepository.ListByInstanceID(nil, instanceID)
 }
 
+// DeleteThreatResolution removes a threat resolution and updates upstream delegation statuses.
+// Handles delegation chain updates before deletion. Returns an error if deletion fails or resolution doesn't exist.
 func DeleteThreatResolution(id uuid.UUID) error {
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
 		resolutionRepository, err := getThreatAssignmentResolutionRepository()
@@ -225,6 +245,8 @@ func DeleteThreatResolution(id uuid.UUID) error {
 	})
 }
 
+// ListByDomainWithUnresolvedByInstancesCount retrieves threats with counts of unresolved instances within a domain.
+// Returns threats with statistics about unresolved instances or an error if database access fails.
 func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByInstancesCount, error) {
 	threatRepository, err := getThreatRepository()
 	if err != nil {
@@ -234,6 +256,8 @@ func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.Th
 	return threatRepository.ListByDomainWithUnresolvedByInstancesCount(nil, domainID)
 }
 
+// DelegateResolution creates a delegation from one threat resolution to another.
+// Updates the source resolution status to match the target and creates a delegation record.
 func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targetThreatResolution models.ThreatAssignmentResolution) error {
 	return database.GetDB().Transaction(func(tx *gorm.DB) error {
 
@@ -265,6 +289,8 @@ func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targ
 	})
 }
 
+// GetDelegatedToResolutionByDelegatedByID retrieves the target resolution of a delegation.
+// Returns the resolution that a specific resolution delegates to, or an error if no delegation exists.
 func GetDelegatedToResolutionByDelegatedByID(delegatedByID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	delegationRepository := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
 
