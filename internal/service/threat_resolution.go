@@ -143,6 +143,11 @@ func GetInstanceLevelThreatResolutionWithDelegation(threatAssignmentID int, inst
 		return nil, err
 	}
 
+	// Check if resolution exists
+	if resolution == nil {
+		return nil, nil
+	}
+
 	// Then get the delegation if it exists
 	delegationRepo := models.NewThreatAssignmentResolutionDelegationRepository(database.GetDB())
 	delegations, err := delegationRepo.GetThreatAssignmentResolutionDelegations(nil, &resolution.ID, nil)
