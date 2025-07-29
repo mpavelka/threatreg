@@ -184,7 +184,7 @@ func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Execute pattern matching
-		matches, err := GetInstanceThreatsByThreatPattern()
+		matches, err := GetAllInstancesThreatsByThreatPattern()
 		require.NoError(t, err)
 
 		// Verify matches
@@ -255,7 +255,7 @@ func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Execute pattern matching
-		matches, err := GetInstanceThreatsByThreatPattern()
+		matches, err := GetAllInstancesThreatsByThreatPattern()
 		require.NoError(t, err)
 
 		// Verify no matches for isolated instance
@@ -298,7 +298,7 @@ func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Execute pattern matching
-		matches, err := GetInstanceThreatsByThreatPattern()
+		matches, err := GetAllInstancesThreatsByThreatPattern()
 		require.NoError(t, err)
 
 		// Verify no matches for instance with inactive pattern
@@ -344,7 +344,7 @@ func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Execute pattern matching
-		matches, err := GetInstanceThreatsByThreatPattern()
+		matches, err := GetAllInstancesThreatsByThreatPattern()
 		require.NoError(t, err)
 
 		// Verify tagged instance matches but untagged doesn't
@@ -397,7 +397,7 @@ func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Execute pattern matching
-		matches, err := GetInstanceThreatsByThreatPattern()
+		matches, err := GetAllInstancesThreatsByThreatPattern()
 		require.NoError(t, err)
 
 		// Verify instance1 matches but isolated instance doesn't
@@ -406,5 +406,169 @@ func TestThreatPatternService_GetInstanceThreatsByThreatPattern(t *testing.T) {
 
 		_, isolatedExists := matches[isolatedInstance.ID]
 		assert.False(t, isolatedExists, "Isolated instance should not match (no depends_on relationship)")
+	})
+}
+
+func TestGetInstanceThreatsByThreatPattern(t *testing.T) {
+	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
+		&models.Product{},
+		&models.Instance{},
+		&models.Tag{},
+		&models.Threat{},
+		&models.ThreatPattern{},
+		&models.PatternCondition{},
+	)
+	defer cleanup()
+
+	t.Run("InstanceMatchesPattern", func(t *testing.T) {
+		// Create a product and instance
+		product, err := service.CreateProduct("Web Application", "A web application")
+		require.NoError(t, err)
+
+		instance, err := service.CreateInstance("Web Server", product.ID)
+		require.NoError(t, err)
+
+		// Create a tag and assign it to the instance
+		tag, err := service.CreateTag("internet-facing", "Internet facing component", "#FF0000")
+		require.NoError(t, err)
+
+		err = service.AssignTagToInstance(tag.ID, instance.ID)
+		require.NoError(t, err)
+
+		// Create a threat
+		threat, err := service.CreateThreat("SQL Injection", "SQL injection vulnerability")
+		require.NoError(t, err)
+
+		// Create a threat pattern that should match the instance
+		pattern, err := CreateThreatPatternWithConditions(
+			"Internet-facing Components",
+			"Components facing the internet",
+			threat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "internet-facing",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Test the function
+		matches, err := GetInstanceThreatsByThreatPattern(*instance, *pattern)
+		require.NoError(t, err)
+
+		// Verify the match
+		require.Len(t, matches, 1, "Should have exactly one match")
+		assert.Equal(t, instance.ID, matches[0].InstanceID)
+		assert.Equal(t, threat.ID, matches[0].ThreatID)
+		assert.Equal(t, pattern.ID, matches[0].PatternID)
+		assert.Equal(t, *pattern, matches[0].Pattern)
+	})
+}
+
+func TestGetInstanceThreatsByExistingThreatPatterns(t *testing.T) {
+	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
+		&models.Product{},
+		&models.Instance{},
+		&models.Tag{},
+		&models.Threat{},
+		&models.ThreatPattern{},
+		&models.PatternCondition{},
+	)
+	defer cleanup()
+
+	t.Run("InstanceMatchesMultiplePatterns", func(t *testing.T) {
+		// Create a product and instance
+		product, err := service.CreateProduct("Database System", "A database system")
+		require.NoError(t, err)
+
+		instance, err := service.CreateInstance("Main Database", product.ID)
+		require.NoError(t, err)
+
+		// Create tags and assign them to the instance
+		criticalTag, err := service.CreateTag("critical", "Critical component", "#FF0000")
+		require.NoError(t, err)
+
+		databaseTag, err := service.CreateTag("database", "Database component", "#00FF00")
+		require.NoError(t, err)
+
+		err = service.AssignTagToInstance(criticalTag.ID, instance.ID)
+		require.NoError(t, err)
+
+		err = service.AssignTagToInstance(databaseTag.ID, instance.ID)
+		require.NoError(t, err)
+
+		// Create threats
+		dataBreachThreat, err := service.CreateThreat("Data Breach", "Data breach threat")
+		require.NoError(t, err)
+
+		sqlInjectionThreat, err := service.CreateThreat("SQL Injection", "SQL injection threat")
+		require.NoError(t, err)
+
+		// Create threat patterns
+		criticalPattern, err := CreateThreatPatternWithConditions(
+			"Critical Components",
+			"Critical components pattern",
+			dataBreachThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "critical",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		databasePattern, err := CreateThreatPatternWithConditions(
+			"Database Components",
+			"Database components pattern",
+			sqlInjectionThreat.ID,
+			true,
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "database",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Create an inactive pattern that shouldn't match
+		_, err = CreateThreatPatternWithConditions(
+			"Inactive Pattern",
+			"This pattern is inactive",
+			dataBreachThreat.ID,
+			false, // inactive
+			[]models.PatternCondition{
+				{
+					ConditionType: models.ConditionTypeTag.String(),
+					Operator:      models.OperatorContains.String(),
+					Value:         "database",
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Test the function
+		matches, err := GetInstanceThreatsByExistingThreatPatterns(*instance)
+		require.NoError(t, err)
+
+		// Verify the matches
+		require.Len(t, matches, 2, "Should have exactly two matches")
+
+		// Check that both patterns are matched
+		patternIDs := make(map[uuid.UUID]bool)
+		for _, match := range matches {
+			patternIDs[match.PatternID] = true
+			assert.Equal(t, instance.ID, match.InstanceID)
+		}
+
+		assert.True(t, patternIDs[criticalPattern.ID], "Should match critical pattern")
+		assert.True(t, patternIDs[databasePattern.ID], "Should match database pattern")
 	})
 }

@@ -17,9 +17,9 @@ type ThreatPatternMatch struct {
 	Pattern    models.ThreatPattern
 }
 
-// GetInstanceThreatsByThreatPattern evaluates all instances against threat patterns
+// GetAllInstancesThreatsByThreatPattern evaluates all instances against threat patterns
 // and returns a map of instance IDs to their matching threat patterns
-func GetInstanceThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch, error) {
+func GetAllInstancesThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch, error) {
 	// Get all instances
 	instances, err := ListInstances()
 	if err != nil {
@@ -55,6 +55,49 @@ func GetInstanceThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch, er
 	}
 
 	return result, nil
+}
+
+// GetInstanceThreatsByThreatPattern evaluates a single instance against a single threat pattern
+// and returns the threat pattern matches if the instance matches the pattern
+func GetInstanceThreatsByThreatPattern(instance models.Instance, pattern models.ThreatPattern) ([]ThreatPatternMatch, error) {
+	var matches []ThreatPatternMatch
+
+	if evaluatePattern(instance, pattern) {
+		matches = append(matches, ThreatPatternMatch{
+			InstanceID: instance.ID,
+			ThreatID:   pattern.ThreatID,
+			PatternID:  pattern.ID,
+			Pattern:    pattern,
+		})
+	}
+
+	return matches, nil
+}
+
+// GetInstanceThreatsByExistingThreatPatterns evaluates a single instance against all active threat patterns
+// and returns all matching threat patterns for that instance
+func GetInstanceThreatsByExistingThreatPatterns(instance models.Instance) ([]ThreatPatternMatch, error) {
+	// Get all active threat patterns
+	activePatterns, err := ListActiveThreatPatterns()
+	if err != nil {
+		return nil, fmt.Errorf("error getting active patterns: %w", err)
+	}
+
+	var matches []ThreatPatternMatch
+
+	// Evaluate the instance against all active patterns
+	for _, pattern := range activePatterns {
+		if evaluatePattern(instance, pattern) {
+			matches = append(matches, ThreatPatternMatch{
+				InstanceID: instance.ID,
+				ThreatID:   pattern.ThreatID,
+				PatternID:  pattern.ID,
+				Pattern:    pattern,
+			})
+		}
+	}
+
+	return matches, nil
 }
 
 // evaluatePattern checks if an instance matches a threat pattern
