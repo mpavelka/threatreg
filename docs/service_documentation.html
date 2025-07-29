@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threatreg Service Layer Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 1rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .stats {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 6px;
+            background: #f8f9fa;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+        
+        .category {
+            background: white;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .category-header {
+            background: #667eea;
+            color: white;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s ease;
+            position: relative;
+        }
+        
+        .category-header:hover {
+            background: #5a67d8;
+        }
+        
+        .category-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+        
+        .category-header::after {
+            content: '▼';
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.3s ease;
+        }
+        
+        .category.collapsed .category-header::after {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+        
+        .category-content {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .category.collapsed .category-content {
+            max-height: 0;
+        }
+        
+        .file-section {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .file-section:last-child {
+            border-bottom: none;
+        }
+        
+        .file-header {
+            background: #f8f9fa;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: #4a5568;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .function {
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .function:last-child {
+            border-bottom: none;
+        }
+        
+        .function-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .function-signature {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+        }
+        
+        .function-docs {
+            color: #4a5568;
+            line-height: 1.7;
+        }
+        
+        .function-docs p {
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .function-docs p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .no-docs {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 3rem;
+        }
+        
+        .toc {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .toc h3 {
+            margin-top: 0;
+            color: #2d3748;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .toc li {
+            padding: 0.25rem 0;
+        }
+        
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .toc a:hover {
+            background-color: #f7fafc;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Threatreg Service Layer Documentation</h1>
+        <p>Comprehensive documentation for all public service functions</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-item">
+            <span class="stat-number">11</span>
+            Service Categories
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">98</span>
+            Public Functions
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">2025-07-29</span>
+            Generated
+        </div>
+    </div>
+    
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#control-management">Control Management</a> (5 functions)</li>
+            <li><a href="#domain-management">Domain Management</a> (10 functions)</li>
+            <li><a href="#instance-management">Instance Management</a> (9 functions)</li>
+            <li><a href="#instance-threat-pattern-evaluation">Instance Threat Pattern Evaluation</a> (8 functions)</li>
+            <li><a href="#product-management">Product Management</a> (7 functions)</li>
+            <li><a href="#relationship-management">Relationship Management</a> (8 functions)</li>
+            <li><a href="#tag-management">Tag Management</a> (16 functions)</li>
+            <li><a href="#threat-management">Threat Management</a> (5 functions)</li>
+            <li><a href="#threat-pattern-conditions">Threat Pattern Conditions</a> (7 functions)</li>
+            <li><a href="#threat-pattern-management">Threat Pattern Management</a> (9 functions)</li>
+            <li><a href="#threat-resolution-management">Threat Resolution Management</a> (14 functions)</li>
+        </ul>
+    </div>
+    
+    <div class="category" id="control-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Control Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">control.go</div>
+                <div class="function">
+                    <div class="function-name">GetControl</div>
+                    <div class="function-signature">func GetControl(id uuid.UUID) (*models.Control, error)</div>
+                    <div class="function-docs">
+                        <p>GetControl retrieves a control by its unique identifier.\nReturns the control if found, or an error if the control does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">CreateControl</div>
+                    <div class="function-signature">func CreateControl( Title string, Description string, ) (*models.Control, error)</div>
+                    <div class="function-docs">
+                        <p>CreateControl creates a new security control with the specified title and description.\nReturns the created control with its assigned ID, or an error if creation fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateControl</div>
+                    <div class="function-signature">func UpdateControl( id uuid.UUID, Title *string, Description *string, ) (*models.Control, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateControl updates an existing control's title and/or description within a transaction.\nOnly non-nil fields are updated. Returns the updated control or an error if the update fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteControl</div>
+                    <div class="function-signature">func DeleteControl(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteControl removes a control from the system by its unique identifier.\nReturns an error if the control does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListControls</div>
+                    <div class="function-signature">func ListControls() ([]models.Control, error)</div>
+                    <div class="function-docs">
+                        <p>ListControls retrieves all security controls in the system.\nReturns a slice of controls or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="domain-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Domain Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">domain.go</div>
+                <div class="function">
+                    <div class="function-name">GetDomain</div>
+                    <div class="function-signature">func GetDomain(id uuid.UUID) (*models.Domain, error)</div>
+                    <div class="function-docs">
+                        <p>GetDomain retrieves a domain by its unique identifier.\nReturns the domain if found, or an error if the domain does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">CreateDomain</div>
+                    <div class="function-signature">func CreateDomain( Name string, Description string, ) (*models.Domain, error)</div>
+                    <div class="function-docs">
+                        <p>CreateDomain creates a new domain with the specified name and description.\nReturns the created domain with its assigned ID, or an error if creation fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateDomain</div>
+                    <div class="function-signature">func UpdateDomain( id uuid.UUID, Name *string, Description *string, ) (*models.Domain, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateDomain updates an existing domain's name and/or description within a transaction.\nOnly non-nil fields are updated. Returns the updated domain or an error if the update fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteDomain</div>
+                    <div class="function-signature">func DeleteDomain(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteDomain removes a domain from the system by its unique identifier.\nReturns an error if the domain does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListDomains</div>
+                    <div class="function-signature">func ListDomains() ([]models.Domain, error)</div>
+                    <div class="function-docs">
+                        <p>ListDomains retrieves all domains in the system.\nReturns a slice of domains or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetInstancesByDomainId</div>
+                    <div class="function-signature">func GetInstancesByDomainId(domainID uuid.UUID) ([]models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstancesByDomainId retrieves all instances that belong to a specific domain.\nReturns a slice of instances with their product information or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AddInstanceToDomain</div>
+                    <div class="function-signature">func AddInstanceToDomain(domainID, instanceID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>AddInstanceToDomain associates an instance with a domain.\nReturns an error if the domain or instance does not exist, or if the association fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">RemoveInstanceFromDomain</div>
+                    <div class="function-signature">func RemoveInstanceFromDomain(domainID, instanceID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>RemoveInstanceFromDomain removes the association between an instance and a domain.\nReturns an error if the association does not exist or if removal fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetDomainsByInstance</div>
+                    <div class="function-signature">func GetDomainsByInstance(instanceID uuid.UUID) ([]models.Domain, error)</div>
+                    <div class="function-docs">
+                        <p>GetDomainsByInstance retrieves all domains that contain a specific instance.\nReturns a slice of domains or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetInstancesByDomainIdWithThreatStats</div>
+                    <div class="function-signature">func GetInstancesByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.InstanceWithThreatStats, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstancesByDomainIdWithThreatStats retrieves all instances in a domain with their threat statistics.\nReturns instances with counts of total, resolved, and unresolved threats, or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="instance-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Instance Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">instance.go</div>
+                <div class="function">
+                    <div class="function-name">GetInstance</div>
+                    <div class="function-signature">func GetInstance(id uuid.UUID) (*models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstance retrieves an instance by its unique identifier.\nReturns the instance with its associated product information, or an error if not found.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">CreateInstance</div>
+                    <div class="function-signature">func CreateInstance(name string, instanceOf uuid.UUID) (*models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>CreateInstance creates a new instance with the specified name and product reference.\nThe instanceOf parameter must reference an existing product. Returns the created instance or an error.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateInstance</div>
+                    <div class="function-signature">func UpdateInstance( id uuid.UUID, name *string, instanceOf *uuid.UUID, ) (*models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateInstance updates an existing instance's name and/or product reference within a transaction.\nOnly non-nil fields are updated. Returns the updated instance with refreshed relationships or an error.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteInstance</div>
+                    <div class="function-signature">func DeleteInstance(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteInstance removes an instance from the system by its unique identifier.\nReturns an error if the instance does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListInstances</div>
+                    <div class="function-signature">func ListInstances() ([]models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>ListInstances retrieves all instances in the system with their associated product information.\nReturns a slice of instances or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListInstancesByProductID</div>
+                    <div class="function-signature">func ListInstancesByProductID(productID uuid.UUID) ([]models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>ListInstancesByProductID retrieves all instances that belong to a specific product.\nReturns a slice of instances for the given product or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">FilterInstances</div>
+                    <div class="function-signature">func FilterInstances(instanceName, productName string) ([]models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>FilterInstances searches for instances by name and/or product name using case-insensitive partial matching.\nBoth parameters support partial matches. Returns matching instances or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AssignThreatToInstance</div>
+                    <div class="function-signature">func AssignThreatToInstance(instanceID, threatID uuid.UUID) (*models.ThreatAssignment, error)</div>
+                    <div class="function-docs">
+                        <p>AssignThreatToInstance creates a threat assignment linking a threat to a specific instance.\nReturns the created threat assignment or an error if the assignment already exists or creation fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreatAssignmentsByInstanceID</div>
+                    <div class="function-signature">func ListThreatAssignmentsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAssignment, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreatAssignmentsByInstanceID retrieves all threat assignments for a specific instance.\nReturns a slice of threat assignments with threat details or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="instance-threat-pattern-evaluation">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Instance Threat Pattern Evaluation</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">threat_pattern/instance_threat_pattern.go</div>
+                <div class="function">
+                    <div class="function-name">GetAllInstancesThreatsByThreatPattern</div>
+                    <div class="function-signature">func GetAllInstancesThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch, error)</div>
+                    <div class="function-docs">
+                        <p>GetAllInstancesThreatsByThreatPattern evaluates all instances against threat patterns\nand returns a map of instance IDs to their matching threat patterns</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetInstanceThreatsByThreatPattern</div>
+                    <div class="function-signature">func GetInstanceThreatsByThreatPattern(instance models.Instance, pattern models.ThreatPattern) ([]ThreatPatternMatch, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstanceThreatsByThreatPattern evaluates a single instance against a single threat pattern\nand returns the threat pattern matches if the instance matches the pattern</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetInstanceThreatsByExistingThreatPatterns</div>
+                    <div class="function-signature">func GetInstanceThreatsByExistingThreatPatterns(instance models.Instance) ([]ThreatPatternMatch, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstanceThreatsByExistingThreatPatterns evaluates a single instance against all active threat patterns\nand returns all matching threat patterns for that instance</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListInstances</div>
+                    <div class="function-signature">func ListInstances() ([]models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>Helper functions to call service functions from the main service package\nListInstances is a wrapper around the main service package function to list all instances.\nReturns all instances with their product information or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetProduct</div>
+                    <div class="function-signature">func GetProduct(productID uuid.UUID) (*models.Product, error)</div>
+                    <div class="function-docs">
+                        <p>GetProduct is a wrapper around the main service package function to retrieve a product by ID.\nReturns the product if found, or an error if the product does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListTagsByProductID</div>
+                    <div class="function-signature">func ListTagsByProductID(productID uuid.UUID) ([]models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>ListTagsByProductID is a wrapper around the main service package function to list tags by product.\nReturns all tags assigned to the specified product or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListTagsByInstanceID</div>
+                    <div class="function-signature">func ListTagsByInstanceID(instanceID uuid.UUID) ([]models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>ListTagsByInstanceID is a wrapper around the main service package function to list tags by instance.\nReturns all tags assigned to the specified instance or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListRelationshipsByFromInstanceID</div>
+                    <div class="function-signature">func ListRelationshipsByFromInstanceID(instanceID uuid.UUID) ([]models.Relationship, error)</div>
+                    <div class="function-docs">
+                        <p>ListRelationshipsByFromInstanceID is a wrapper around the main service package function to list relationships.\nReturns all relationships originating from the specified instance or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="product-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Product Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">product.go</div>
+                <div class="function">
+                    <div class="function-name">GetProduct</div>
+                    <div class="function-signature">func GetProduct(id uuid.UUID) (*models.Product, error)</div>
+                    <div class="function-docs">
+                        <p>GetProduct retrieves a product by its unique identifier.\nReturns the product if found, or an error if the product does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">CreateProduct</div>
+                    <div class="function-signature">func CreateProduct( Name string, Description string, ) (*models.Product, error)</div>
+                    <div class="function-docs">
+                        <p>CreateProduct creates a new product with the specified name and description.\nReturns the created product with its assigned ID, or an error if creation fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateProduct</div>
+                    <div class="function-signature">func UpdateProduct( id uuid.UUID, Name *string, Description *string, ) (*models.Product, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateProduct updates an existing product's name and/or description within a transaction.\nOnly non-nil fields are updated. Returns the updated product or an error if the update fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteProduct</div>
+                    <div class="function-signature">func DeleteProduct(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteProduct removes a product from the system by its unique identifier.\nReturns an error if the product does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListProducts</div>
+                    <div class="function-signature">func ListProducts() ([]models.Product, error)</div>
+                    <div class="function-docs">
+                        <p>ListProducts retrieves all products in the system.\nReturns a slice of products or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AssignThreatToProduct</div>
+                    <div class="function-signature">func AssignThreatToProduct(productID, threatID uuid.UUID) (*models.ThreatAssignment, error)</div>
+                    <div class="function-docs">
+                        <p>AssignThreatToProduct creates a threat assignment linking a threat to a specific product.\nReturns the created threat assignment or an error if the assignment already exists or creation fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreatAssignmentsByProductID</div>
+                    <div class="function-signature">func ListThreatAssignmentsByProductID(productID uuid.UUID) ([]models.ThreatAssignment, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreatAssignmentsByProductID retrieves all threat assignments for a specific product.\nReturns a slice of threat assignments with threat details or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="relationship-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Relationship Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">relationship.go</div>
+                <div class="function">
+                    <div class="function-name">AddRelationshipConsumesApiOf</div>
+                    <div class="function-signature">func AddRelationshipConsumesApiOf(fromInstanceID, toInstanceID *uuid.UUID, fromProductID, toProductID *uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>AddRelationshipConsumesApiOf creates bidirectional API consumption relationships between instances or products.\nCreates 'consumes_api_of' and 'provides_api_to' relationships. Exactly one pair (instances or products) must be provided.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AddRelationship</div>
+                    <div class="function-signature">func AddRelationship(fromInstanceID, fromProductID, toInstanceID, toProductID *uuid.UUID, relType, viceVersaType string) error</div>
+                    <div class="function-docs">
+                        <p>AddRelationship creates relationships between instances or products with optional reverse relationship.\nIf viceVersaType is provided, creates a bidirectional relationship. Validates entity consistency and existence.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteRelationshipById</div>
+                    <div class="function-signature">func DeleteRelationshipById(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteRelationshipById removes a relationship from the system by its unique identifier.\nReturns an error if the relationship does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetRelationship</div>
+                    <div class="function-signature">func GetRelationship(id uuid.UUID) (*models.Relationship, error)</div>
+                    <div class="function-docs">
+                        <p>GetRelationship retrieves a relationship by its unique identifier.\nReturns the relationship if found, or an error if the relationship does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListRelationships</div>
+                    <div class="function-signature">func ListRelationships() ([]models.Relationship, error)</div>
+                    <div class="function-docs">
+                        <p>ListRelationships retrieves all relationships in the system.\nReturns a slice of relationships or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListRelationshipsByFromInstanceID</div>
+                    <div class="function-signature">func ListRelationshipsByFromInstanceID(fromInstanceID uuid.UUID) ([]models.Relationship, error)</div>
+                    <div class="function-docs">
+                        <p>ListRelationshipsByFromInstanceID retrieves all relationships originating from a specific instance.\nReturns a slice of relationships or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListRelationshipsByFromProductID</div>
+                    <div class="function-signature">func ListRelationshipsByFromProductID(fromProductID uuid.UUID) ([]models.Relationship, error)</div>
+                    <div class="function-docs">
+                        <p>ListRelationshipsByFromProductID retrieves all relationships originating from a specific product.\nReturns a slice of relationships or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListRelationshipsByType</div>
+                    <div class="function-signature">func ListRelationshipsByType(relType string) ([]models.Relationship, error)</div>
+                    <div class="function-docs">
+                        <p>ListRelationshipsByType retrieves all relationships of a specific type.\nReturns a slice of relationships matching the type or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="tag-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Tag Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">tag.go</div>
+                <div class="function">
+                    <div class="function-name">CreateTag</div>
+                    <div class="function-signature">func CreateTag(name, description, color string) (*models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>CreateTag creates a new tag with the specified name, description, and color.\nReturns the created tag with its assigned ID, or an error if creation fails or the name already exists.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetTag</div>
+                    <div class="function-signature">func GetTag(id uuid.UUID) (*models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>GetTag retrieves a tag by its unique identifier.\nReturns the tag if found, or an error if the tag does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetTagByName</div>
+                    <div class="function-signature">func GetTagByName(name string) (*models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>GetTagByName retrieves a tag by its name.\nReturns the tag if found, or an error if the tag does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateTag</div>
+                    <div class="function-signature">func UpdateTag(id uuid.UUID, name, description, color *string) (*models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateTag updates an existing tag's name, description, and/or color within a transaction.\nOnly non-nil fields are updated. Returns the updated tag or an error if the update fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteTag</div>
+                    <div class="function-signature">func DeleteTag(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteTag removes a tag from the system by its unique identifier.\nReturns an error if the tag does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListTags</div>
+                    <div class="function-signature">func ListTags() ([]models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>ListTags retrieves all tags in the system.\nReturns a slice of tags or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListTagsByProductID</div>
+                    <div class="function-signature">func ListTagsByProductID(productID uuid.UUID) ([]models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>ListTagsByProductID retrieves all tags assigned to a specific product.\nReturns a slice of tags or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListTagsByInstanceID</div>
+                    <div class="function-signature">func ListTagsByInstanceID(instanceID uuid.UUID) ([]models.Tag, error)</div>
+                    <div class="function-docs">
+                        <p>ListTagsByInstanceID retrieves all tags assigned to a specific instance.\nReturns a slice of tags or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AssignTagToProduct</div>
+                    <div class="function-signature">func AssignTagToProduct(tagID, productID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>AssignTagToProduct creates an assignment between a tag and a product.\nValidates that both entities exist and prevents duplicate assignments. Returns an error if assignment fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UnassignTagFromProduct</div>
+                    <div class="function-signature">func UnassignTagFromProduct(tagID, productID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>UnassignTagFromProduct removes the assignment between a tag and a product.\nReturns an error if the assignment does not exist or if removal fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AssignTagToInstance</div>
+                    <div class="function-signature">func AssignTagToInstance(tagID, instanceID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>AssignTagToInstance creates an assignment between a tag and an instance.\nValidates that both entities exist and prevents duplicate assignments. Returns an error if assignment fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UnassignTagFromInstance</div>
+                    <div class="function-signature">func UnassignTagFromInstance(tagID, instanceID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>UnassignTagFromInstance removes the assignment between a tag and an instance.\nReturns an error if the assignment does not exist or if removal fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListProductsByTagID</div>
+                    <div class="function-signature">func ListProductsByTagID(tagID uuid.UUID) ([]models.Product, error)</div>
+                    <div class="function-docs">
+                        <p>ListProductsByTagID retrieves all products that have a specific tag assigned.\nReturns a slice of products or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListInstancesByTagID</div>
+                    <div class="function-signature">func ListInstancesByTagID(tagID uuid.UUID) ([]models.Instance, error)</div>
+                    <div class="function-docs">
+                        <p>ListInstancesByTagID retrieves all instances that have a specific tag assigned.\nReturns a slice of instances or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AssignTagToProductByName</div>
+                    <div class="function-signature">func AssignTagToProductByName(tagName string, productID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>AssignTagToProductByName assigns a tag to a product by tag name, creating the tag if it doesn't exist.\nIf the tag doesn't exist, creates it with default values. Returns an error if assignment fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">AssignTagToInstanceByName</div>
+                    <div class="function-signature">func AssignTagToInstanceByName(tagName string, instanceID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>AssignTagToInstanceByName assigns a tag to an instance by tag name, creating the tag if it doesn't exist.\nIf the tag doesn't exist, creates it with default values. Returns an error if assignment fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="threat-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Threat Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">threat.go</div>
+                <div class="function">
+                    <div class="function-name">GetThreat</div>
+                    <div class="function-signature">func GetThreat(id uuid.UUID) (*models.Threat, error)</div>
+                    <div class="function-docs">
+                        <p>GetThreat retrieves a threat by its unique identifier.\nReturns the threat if found, or an error if the threat does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">CreateThreat</div>
+                    <div class="function-signature">func CreateThreat(title string, description string) (*models.Threat, error)</div>
+                    <div class="function-docs">
+                        <p>CreateThreat creates a new threat with the specified title and description.\nReturns the created threat with its assigned ID, or an error if creation fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateThreat</div>
+                    <div class="function-signature">func UpdateThreat( id uuid.UUID, title *string, description *string, ) (*models.Threat, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateThreat updates an existing threat's title and/or description within a transaction.\nOnly non-nil fields are updated. Returns the updated threat or an error if the update fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteThreat</div>
+                    <div class="function-signature">func DeleteThreat(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteThreat removes a threat from the system by its unique identifier.\nReturns an error if the threat does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreats</div>
+                    <div class="function-signature">func ListThreats() ([]models.Threat, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreats retrieves all threats in the system.\nReturns a slice of threats or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="threat-pattern-conditions">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Threat Pattern Conditions</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">threat_pattern/pattern_condition.go</div>
+                <div class="function">
+                    <div class="function-name">CreatePatternCondition</div>
+                    <div class="function-signature">func CreatePatternCondition(patternID uuid.UUID, conditionType, operator, value, relationshipType string) (*models.PatternCondition, error)</div>
+                    <div class="function-docs">
+                        <p>CreatePatternCondition creates a new pattern condition with validation of enum values.\nValidates that conditionType and operator are valid enum values. Returns the created condition or an error.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetPatternCondition</div>
+                    <div class="function-signature">func GetPatternCondition(id uuid.UUID) (*models.PatternCondition, error)</div>
+                    <div class="function-docs">
+                        <p>GetPatternCondition retrieves a pattern condition by its unique identifier.\nReturns the condition if found, or an error if the condition does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdatePatternCondition</div>
+                    <div class="function-signature">func UpdatePatternCondition(id uuid.UUID, conditionType, operator, value, relationshipType *string) (*models.PatternCondition, error)</div>
+                    <div class="function-docs">
+                        <p>UpdatePatternCondition updates an existing pattern condition with validation within a transaction.\nOnly non-nil fields are updated. Validates enum values before updating. Returns the updated condition or an error.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeletePatternCondition</div>
+                    <div class="function-signature">func DeletePatternCondition(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeletePatternCondition removes a pattern condition from the system by its unique identifier.\nReturns an error if the condition does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListPatternConditionsByPatternID</div>
+                    <div class="function-signature">func ListPatternConditionsByPatternID(patternID uuid.UUID) ([]models.PatternCondition, error)</div>
+                    <div class="function-docs">
+                        <p>ListPatternConditionsByPatternID retrieves all conditions associated with a specific threat pattern.\nReturns a slice of conditions or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeletePatternConditionsByPatternID</div>
+                    <div class="function-signature">func DeletePatternConditionsByPatternID(patternID uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeletePatternConditionsByPatternID removes all conditions associated with a specific threat pattern.\nUsed when deleting a pattern to clean up its conditions. Returns an error if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListAllPatternConditions</div>
+                    <div class="function-signature">func ListAllPatternConditions() ([]models.PatternCondition, error)</div>
+                    <div class="function-docs">
+                        <p>ListAllPatternConditions retrieves all pattern conditions in the system.\nReturns a slice of all conditions or an error if database access fails.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="threat-pattern-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Threat Pattern Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">threat_pattern/threat_pattern.go</div>
+                <div class="function">
+                    <div class="function-name">CreateThreatPattern</div>
+                    <div class="function-signature">func CreateThreatPattern(name, description string, threatID uuid.UUID, isActive bool) (*models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>CreateThreatPattern creates a new threat pattern with validation that the associated threat exists.\nReturns the created pattern with its assigned ID, or an error if creation fails or the threat doesn't exist.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetThreatPattern</div>
+                    <div class="function-signature">func GetThreatPattern(id uuid.UUID) (*models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>GetThreatPattern retrieves a threat pattern by its unique identifier.\nReturns the pattern with its conditions, or an error if the pattern does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateThreatPattern</div>
+                    <div class="function-signature">func UpdateThreatPattern(id uuid.UUID, name, description *string, threatID *uuid.UUID, isActive *bool) (*models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateThreatPattern updates an existing threat pattern's fields within a transaction.\nOnly non-nil fields are updated. Validates threat existence if threatID is provided. Returns the updated pattern.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteThreatPattern</div>
+                    <div class="function-signature">func DeleteThreatPattern(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteThreatPattern removes a threat pattern from the system by its unique identifier.\nReturns an error if the pattern does not exist or if deletion fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreatPatterns</div>
+                    <div class="function-signature">func ListThreatPatterns() ([]models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreatPatterns retrieves all threat patterns in the system.\nReturns a slice of patterns with their conditions, or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListActiveThreatPatterns</div>
+                    <div class="function-signature">func ListActiveThreatPatterns() ([]models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>ListActiveThreatPatterns retrieves only active threat patterns in the system.\nReturns a slice of active patterns with their conditions, or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreatPatternsByThreatID</div>
+                    <div class="function-signature">func ListThreatPatternsByThreatID(threatID uuid.UUID) ([]models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreatPatternsByThreatID retrieves all threat patterns associated with a specific threat.\nReturns a slice of patterns for the given threat, or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">SetThreatPatternActive</div>
+                    <div class="function-signature">func SetThreatPatternActive(id uuid.UUID, isActive bool) error</div>
+                    <div class="function-docs">
+                        <p>SetThreatPatternActive updates the active status of a threat pattern.\nReturns an error if the pattern does not exist or if the update fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">CreateThreatPatternWithConditions</div>
+                    <div class="function-signature">func CreateThreatPatternWithConditions(name, description string, threatID uuid.UUID, isActive bool, conditions []models.PatternCondition) (*models.ThreatPattern, error)</div>
+                    <div class="function-docs">
+                        <p>CreateThreatPatternWithConditions creates a threat pattern and its conditions in a single transaction.\nValidates all conditions and creates them atomically with the pattern. Returns the created pattern or an error.</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+    
+    <div class="category" id="threat-resolution-management">
+        <div class="category-header" onclick="toggleCategory(this)">
+            <h2>Threat Resolution Management</h2>
+        </div>
+        <div class="category-content">
+            <div class="file-section">
+                <div class="file-header">threat_resolution.go</div>
+                <div class="function">
+                    <div class="function-name">CreateThreatResolution</div>
+                    <div class="function-signature">func CreateThreatResolution( threatAssignmentID int, instanceID *uuid.UUID, productID *uuid.UUID, status models.ThreatAssignmentResolutionStatus, description string, ) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>CreateThreatResolution creates a new threat resolution for either an instance or product.\nExactly one of instanceID or productID must be provided. Returns the created resolution or an error.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">UpdateThreatResolution</div>
+                    <div class="function-signature">func UpdateThreatResolution( id uuid.UUID, status *models.ThreatAssignmentResolutionStatus, description *string, ) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>UpdateThreatResolution updates an existing threat resolution's status and/or description within a transaction.\nAutomatically removes any delegation when the resolution is updated. Only non-nil fields are updated.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetThreatResolution</div>
+                    <div class="function-signature">func GetThreatResolution(id uuid.UUID) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>GetThreatResolution retrieves a threat resolution by its unique identifier.\nReturns the resolution if found, or an error if the resolution does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetThreatResolutionByThreatAssignmentID</div>
+                    <div class="function-signature">func GetThreatResolutionByThreatAssignmentID(threatAssignmentID int) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>GetThreatResolutionByThreatAssignmentID retrieves a threat resolution by its threat assignment ID.\nReturns the resolution if found, or an error if the resolution does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetInstanceLevelThreatResolution</div>
+                    <div class="function-signature">func GetInstanceLevelThreatResolution(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstanceLevelThreatResolution retrieves a threat resolution for a specific instance and threat assignment.\nReturns the instance-level resolution if found, or an error if it does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetInstanceLevelThreatResolutionWithDelegation</div>
+                    <div class="function-signature">func GetInstanceLevelThreatResolutionWithDelegation(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolutionWithDelegation, error)</div>
+                    <div class="function-docs">
+                        <p>GetInstanceLevelThreatResolutionWithDelegation retrieves a threat resolution with delegation information.\nReturns the resolution with associated delegation data, or nil if no resolution exists.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetProductLevelThreatResolution</div>
+                    <div class="function-signature">func GetProductLevelThreatResolution(threatAssignmentID int, productID uuid.UUID) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>GetProductLevelThreatResolution retrieves a threat resolution for a specific product and threat assignment.\nReturns the product-level resolution if found, or an error if it does not exist or database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreatResolutionsByProductID</div>
+                    <div class="function-signature">func ListThreatResolutionsByProductID(productID uuid.UUID) ([]models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreatResolutionsByProductID retrieves all threat resolutions for a specific product.\nReturns a slice of resolutions or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListThreatResolutionsByInstanceID</div>
+                    <div class="function-signature">func ListThreatResolutionsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>ListThreatResolutionsByInstanceID retrieves all threat resolutions for a specific instance.\nReturns a slice of resolutions or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DeleteThreatResolution</div>
+                    <div class="function-signature">func DeleteThreatResolution(id uuid.UUID) error</div>
+                    <div class="function-docs">
+                        <p>DeleteThreatResolution removes a threat resolution and updates upstream delegation statuses.\nHandles delegation chain updates before deletion. Returns an error if deletion fails or resolution doesn't exist.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">ListByDomainWithUnresolvedByInstancesCount</div>
+                    <div class="function-signature">func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByInstancesCount, error)</div>
+                    <div class="function-docs">
+                        <p>ListByDomainWithUnresolvedByInstancesCount retrieves threats with counts of unresolved instances within a domain.\nReturns threats with statistics about unresolved instances or an error if database access fails.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">DelegateResolution</div>
+                    <div class="function-signature">func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targetThreatResolution models.ThreatAssignmentResolution) error</div>
+                    <div class="function-docs">
+                        <p>DelegateResolution creates a delegation from one threat resolution to another.\nUpdates the source resolution status to match the target and creates a delegation record.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">GetDelegatedToResolutionByDelegatedByID</div>
+                    <div class="function-signature">func GetDelegatedToResolutionByDelegatedByID(delegatedByID uuid.UUID) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>GetDelegatedToResolutionByDelegatedByID retrieves the target resolution of a delegation.\nReturns the resolution that a specific resolution delegates to, or an error if no delegation exists.</p>
+                    </div>
+                </div>
+                <div class="function">
+                    <div class="function-name">FindResolutionRoot</div>
+                    <div class="function-signature">func FindResolutionRoot(resolution models.ThreatAssignmentResolution, tx *gorm.DB) (*models.ThreatAssignmentResolution, error)</div>
+                    <div class="function-docs">
+                        <p>FindResolutionRoot traverses the delegation chain to find the root resolution</p>
+                    </div>
+                </div>
+            </div>\n        </div>
+    </div>
+
+    <div class="footer">
+        <p>Generated on 2025-07-29 at 16:23:35 | 
+           Total functions documented: 98</p>
+    </div>
+
+    <script>
+        function toggleCategory(header) {
+            const category = header.parentElement;
+            category.classList.toggle('collapsed');
+        }
+        
+        // Initialize all categories as expanded
+        document.addEventListener('DOMContentLoaded', function() {
+            // You can uncomment the next line to start with all categories collapsed
+            // document.querySelectorAll('.category').forEach(cat => cat.classList.add('collapsed'));
+        });
+    </script>
+</body>
+</html>
