@@ -15,6 +15,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
 )
 
 // Server represents the REST API server
@@ -51,6 +53,13 @@ func NewServer() *Server {
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
 	})
+
+	// Swagger documentation endpoints
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	
+	// Alternative OpenAPI endpoints
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/api-docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &Server{
 		router: router,

@@ -1,0 +1,1274 @@
+basePath: /api/v1
+definitions:
+  handlers.CreateControlRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - description
+    - title
+    type: object
+  handlers.CreateDomainRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  handlers.CreateInstanceRequest:
+    properties:
+      instance_of:
+        type: string
+      name:
+        type: string
+    required:
+    - instance_of
+    - name
+    type: object
+  handlers.CreateProductRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  handlers.CreateTagRequest:
+    properties:
+      color:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - color
+    - description
+    - name
+    type: object
+  handlers.CreateThreatRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - description
+    - title
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  handlers.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  handlers.UpdateControlRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.UpdateDomainRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.UpdateInstanceRequest:
+    properties:
+      instance_of:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.UpdateProductRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.UpdateTagRequest:
+    properties:
+      color:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  handlers.UpdateThreatRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  models.Control:
+    properties:
+      controlAssignments:
+        items:
+          $ref: '#/definitions/models.ControlAssignment'
+        type: array
+      description:
+        type: string
+      id:
+        type: string
+      threatControls:
+        items:
+          $ref: '#/definitions/models.ThreatControl'
+        type: array
+      title:
+        type: string
+    type: object
+  models.ControlAssignment:
+    properties:
+      control:
+        $ref: '#/definitions/models.Control'
+      controlID:
+        type: string
+      id:
+        type: integer
+      threatAssignment:
+        $ref: '#/definitions/models.ThreatAssignment'
+      threatAssignmentID:
+        type: integer
+    type: object
+  models.Domain:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      instances:
+        items:
+          $ref: '#/definitions/models.Instance'
+        type: array
+      name:
+        type: string
+    type: object
+  models.Instance:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/models.Domain'
+        type: array
+      id:
+        type: string
+      instanceOf:
+        type: string
+      name:
+        type: string
+      product:
+        $ref: '#/definitions/models.Product'
+      threatAssignments:
+        items:
+          $ref: '#/definitions/models.ThreatAssignment'
+        type: array
+    type: object
+  models.Product:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      instances:
+        items:
+          $ref: '#/definitions/models.Instance'
+        type: array
+      name:
+        type: string
+      threatAssignments:
+        items:
+          $ref: '#/definitions/models.ThreatAssignment'
+        type: array
+    type: object
+  models.Tag:
+    properties:
+      color:
+        description: 'Hex color code like #FF0000'
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      instances:
+        items:
+          $ref: '#/definitions/models.Instance'
+        type: array
+      name:
+        type: string
+      products:
+        items:
+          $ref: '#/definitions/models.Product'
+        type: array
+    type: object
+  models.Threat:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      threatAssignments:
+        items:
+          $ref: '#/definitions/models.ThreatAssignment'
+        type: array
+      threatControls:
+        items:
+          $ref: '#/definitions/models.ThreatControl'
+        type: array
+      title:
+        type: string
+    type: object
+  models.ThreatAssignment:
+    properties:
+      controlAssignments:
+        items:
+          $ref: '#/definitions/models.ControlAssignment'
+        type: array
+      id:
+        type: integer
+      instance:
+        $ref: '#/definitions/models.Instance'
+      instanceID:
+        type: string
+      product:
+        $ref: '#/definitions/models.Product'
+      productID:
+        type: string
+      threat:
+        $ref: '#/definitions/models.Threat'
+      threatID:
+        type: string
+    type: object
+  models.ThreatControl:
+    properties:
+      control:
+        $ref: '#/definitions/models.Control'
+      controlID:
+        type: string
+      id:
+        type: integer
+      threat:
+        $ref: '#/definitions/models.Threat'
+      threatID:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@threatreg.io
+    name: API Support
+  description: |-
+    This is a REST API server for threat registry management.
+    It provides endpoints for managing products, instances, threats, controls, domains, and tags.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Threatreg API
+  version: "1.0"
+paths:
+  /controls:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all security controls in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Control'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all controls
+      tags:
+      - Controls
+    post:
+      consumes:
+      - application/json
+      description: Create a new security control with the provided title and description
+      parameters:
+      - description: Control creation request
+        in: body
+        name: control
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateControlRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Control'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new control
+      tags:
+      - Controls
+  /controls/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a security control by its UUID
+      parameters:
+      - description: Control ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a control
+      tags:
+      - Controls
+    get:
+      consumes:
+      - application/json
+      description: Get a specific security control by its UUID
+      parameters:
+      - description: Control ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Control'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a control by ID
+      tags:
+      - Controls
+    put:
+      consumes:
+      - application/json
+      description: Update a control's title and/or description
+      parameters:
+      - description: Control ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Control update request
+        in: body
+        name: control
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateControlRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Control'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a control
+      tags:
+      - Controls
+  /domains:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all security domains in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Domain'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all domains
+      tags:
+      - Domains
+    post:
+      consumes:
+      - application/json
+      description: Create a new security domain with the provided name and description
+      parameters:
+      - description: Domain creation request
+        in: body
+        name: domain
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateDomainRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Domain'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new domain
+      tags:
+      - Domains
+  /domains/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a security domain by its UUID
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a domain
+      tags:
+      - Domains
+    get:
+      consumes:
+      - application/json
+      description: Get a specific security domain by its UUID
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Domain'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a domain by ID
+      tags:
+      - Domains
+    put:
+      consumes:
+      - application/json
+      description: Update a domain's name and/or description
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Domain update request
+        in: body
+        name: domain
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateDomainRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Domain'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a domain
+      tags:
+      - Domains
+  /instances:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all product instances in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Instance'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all instances
+      tags:
+      - Instances
+    post:
+      consumes:
+      - application/json
+      description: Create a new product instance with the provided name and product
+        reference
+      parameters:
+      - description: Instance creation request
+        in: body
+        name: instance
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateInstanceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Instance'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new instance
+      tags:
+      - Instances
+  /instances/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a product instance by its UUID
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete an instance
+      tags:
+      - Instances
+    get:
+      consumes:
+      - application/json
+      description: Get a specific product instance by its UUID
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Instance'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get an instance by ID
+      tags:
+      - Instances
+    put:
+      consumes:
+      - application/json
+      description: Update an instance's name and/or product reference
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Instance update request
+        in: body
+        name: instance
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateInstanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Instance'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update an instance
+      tags:
+      - Instances
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all products in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Product'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product with the provided name and description
+      parameters:
+      - description: Product creation request
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new product
+      tags:
+      - Products
+  /products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a product by its UUID
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a product
+      tags:
+      - Products
+    get:
+      consumes:
+      - application/json
+      description: Get a specific product by its UUID
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a product by ID
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Update a product's name and/or description
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product update request
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a product
+      tags:
+      - Products
+  /tags:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all tags in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Tag'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all tags
+      tags:
+      - Tags
+    post:
+      consumes:
+      - application/json
+      description: Create a new tag with the provided name, description, and color
+      parameters:
+      - description: Tag creation request
+        in: body
+        name: tag
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Tag'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new tag
+      tags:
+      - Tags
+  /tags/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a tag by its UUID
+      parameters:
+      - description: Tag ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a tag
+      tags:
+      - Tags
+    get:
+      consumes:
+      - application/json
+      description: Get a specific tag by its UUID
+      parameters:
+      - description: Tag ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Tag'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a tag by ID
+      tags:
+      - Tags
+    put:
+      consumes:
+      - application/json
+      description: Update a tag's name, description, and/or color
+      parameters:
+      - description: Tag ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag update request
+        in: body
+        name: tag
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Tag'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a tag
+      tags:
+      - Tags
+  /threats:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all security threats in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Threat'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all threats
+      tags:
+      - Threats
+    post:
+      consumes:
+      - application/json
+      description: Create a new security threat with the provided title and description
+      parameters:
+      - description: Threat creation request
+        in: body
+        name: threat
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateThreatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Threat'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new threat
+      tags:
+      - Threats
+  /threats/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a security threat by its UUID
+      parameters:
+      - description: Threat ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a threat
+      tags:
+      - Threats
+    get:
+      consumes:
+      - application/json
+      description: Get a specific security threat by its UUID
+      parameters:
+      - description: Threat ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Threat'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a threat by ID
+      tags:
+      - Threats
+    put:
+      consumes:
+      - application/json
+      description: Update a threat's title and/or description
+      parameters:
+      - description: Threat ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Threat update request
+        in: body
+        name: threat
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateThreatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Threat'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a threat
+      tags:
+      - Threats
+produces:
+- application/json
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Operations related to product management
+  name: Products
+- description: Operations related to product instance management
+  name: Instances
+- description: Operations related to threat management
+  name: Threats
+- description: Operations related to security control management
+  name: Controls
+- description: Operations related to domain management
+  name: Domains
+- description: Operations related to tag management
+  name: Tags

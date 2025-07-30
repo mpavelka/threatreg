@@ -4,6 +4,7 @@ import (
 	"log"
 	"threatreg/cmd"
 	"threatreg/internal/config"
+	_ "threatreg/docs" // Import generated docs
 )
 
 func main() {

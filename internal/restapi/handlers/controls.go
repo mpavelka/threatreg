@@ -19,6 +19,14 @@ type UpdateControlRequest struct {
 }
 
 // ListControls handles GET /api/v1/controls
+// @Summary List all controls
+// @Description Get a list of all security controls in the system
+// @Tags Controls
+// @Accept json
+// @Produce json
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.Control}
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /controls [get]
 func ListControls(c *gin.Context) {
 	controls, err := service.ListControls()
 	if err != nil {
@@ -30,6 +38,16 @@ func ListControls(c *gin.Context) {
 }
 
 // CreateControl handles POST /api/v1/controls
+// @Summary Create a new control
+// @Description Create a new security control with the provided title and description
+// @Tags Controls
+// @Accept json
+// @Produce json
+// @Param control body CreateControlRequest true "Control creation request"
+// @Success 201 {object} handlers.SuccessResponse{data=models.Control}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /controls [post]
 func CreateControl(c *gin.Context) {
 	var req CreateControlRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,6 +65,16 @@ func CreateControl(c *gin.Context) {
 }
 
 // GetControl handles GET /api/v1/controls/:id
+// @Summary Get a control by ID
+// @Description Get a specific security control by its UUID
+// @Tags Controls
+// @Accept json
+// @Produce json
+// @Param id path string true "Control ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=models.Control}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Router /controls/{id} [get]
 func GetControl(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
@@ -64,6 +92,17 @@ func GetControl(c *gin.Context) {
 }
 
 // UpdateControl handles PUT /api/v1/controls/:id
+// @Summary Update a control
+// @Description Update a control's title and/or description
+// @Tags Controls
+// @Accept json
+// @Produce json
+// @Param id path string true "Control ID (UUID)"
+// @Param control body UpdateControlRequest true "Control update request"
+// @Success 200 {object} handlers.SuccessResponse{data=models.Control}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /controls/{id} [put]
 func UpdateControl(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
@@ -87,6 +126,16 @@ func UpdateControl(c *gin.Context) {
 }
 
 // DeleteControl handles DELETE /api/v1/controls/:id
+// @Summary Delete a control
+// @Description Delete a security control by its UUID
+// @Tags Controls
+// @Accept json
+// @Produce json
+// @Param id path string true "Control ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /controls/{id} [delete]
 func DeleteControl(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {

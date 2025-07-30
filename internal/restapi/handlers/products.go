@@ -19,6 +19,14 @@ type UpdateProductRequest struct {
 }
 
 // ListProducts handles GET /api/v1/products
+// @Summary List all products
+// @Description Get a list of all products in the system
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.Product}
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products [get]
 func ListProducts(c *gin.Context) {
 	products, err := service.ListProducts()
 	if err != nil {
@@ -30,6 +38,16 @@ func ListProducts(c *gin.Context) {
 }
 
 // CreateProduct handles POST /api/v1/products
+// @Summary Create a new product
+// @Description Create a new product with the provided name and description
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param product body CreateProductRequest true "Product creation request"
+// @Success 201 {object} handlers.SuccessResponse{data=models.Product}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products [post]
 func CreateProduct(c *gin.Context) {
 	var req CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,6 +65,16 @@ func CreateProduct(c *gin.Context) {
 }
 
 // GetProduct handles GET /api/v1/products/:id
+// @Summary Get a product by ID
+// @Description Get a specific product by its UUID
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=models.Product}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Router /products/{id} [get]
 func GetProduct(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
@@ -64,6 +92,17 @@ func GetProduct(c *gin.Context) {
 }
 
 // UpdateProduct handles PUT /api/v1/products/:id
+// @Summary Update a product
+// @Description Update a product's name and/or description
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID (UUID)"
+// @Param product body UpdateProductRequest true "Product update request"
+// @Success 200 {object} handlers.SuccessResponse{data=models.Product}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products/{id} [put]
 func UpdateProduct(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
@@ -87,6 +126,16 @@ func UpdateProduct(c *gin.Context) {
 }
 
 // DeleteProduct handles DELETE /api/v1/products/:id
+// @Summary Delete a product
+// @Description Delete a product by its UUID
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products/{id} [delete]
 func DeleteProduct(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {

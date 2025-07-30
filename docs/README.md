@@ -1,15 +1,71 @@
-# Threatreg Service Documentation
+# Threatreg Documentation
 
-This directory contains tools and generated documentation for the Threatreg service layer.
+This directory contains tools and generated documentation for the Threatreg service, including API documentation and service layer documentation.
 
 ## Files
 
+- `docs.go` - Generated OpenAPI/Swagger documentation (auto-generated)
+- `swagger.json` - OpenAPI specification in JSON format (auto-generated)
+- `swagger.yaml` - OpenAPI specification in YAML format (auto-generated)
 - `generate_service_docs.py` - Python script that scans Go service files and generates HTML documentation
 - `service_documentation.html` - Generated HTML documentation with expandable sections (auto-generated)
 
 ## Usage
 
-### Generating Documentation
+### Generating OpenAPI/Swagger Documentation
+
+The REST API documentation is generated using Swagger annotations in the handler code. To regenerate the API documentation after making changes to API endpoints or annotations:
+
+```bash
+# Install the swag tool (if not already installed)
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate Swagger documentation from the project root
+swag init --dir ./ --generalInfo docs.go --output ./docs
+```
+
+The generation process will:
+1. Scan all Go files for Swagger annotations (starting with `// @`)
+2. Parse the main API documentation from `docs.go`
+3. Extract endpoint documentation from handler functions
+4. Generate comprehensive OpenAPI specification files
+
+#### Viewing API Documentation
+
+The API documentation is served automatically when running the REST API server:
+
+```bash
+# Start the REST API server
+./bin/threatreg restapi
+
+# Access interactive Swagger UI at any of these endpoints:
+# http://localhost:8080/swagger/index.html
+# http://localhost:8080/docs/index.html  
+# http://localhost:8080/api-docs/index.html
+```
+
+#### Adding API Documentation
+
+When adding new endpoints or modifying existing ones, add Swagger annotations above your handler functions:
+
+```go
+// CreateProduct handles POST /api/v1/products
+// @Summary Create a new product
+// @Description Create a new product with the provided name and description
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param product body CreateProductRequest true "Product creation request"
+// @Success 201 {object} handlers.SuccessResponse{data=models.Product}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products [post]
+func CreateProduct(c *gin.Context) {
+    // implementation
+}
+```
+
+### Generating Service Documentation
 
 To regenerate the service documentation after making changes to service functions or their docstrings:
 

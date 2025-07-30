@@ -20,6 +20,14 @@ type UpdateInstanceRequest struct {
 }
 
 // ListInstances handles GET /api/v1/instances
+// @Summary List all instances
+// @Description Get a list of all product instances in the system
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.Instance}
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances [get]
 func ListInstances(c *gin.Context) {
 	instances, err := service.ListInstances()
 	if err != nil {
@@ -31,6 +39,16 @@ func ListInstances(c *gin.Context) {
 }
 
 // CreateInstance handles POST /api/v1/instances
+// @Summary Create a new instance
+// @Description Create a new product instance with the provided name and product reference
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param instance body CreateInstanceRequest true "Instance creation request"
+// @Success 201 {object} handlers.SuccessResponse{data=models.Instance}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances [post]
 func CreateInstance(c *gin.Context) {
 	var req CreateInstanceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -48,6 +66,16 @@ func CreateInstance(c *gin.Context) {
 }
 
 // GetInstance handles GET /api/v1/instances/:id
+// @Summary Get an instance by ID
+// @Description Get a specific product instance by its UUID
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=models.Instance}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Router /instances/{id} [get]
 func GetInstance(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
@@ -65,6 +93,17 @@ func GetInstance(c *gin.Context) {
 }
 
 // UpdateInstance handles PUT /api/v1/instances/:id
+// @Summary Update an instance
+// @Description Update an instance's name and/or product reference
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Param instance body UpdateInstanceRequest true "Instance update request"
+// @Success 200 {object} handlers.SuccessResponse{data=models.Instance}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/{id} [put]
 func UpdateInstance(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
@@ -88,6 +127,16 @@ func UpdateInstance(c *gin.Context) {
 }
 
 // DeleteInstance handles DELETE /api/v1/instances/:id
+// @Summary Delete an instance
+// @Description Delete a product instance by its UUID
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/{id} [delete]
 func DeleteInstance(c *gin.Context) {
 	id, err := ParseUUID(c, "id")
 	if err != nil {
