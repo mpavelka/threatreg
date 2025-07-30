@@ -18,6 +18,8 @@ type Config struct {
 	DatabaseName     string `mapstructure:"database_name"`
 	Environment      string `mapstructure:"environment"`
 	SecretKey        string `mapstructure:"secret_key"`
+	APIHost          string `mapstructure:"api_host"`
+	APIPort          string `mapstructure:"api_port"`
 }
 
 var AppConfig Config
@@ -39,6 +41,8 @@ func Load() error {
 	viper.SetDefault("database_name", "app.db")
 	viper.SetDefault("environment", "development")
 	viper.SetDefault("secret_key", "your-secret-key-change-this")
+	viper.SetDefault("api_host", "localhost")
+	viper.SetDefault("api_port", "8080")
 
 	// Configure environment variable handling
 	viper.SetEnvPrefix("APP") // Look for APP_* variables
@@ -85,6 +89,16 @@ func GetDatabaseName() string {
 
 func GetEnvironment() string {
 	return AppConfig.Environment
+}
+
+// GetAPIHost returns the API server host configuration.
+func GetAPIHost() string {
+	return AppConfig.APIHost
+}
+
+// GetAPIPort returns the API server port configuration.
+func GetAPIPort() string {
+	return AppConfig.APIPort
 }
 
 // BuildDatabaseURL constructs a database URL from individual components

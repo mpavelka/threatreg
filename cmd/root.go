@@ -27,7 +27,9 @@ func Execute() {
 
 func init() {
 	initStatusCmd()
+	initRestapiCmd()
 	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(restapiCmd)
 	rootCmd.AddCommand(productCmd)
 	rootCmd.AddCommand(instanceCmd)
 	rootCmd.AddCommand(domainCmd)
