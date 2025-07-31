@@ -36,13 +36,10 @@ Atlas CLI needs to be installed manually:
 
 ```bash
 # Install Atlas CLI
-go install ariga.io/atlas/cmd/atlas@latest
+curl -sSf https://atlasgo.sh | sh
 
 # Install Atlas GORM provider
 go get -u ariga.io/atlas-provider-gorm
-
-# Make sure atlas is in your PATH
-export PATH=$PATH:$(go env GOPATH)/bin
 
 # Verify installation
 atlas version

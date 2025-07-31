@@ -11,7 +11,6 @@ BINARY_NAME=threatreg
 MAIN_PATH=.
 BUILD_DIR=bin
 BINARY_PATH=$(BUILD_DIR)/$(BINARY_NAME)
-ATLAS_CMD=$(shell go env GOPATH)/bin/atlas
 
 # Default target
 help:
@@ -94,38 +93,36 @@ lint:
 
 migrate-apply-sqlite:
 	@echo "⬆️  Applying SQLite database migrations..."
-	@$(ATLAS_CMD) migrate apply --env sqlite --dir file://migrations/sqlite
+	atlas migrate apply --env sqlite --dir file://migrations/sqlite
 
 migrate-apply-postgres:
 	@echo "⬆️  Applying Postgres database migrations..."
-	@$(ATLAS_CMD) migrate apply --env postgres --dir file://migrations/postgres
+	atlas migrate apply --env postgres --dir file://migrations/postgres
 
 migrate-status-sqlite:
 	@echo "📊 Checking SQLite migration status..."
-	@$(ATLAS_CMD) migrate status --env sqlite --dir file://migrations/sqlite
+	atlas migrate status --env sqlite --dir file://migrations/sqlite
 
 migrate-status-postgres:
 	@echo "📊 Checking Postgres migration status..."
-	@$(ATLAS_CMD) migrate status --env postgres --dir file://migrations/postgres
+	atlas migrate status --env postgres --dir file://migrations/postgres
 
 migrate-validate-sqlite:
 	@echo "✅ Validating SQLite migration files..."
-	@$(ATLAS_CMD) migrate validate --env sqlite --dir file://migrations/sqlite
+	atlas migrate validate --env sqlite --dir file://migrations/sqlite
 
 migrate-validate-postgres:
 	@echo "✅ Validating Postgres migration files..."
-	@$(ATLAS_CMD) migrate validate --env postgres --dir file://migrations/postgres
+	atlas migrate validate --env postgres --dir file://migrations/postgres
 
 migrate-gen-sqlite:
 	@echo "📝 Generating SQLite migration from GORM models..."
 	@mkdir -p migrations/sqlite
-	$(go env GOPATH)/bin/atlas migrate diff migration_description  --env sqlite --dir file://migrations/sqlite
+	atlas migrate diff migration_description  --env sqlite --dir file://migrations/sqlite
 
 migrate-gen-postgres:
 	@echo "📝 Generating Postgres migration from GORM models..."
-	@mkdir -p migrations/postgres
-	@read -r DESC?'Enter migration description: '; \
-	$(ATLAS_CMD) migrate diff --env postgres --dir file://migrations/postgres --description "$$DESC"
+	atlas migrate diff --env postgres --dir file://migrations/postgres
 
 # Show application status
 status: build
