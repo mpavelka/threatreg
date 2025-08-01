@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: threatreg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: threatreg
+      POSTGRES_USER: threatreg
+      POSTGRES_PASSWORD: threatreg_dev_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U threatreg -d threatreg"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - threatreg
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  threatreg:
+    driver: bridge
