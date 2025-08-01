@@ -1,4 +1,19 @@
+basePath: /api/v1
 definitions:
+  handlers.AssignThreatToInstanceRequest:
+    properties:
+      threat_id:
+        type: string
+    required:
+    - threat_id
+    type: object
+  handlers.AssignThreatToProductRequest:
+    properties:
+      threat_id:
+        type: string
+    required:
+    - threat_id
+    type: object
   handlers.CreateControlRequest:
     properties:
       description:
@@ -303,8 +318,19 @@ definitions:
       unresolved_by_instance_count:
         type: integer
     type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@threatreg.io
+    name: API Support
+  description: |-
+    This is a REST API server for threat registry management.
+    It provides endpoints for managing products, instances, threats, controls, domains, and tags.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Threatreg API
+  version: "1.0"
 paths:
   /controls:
     get:
@@ -965,6 +991,153 @@ paths:
       summary: Get domains for an instance
       tags:
       - Instances
+  /instances/{id}/threats:
+    get:
+      consumes:
+      - application/json
+      description: Get all threat assignments for a specific instance
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatAssignment'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threat assignments for an instance
+      tags:
+      - Instances
+    post:
+      consumes:
+      - application/json
+      description: Create a threat assignment linking a threat to a specific instance
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Threat assignment request
+        in: body
+        name: threat
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AssignThreatToInstanceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignment'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Assign a threat to an instance
+      tags:
+      - Instances
+  /instances/by-product/{productId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all instances that belong to a specific product
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Instance'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List instances by product
+      tags:
+      - Instances
+  /instances/filter:
+    get:
+      consumes:
+      - application/json
+      description: Search for instances by name and/or product name using case-insensitive
+        partial matching
+      parameters:
+      - description: Instance name filter (partial match)
+        in: query
+        name: instance_name
+        type: string
+      - description: Product name filter (partial match)
+        in: query
+        name: product_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Instance'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Filter instances by name and/or product name
+      tags:
+      - Instances
   /products:
     get:
       consumes:
@@ -1124,6 +1297,81 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: Update a product
+      tags:
+      - Products
+  /products/{id}/threats:
+    get:
+      consumes:
+      - application/json
+      description: Get all threat assignments for a specific product
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatAssignment'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threat assignments for a product
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create a threat assignment linking a threat to a specific product
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Threat assignment request
+        in: body
+        name: threat
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AssignThreatToProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignment'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Assign a threat to a product
       tags:
       - Products
   /tags:
@@ -1485,4 +1733,22 @@ paths:
       summary: List threats by domain with unresolved instance counts
       tags:
       - Threats
+produces:
+- application/json
+schemes:
+- http
+- https
 swagger: "2.0"
+tags:
+- description: Operations related to product management
+  name: Products
+- description: Operations related to product instance management
+  name: Instances
+- description: Operations related to threat management
+  name: Threats
+- description: Operations related to security control management
+  name: Controls
+- description: Operations related to domain management
+  name: Domains
+- description: Operations related to tag management
+  name: Tags

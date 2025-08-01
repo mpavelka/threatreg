@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"threatreg/internal/config"  
+	"threatreg/internal/config"
 	"threatreg/internal/restapi"
 
 	"github.com/spf13/cobra"

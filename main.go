@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"threatreg/cmd"
-	"threatreg/internal/config"
 	_ "threatreg/docs" // Import generated docs
+	"threatreg/internal/config"
 )
 
 func main() {

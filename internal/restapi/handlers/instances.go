@@ -178,3 +178,120 @@ func GetDomainsByInstance(c *gin.Context) {
 
 	ListResponse(c, domains)
 }
+
+// ListInstancesByProduct handles GET /api/v1/instances/by-product/:productId
+// @Summary List instances by product
+// @Description Get all instances that belong to a specific product
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param productId path string true "Product ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.Instance}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/by-product/{productId} [get]
+func ListInstancesByProduct(c *gin.Context) {
+	productID, err := ParseUUID(c, "productId")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	instances, err := service.ListInstancesByProductID(productID)
+	if err != nil {
+		InternalError(c, err, "Failed to retrieve instances for product")
+		return
+	}
+
+	ListResponse(c, instances)
+}
+
+// FilterInstances handles GET /api/v1/instances/filter
+// @Summary Filter instances by name and/or product name
+// @Description Search for instances by name and/or product name using case-insensitive partial matching
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param instance_name query string false "Instance name filter (partial match)"
+// @Param product_name query string false "Product name filter (partial match)"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.Instance}
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/filter [get]
+func FilterInstances(c *gin.Context) {
+	instanceName := c.Query("instance_name")
+	productName := c.Query("product_name")
+
+	instances, err := service.FilterInstances(instanceName, productName)
+	if err != nil {
+		InternalError(c, err, "Failed to filter instances")
+		return
+	}
+
+	ListResponse(c, instances)
+}
+
+// AssignThreatToInstanceRequest represents the request payload for assigning a threat to an instance
+type AssignThreatToInstanceRequest struct {
+	ThreatID uuid.UUID `json:"threat_id" binding:"required"`
+}
+
+// AssignThreatToInstance handles POST /api/v1/instances/:id/threats
+// @Summary Assign a threat to an instance
+// @Description Create a threat assignment linking a threat to a specific instance
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Param threat body AssignThreatToInstanceRequest true "Threat assignment request"
+// @Success 201 {object} handlers.SuccessResponse{data=models.ThreatAssignment}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/{id}/threats [post]
+func AssignThreatToInstance(c *gin.Context) {
+	instanceID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	var req AssignThreatToInstanceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	threatAssignment, err := service.AssignThreatToInstance(instanceID, req.ThreatID)
+	if err != nil {
+		InternalError(c, err, "Failed to assign threat to instance")
+		return
+	}
+
+	CreatedResponse(c, threatAssignment, "Threat assignment")
+}
+
+// ListThreatAssignmentsByInstance handles GET /api/v1/instances/:id/threats
+// @Summary List threat assignments for an instance
+// @Description Get all threat assignments for a specific instance
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.ThreatAssignment}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/{id}/threats [get]
+func ListThreatAssignmentsByInstance(c *gin.Context) {
+	instanceID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	threatAssignments, err := service.ListThreatAssignmentsByInstanceID(instanceID)
+	if err != nil {
+		InternalError(c, err, "Failed to retrieve threat assignments for instance")
+		return
+	}
+
+	ListResponse(c, threatAssignments)
+}

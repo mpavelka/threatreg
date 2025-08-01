@@ -8,15 +8,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 	"threatreg/internal/config"
 	"threatreg/internal/database"
 	"threatreg/internal/restapi/handlers"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Server represents the REST API server
@@ -56,7 +56,7 @@ func NewServer() *Server {
 
 	// Swagger documentation endpoints
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	
+
 	// Alternative OpenAPI endpoints
 	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	router.GET("/api-docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -84,6 +84,8 @@ func (s *Server) setupRoutes() {
 			products.GET("/:id", handlers.GetProduct)
 			products.PUT("/:id", handlers.UpdateProduct)
 			products.DELETE("/:id", handlers.DeleteProduct)
+			products.POST("/:id/threats", handlers.AssignThreatToProduct)
+			products.GET("/:id/threats", handlers.ListThreatAssignmentsByProduct)
 		}
 
 		// Instances endpoints
@@ -91,10 +93,14 @@ func (s *Server) setupRoutes() {
 		{
 			instances.GET("", handlers.ListInstances)
 			instances.POST("", handlers.CreateInstance)
+			instances.GET("/by-product/:productId", handlers.ListInstancesByProduct)
+			instances.GET("/filter", handlers.FilterInstances)
 			instances.GET("/:id", handlers.GetInstance)
 			instances.GET("/:id/domains", handlers.GetDomainsByInstance)
 			instances.PUT("/:id", handlers.UpdateInstance)
 			instances.DELETE("/:id", handlers.DeleteInstance)
+			instances.POST("/:id/threats", handlers.AssignThreatToInstance)
+			instances.GET("/:id/threats", handlers.ListThreatAssignmentsByInstance)
 		}
 
 		// Threats endpoints

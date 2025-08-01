@@ -4,6 +4,7 @@ import (
 	"threatreg/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // CreateProductRequest represents the request payload for creating a product
@@ -149,4 +150,70 @@ func DeleteProduct(c *gin.Context) {
 	}
 
 	DeletedResponse(c, "Product")
+}
+
+// AssignThreatToProductRequest represents the request payload for assigning a threat to a product
+type AssignThreatToProductRequest struct {
+	ThreatID uuid.UUID `json:"threat_id" binding:"required"`
+}
+
+// AssignThreatToProduct handles POST /api/v1/products/:id/threats
+// @Summary Assign a threat to a product
+// @Description Create a threat assignment linking a threat to a specific product
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID (UUID)"
+// @Param threat body AssignThreatToProductRequest true "Threat assignment request"
+// @Success 201 {object} handlers.SuccessResponse{data=models.ThreatAssignment}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products/{id}/threats [post]
+func AssignThreatToProduct(c *gin.Context) {
+	productID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	var req AssignThreatToProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	threatAssignment, err := service.AssignThreatToProduct(productID, req.ThreatID)
+	if err != nil {
+		InternalError(c, err, "Failed to assign threat to product")
+		return
+	}
+
+	CreatedResponse(c, threatAssignment, "Threat assignment")
+}
+
+// ListThreatAssignmentsByProduct handles GET /api/v1/products/:id/threats
+// @Summary List threat assignments for a product
+// @Description Get all threat assignments for a specific product
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.ThreatAssignment}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products/{id}/threats [get]
+func ListThreatAssignmentsByProduct(c *gin.Context) {
+	productID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	threatAssignments, err := service.ListThreatAssignmentsByProductID(productID)
+	if err != nil {
+		InternalError(c, err, "Failed to retrieve threat assignments for product")
+		return
+	}
+
+	ListResponse(c, threatAssignments)
 }

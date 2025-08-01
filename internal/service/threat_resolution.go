@@ -245,7 +245,6 @@ func DeleteThreatResolution(id uuid.UUID) error {
 	})
 }
 
-
 // DelegateResolution creates a delegation from one threat resolution to another.
 // Updates the source resolution status to match the target and creates a delegation record.
 func DelegateResolution(threatResolution models.ThreatAssignmentResolution, targetThreatResolution models.ThreatAssignmentResolution) error {
