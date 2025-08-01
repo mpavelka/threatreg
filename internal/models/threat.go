@@ -6,11 +6,11 @@ import (
 )
 
 type Threat struct {
-	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
-	Title             string             `gorm:"type:varchar(255)"`
-	Description       string             `gorm:"type:text"`
-	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	ThreatControls    []ThreatControl    `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Title             string             `gorm:"type:varchar(255)" json:"title"`
+	Description       string             `gorm:"type:text" json:"description"`
+	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threatAssignments"`
+	ThreatControls    []ThreatControl    `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threatControls"`
 }
 
 // ThreatWithUnresolvedInstanceCount represents a threat with count of unresolved instances in a domain

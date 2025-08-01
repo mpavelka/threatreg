@@ -5,9 +5,9 @@ import (
 )
 
 type ThreatControl struct {
-	ID        int       `gorm:"primaryKey;autoIncrement;not null;unique"`
-	ThreatID  uuid.UUID `gorm:"type:uuid"`
-	ControlID uuid.UUID `gorm:"type:uuid"`
-	Threat    Threat    `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	Control   Control   `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	ID        int       `gorm:"primaryKey;autoIncrement;not null;unique" json:"id"`
+	ThreatID  uuid.UUID `gorm:"type:uuid" json:"threatID"`
+	ControlID uuid.UUID `gorm:"type:uuid" json:"controlID"`
+	Threat    Threat    `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threat"`
+	Control   Control   `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"control"`
 }

@@ -5,9 +5,9 @@ import (
 )
 
 type ControlAssignment struct {
-	ID                 int              `gorm:"primaryKey;autoIncrement;not null;unique"`
-	ThreatAssignmentID int              `gorm:"not null"`
-	ControlID          uuid.UUID        `gorm:"type:uuid"`
-	ThreatAssignment   ThreatAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	Control            Control          `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	ID                 int              `gorm:"primaryKey;autoIncrement;not null;unique" json:"id"`
+	ThreatAssignmentID int              `gorm:"not null" json:"threatAssignmentID"`
+	ControlID          uuid.UUID        `gorm:"type:uuid" json:"controlID"`
+	ThreatAssignment   ThreatAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threatAssignment"`
+	Control            Control          `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"control"`
 }

@@ -6,10 +6,10 @@ import (
 )
 
 type Domain struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique"`
-	Name        string     `gorm:"type:varchar(255);index"`
-	Description string     `gorm:"type:text"`
-	Instances   []Instance `gorm:"many2many:domain_instances;"`
+	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Name        string     `gorm:"type:varchar(255);index" json:"name"`
+	Description string     `gorm:"type:text" json:"description"`
+	Instances   []Instance `gorm:"many2many:domain_instances;" json:"instances"`
 }
 
 func (d *Domain) BeforeCreate(tx *gorm.DB) error {

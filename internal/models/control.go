@@ -6,11 +6,11 @@ import (
 )
 
 type Control struct {
-	ID                 uuid.UUID           `gorm:"type:uuid;primaryKey;not null;unique"`
-	Title              string              `gorm:"type:varchar(255)"`
-	Description        string              `gorm:"type:text"`
-	ControlAssignments []ControlAssignment `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	ThreatControls     []ThreatControl     `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	ID                 uuid.UUID           `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Title              string              `gorm:"type:varchar(255)" json:"title"`
+	Description        string              `gorm:"type:text" json:"description"`
+	ControlAssignments []ControlAssignment `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"controlAssignments"`
+	ThreatControls     []ThreatControl     `gorm:"foreignKey:ControlID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threatControls"`
 }
 
 func (c *Control) BeforeCreate(tx *gorm.DB) (err error) {

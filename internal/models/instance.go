@@ -6,12 +6,12 @@ import (
 )
 
 type Instance struct {
-	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
-	Name              string             `gorm:"type:varchar(255);index"`
-	InstanceOf        uuid.UUID          `gorm:"type:uuid"`
-	Product           Product            `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	Domains           []Domain           `gorm:"many2many:domain_instances;"`
+	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Name              string             `gorm:"type:varchar(255);index" json:"name"`
+	InstanceOf        uuid.UUID          `gorm:"type:uuid" json:"instanceOf"`
+	Product           Product            `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"product"`
+	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threatAssignments"`
+	Domains           []Domain           `gorm:"many2many:domain_instances;" json:"domains"`
 }
 
 func (i *Instance) BeforeCreate(tx *gorm.DB) (err error) {

@@ -6,12 +6,12 @@ import (
 )
 
 type Tag struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique"`
-	Name        string     `gorm:"type:varchar(255);uniqueIndex;not null"`
-	Description string     `gorm:"type:text"`
-	Color       string     `gorm:"type:varchar(7)"` // Hex color code like #FF0000
-	Products    []Product  `gorm:"many2many:product_tags;"`
-	Instances   []Instance `gorm:"many2many:instance_tags;"`
+	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Name        string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
+	Description string     `gorm:"type:text" json:"description"`
+	Color       string     `gorm:"type:varchar(7)" json:"color"` // Hex color code like #FF0000
+	Products    []Product  `gorm:"many2many:product_tags;" json:"products"`
+	Instances   []Instance `gorm:"many2many:instance_tags;" json:"instances"`
 }
 
 func (t *Tag) BeforeCreate(tx *gorm.DB) error {

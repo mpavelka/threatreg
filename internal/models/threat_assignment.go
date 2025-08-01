@@ -9,14 +9,14 @@ import (
 )
 
 type ThreatAssignment struct {
-	ID                 int                 `gorm:"primaryKey;autoIncrement;not null;unique"`
-	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment"`
-	ProductID          uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment"`
-	InstanceID         uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment"`
-	Threat             Threat              `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	Product            Product             `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	Instance           Instance            `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	ControlAssignments []ControlAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	ID                 int                 `gorm:"primaryKey;autoIncrement;not null;unique" json:"id"`
+	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"threatID"`
+	ProductID          uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"productID"`
+	InstanceID         uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"instanceID"`
+	Threat             Threat              `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threat"`
+	Product            Product             `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"product"`
+	Instance           Instance            `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"instance"`
+	ControlAssignments []ControlAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"controlAssignments"`
 }
 
 // BeforeCreate ensures exactly one of ProductID or InstanceID is set

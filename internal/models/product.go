@@ -7,11 +7,11 @@ import (
 
 // Product represents a product entity in the domain
 type Product struct {
-	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique"`
-	Name              string             `gorm:"type:varchar(255);index"`
-	Description       string             `gorm:"type:text"`
-	Instances         []Instance         `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
-	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	ID                uuid.UUID          `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Name              string             `gorm:"type:varchar(255);index" json:"name"`
+	Description       string             `gorm:"type:text" json:"description"`
+	Instances         []Instance         `gorm:"foreignKey:InstanceOf;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"instances"`
+	ThreatAssignments []ThreatAssignment `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threatAssignments"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID
