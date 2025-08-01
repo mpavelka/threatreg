@@ -141,3 +141,14 @@ func ListThreatAssignmentsByProductID(productID uuid.UUID) ([]models.ThreatAssig
 
 	return threatAssignmentRepository.ListByProductID(nil, productID)
 }
+
+// ListThreatAssignmentsByProductIDWithResolutionByInstanceID retrieves all threat assignments for a product with resolution information filtered to a specific instance.
+// Returns threat assignments for the product, but only shows resolution status if it matches the given resolutionInstanceID.
+func ListThreatAssignmentsByProductIDWithResolutionByInstanceID(productID, resolutionInstanceID uuid.UUID) ([]models.ThreatAssignmentWithResolution, error) {
+	threatAssignmentRepository, err := getThreatAssignmentRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatAssignmentRepository.ListWithResolutionByProductID(nil, productID, resolutionInstanceID)
+}

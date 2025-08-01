@@ -1707,6 +1707,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/products/{id}/threats/with-resolution/{instanceId}": {
+            "get": {
+                "description": "Get all threat assignments for a specific product, showing resolution status only for the specified instance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "List threat assignments with resolution status for a product filtered by instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Instance ID (UUID) to filter resolutions",
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/handlers.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.ThreatAssignmentWithResolution"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tags": {
             "get": {
                 "description": "Get a list of all tags in the system",
@@ -2730,6 +2796,62 @@ const docTemplate = `{
                 },
                 "productID": {
                     "type": "string"
+                },
+                "threat": {
+                    "$ref": "#/definitions/models.Threat"
+                },
+                "threatID": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ThreatAssignmentResolutionStatus": {
+            "type": "string",
+            "enum": [
+                "resolved",
+                "awaiting",
+                "accepted"
+            ],
+            "x-enum-varnames": [
+                "ThreatAssignmentResolutionStatusResolved",
+                "ThreatAssignmentResolutionStatusAwaiting",
+                "ThreatAssignmentResolutionStatusAccepted"
+            ]
+        },
+        "models.ThreatAssignmentWithResolution": {
+            "type": "object",
+            "properties": {
+                "controlAssignments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ControlAssignment"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "instance": {
+                    "$ref": "#/definitions/models.Instance"
+                },
+                "instanceID": {
+                    "type": "string"
+                },
+                "isDelegated": {
+                    "type": "boolean"
+                },
+                "product": {
+                    "$ref": "#/definitions/models.Product"
+                },
+                "productID": {
+                    "type": "string"
+                },
+                "resolutionStatus": {
+                    "description": "Additional fields for resolution and delegation status",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ThreatAssignmentResolutionStatus"
+                        }
+                    ]
                 },
                 "threat": {
                     "$ref": "#/definitions/models.Threat"

@@ -162,6 +162,37 @@ func (r *ThreatAssignmentRepository) ListByInstanceID(tx *gorm.DB, instanceID uu
 	return assignments, nil
 }
 
+// ListWithResolutionByProductID retrieves threat assignments with resolution and delegation status for a product
+// The resolutionInstanceID parameter filters which resolutions to include - only resolutions for that specific instance will be shown
+func (r *ThreatAssignmentRepository) ListWithResolutionByProductID(tx *gorm.DB, productID, resolutionInstanceID uuid.UUID) ([]ThreatAssignmentWithResolution, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var results []ThreatAssignmentWithResolution
+
+	// Use GORM to join with resolution and delegation tables, similar to ListByProductID
+	// Filter resolutions to only include those for the specified resolutionInstanceID
+	err := tx.Table("threat_assignments ta").
+		Select(`ta.*, 
+			tar.status as resolution_status,
+			CASE WHEN tard.id IS NOT NULL THEN 1 ELSE 0 END as is_delegated`).
+		Joins("LEFT JOIN threat_assignment_resolutions tar ON ta.id = tar.threat_assignment_id AND tar.instance_id = ?", resolutionInstanceID).
+		Joins("LEFT JOIN threat_assignment_resolution_delegations tard ON tar.id = tard.delegated_by").
+		Where("ta.product_id = ?", productID).
+		Preload("Threat").
+		Preload("Product").
+		Preload("Instance").
+		Preload("ControlAssignments").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 // isUniqueConstraintError checks if the error is a unique constraint violation
 func isUniqueConstraintError(err error) bool {
 	if err == nil {
@@ -177,4 +208,12 @@ func isUniqueConstraintError(err error) bool {
 		return true
 	}
 	return false
+}
+
+// ThreatAssignmentWithResolution extends ThreatAssignment with resolution status and delegation info
+type ThreatAssignmentWithResolution struct {
+	ThreatAssignment
+	// Additional fields for resolution and delegation status
+	ResolutionStatus *ThreatAssignmentResolutionStatus `json:"resolutionStatus,omitempty"`
+	IsDelegated      bool                              `json:"isDelegated"`
 }

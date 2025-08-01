@@ -86,6 +86,7 @@ func (s *Server) setupRoutes() {
 			products.DELETE("/:id", handlers.DeleteProduct)
 			products.POST("/:id/threats", handlers.AssignThreatToProduct)
 			products.GET("/:id/threats", handlers.ListThreatAssignmentsByProduct)
+			products.GET("/:id/threats/with-resolution/:instanceId", handlers.ListThreatAssignmentsByProductWithResolutionByInstance)
 		}
 
 		// Instances endpoints

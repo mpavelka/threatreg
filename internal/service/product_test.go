@@ -386,3 +386,109 @@ func TestProductService_Integration(t *testing.T) {
 		assert.Len(t, assignments, 0)
 	})
 }
+
+func TestListThreatAssignmentsByProductIDWithResolutionByInstanceID(t *testing.T) {
+	cleanup := testutil.SetupTestDatabase(t)
+	defer cleanup()
+
+	t.Run("Happy Flow", func(t *testing.T) {
+		// Create product1 and product2
+		product1, err := CreateProduct("Product 1", "First test product")
+		require.NoError(t, err)
+		product2, err := CreateProduct("Product 2", "Second test product")
+		require.NoError(t, err)
+
+		// Create instance1 (for product1) and instance2 (for product2)
+		instance1, err := CreateInstance("Instance 1", product1.ID)
+		require.NoError(t, err)
+		instance2, err := CreateInstance("Instance 2", product2.ID)
+		require.NoError(t, err)
+
+		// Create threat1 and threat2
+		threat1, err := CreateThreat("Threat 1", "First test threat")
+		require.NoError(t, err)
+		threat2, err := CreateThreat("Threat 2", "Second test threat")
+		require.NoError(t, err)
+
+		// Assign threat1 to product1
+		assignment1, err := AssignThreatToProduct(product1.ID, threat1.ID)
+		require.NoError(t, err)
+
+		// Assign threat2 to instance2
+		assignment2, err := AssignThreatToInstance(threat2.ID, instance2.ID)
+		require.NoError(t, err)
+
+		// Create threat resolutions for both instance1 and instance2
+		resolution1, err := CreateThreatResolution(
+			assignment1.ID,
+			&instance1.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusAwaiting,
+			"Resolution for instance1",
+		)
+		require.NoError(t, err)
+
+		resolution2, err := CreateThreatResolution(
+			assignment2.ID,
+			&instance2.ID,
+			nil,
+			models.ThreatAssignmentResolutionStatusAwaiting,
+			"Resolution for instance2",
+		)
+		require.NoError(t, err)
+
+		// Delegate resolution1 to resolution2
+		err = DelegateResolution(*resolution1, *resolution2)
+		require.NoError(t, err)
+
+		// Mark resolution2 as resolved
+		resolvedStatus := models.ThreatAssignmentResolutionStatusResolved
+		_, err = UpdateThreatResolution(resolution2.ID, &resolvedStatus, nil)
+		require.NoError(t, err)
+
+		// Test ListThreatAssignmentsByProductIDWithResolutionByInstanceID for product1 filtered by instance1
+		results, err := ListThreatAssignmentsByProductIDWithResolutionByInstanceID(product1.ID, instance1.ID)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Len(t, results, 1, "Should return one threat assignment for product1")
+		
+		result := results[0]
+		assert.Equal(t, assignment1.ID, result.ID)
+		assert.Equal(t, threat1.ID, result.ThreatID)
+		assert.Equal(t, product1.ID, result.ProductID)
+		assert.Equal(t, uuid.Nil, result.InstanceID) // Product assignment should have nil instance ID
+
+		// Verify threat relationship is loaded
+		assert.Equal(t, threat1.ID, result.Threat.ID)
+		assert.Equal(t, "Threat 1", result.Threat.Title)
+
+		// Verify product relationship is loaded
+		assert.Equal(t, product1.ID, result.Product.ID)
+		assert.Equal(t, "Product 1", result.Product.Name)
+
+		// Verify resolution status - should show resolved because resolution1 was delegated to resolution2 which is resolved
+		assert.NotNil(t, result.ResolutionStatus)
+		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, *result.ResolutionStatus)
+
+		// Verify delegation status
+		assert.True(t, result.IsDelegated, "Should show as delegated")
+
+		// Test with different instance filter - should return same assignment but no resolution info
+		resultsOtherInstance, err := ListThreatAssignmentsByProductIDWithResolutionByInstanceID(product1.ID, instance2.ID)
+		require.NoError(t, err)
+
+		assert.Len(t, resultsOtherInstance, 1, "Should still return the threat assignment for product1")
+		otherResult := resultsOtherInstance[0]
+		assert.Equal(t, assignment1.ID, otherResult.ID)
+		
+		// But resolution info should be nil since we filtered by instance2 but resolution1 is for instance1
+		assert.Nil(t, otherResult.ResolutionStatus, "Should not have resolution status for different instance")
+		assert.False(t, otherResult.IsDelegated, "Should not show as delegated for different instance")
+
+		// Test with product2 - should return no assignments since threat2 was assigned to instance2, not product2
+		resultsProduct2, err := ListThreatAssignmentsByProductIDWithResolutionByInstanceID(product2.ID, instance2.ID)
+		require.NoError(t, err)
+		assert.Len(t, resultsProduct2, 0, "Should return no assignments for product2 since threat2 was assigned to instance2")
+	})
+}

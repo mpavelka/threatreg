@@ -217,3 +217,37 @@ func ListThreatAssignmentsByProduct(c *gin.Context) {
 
 	ListResponse(c, threatAssignments)
 }
+
+// ListThreatAssignmentsByProductWithResolutionByInstance handles GET /api/v1/products/:id/threats/with-resolution/:instanceId
+// @Summary List threat assignments with resolution status for a product filtered by instance
+// @Description Get all threat assignments for a specific product, showing resolution status only for the specified instance
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID (UUID)"
+// @Param instanceId path string true "Instance ID (UUID) to filter resolutions"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.ThreatAssignmentWithResolution}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /products/{id}/threats/with-resolution/{instanceId} [get]
+func ListThreatAssignmentsByProductWithResolutionByInstance(c *gin.Context) {
+	productID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	resolutionInstanceID, err := ParseUUID(c, "instanceId")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	threatAssignments, err := service.ListThreatAssignmentsByProductIDWithResolutionByInstanceID(productID, resolutionInstanceID)
+	if err != nil {
+		InternalError(c, err, "Failed to retrieve threat assignments with resolution for product")
+		return
+	}
+
+	ListResponse(c, threatAssignments)
+}

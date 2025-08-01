@@ -294,6 +294,43 @@ definitions:
       threatID:
         type: string
     type: object
+  models.ThreatAssignmentResolutionStatus:
+    enum:
+    - resolved
+    - awaiting
+    - accepted
+    type: string
+    x-enum-varnames:
+    - ThreatAssignmentResolutionStatusResolved
+    - ThreatAssignmentResolutionStatusAwaiting
+    - ThreatAssignmentResolutionStatusAccepted
+  models.ThreatAssignmentWithResolution:
+    properties:
+      controlAssignments:
+        items:
+          $ref: '#/definitions/models.ControlAssignment'
+        type: array
+      id:
+        type: integer
+      instance:
+        $ref: '#/definitions/models.Instance'
+      instanceID:
+        type: string
+      isDelegated:
+        type: boolean
+      product:
+        $ref: '#/definitions/models.Product'
+      productID:
+        type: string
+      resolutionStatus:
+        allOf:
+        - $ref: '#/definitions/models.ThreatAssignmentResolutionStatus'
+        description: Additional fields for resolution and delegation status
+      threat:
+        $ref: '#/definitions/models.Threat'
+      threatID:
+        type: string
+    type: object
   models.ThreatControl:
     properties:
       control:
@@ -1372,6 +1409,49 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: Assign a threat to a product
+      tags:
+      - Products
+  /products/{id}/threats/with-resolution/{instanceId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all threat assignments for a specific product, showing resolution
+        status only for the specified instance
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Instance ID (UUID) to filter resolutions
+        in: path
+        name: instanceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatAssignmentWithResolution'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threat assignments with resolution status for a product filtered
+        by instance
       tags:
       - Products
   /tags:
