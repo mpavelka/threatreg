@@ -102,6 +102,7 @@ func (s *Server) setupRoutes() {
 			instances.DELETE("/:id", handlers.DeleteInstance)
 			instances.POST("/:id/threats", handlers.AssignThreatToInstance)
 			instances.GET("/:id/threats", handlers.ListThreatAssignmentsByInstance)
+			instances.GET("/:id/threats/with-resolution/:resolutionInstanceId", handlers.ListThreatAssignmentsByInstanceWithResolutionByInstance)
 		}
 
 		// Threats endpoints

@@ -295,3 +295,37 @@ func ListThreatAssignmentsByInstance(c *gin.Context) {
 
 	ListResponse(c, threatAssignments)
 }
+
+// ListThreatAssignmentsByInstanceWithResolutionByInstance handles GET /api/v1/instances/:id/threats/with-resolution/:resolutionInstanceId
+// @Summary List threat assignments with resolution status for an instance filtered by resolution instance
+// @Description Get all threat assignments for a specific instance, showing resolution status only for the specified resolution instance
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Param resolutionInstanceId path string true "Resolution Instance ID (UUID) to filter resolutions"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.ThreatAssignmentWithResolution}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/{id}/threats/with-resolution/{resolutionInstanceId} [get]
+func ListThreatAssignmentsByInstanceWithResolutionByInstance(c *gin.Context) {
+	instanceID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	resolutionInstanceID, err := ParseUUID(c, "resolutionInstanceId")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	threatAssignments, err := service.ListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(instanceID, resolutionInstanceID)
+	if err != nil {
+		InternalError(c, err, "Failed to retrieve threat assignments with resolution for instance")
+		return
+	}
+
+	ListResponse(c, threatAssignments)
+}

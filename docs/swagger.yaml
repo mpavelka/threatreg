@@ -1103,6 +1103,49 @@ paths:
       summary: Assign a threat to an instance
       tags:
       - Instances
+  /instances/{id}/threats/with-resolution/{resolutionInstanceId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all threat assignments for a specific instance, showing resolution
+        status only for the specified resolution instance
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Resolution Instance ID (UUID) to filter resolutions
+        in: path
+        name: resolutionInstanceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatAssignmentWithResolution'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threat assignments with resolution status for an instance filtered
+        by resolution instance
+      tags:
+      - Instances
   /instances/by-product/{productId}:
     get:
       consumes:

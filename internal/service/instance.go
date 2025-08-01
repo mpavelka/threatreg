@@ -161,3 +161,14 @@ func ListThreatAssignmentsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAss
 
 	return threatAssignmentRepository.ListByInstanceID(nil, instanceID)
 }
+
+// ListThreatAssignmentsByInstanceIDWithResolutionByInstanceID retrieves all threat assignments for an instance with resolution information filtered to a specific instance.
+// Returns threat assignments for the instance, but only shows resolution status if it matches the given resolutionInstanceID.
+func ListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(instanceID, resolutionInstanceID uuid.UUID) ([]models.ThreatAssignmentWithResolution, error) {
+	threatAssignmentRepository, err := getThreatAssignmentRepositoryForInstance()
+	if err != nil {
+		return nil, err
+	}
+
+	return threatAssignmentRepository.ListWithResolutionByInstanceID(nil, instanceID, resolutionInstanceID)
+}

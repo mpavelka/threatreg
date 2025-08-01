@@ -193,6 +193,52 @@ func (r *ThreatAssignmentRepository) ListWithResolutionByProductID(tx *gorm.DB, 
 	return results, nil
 }
 
+// ListWithResolutionByInstanceID retrieves threat assignments with resolution and delegation status for an instance
+// The resolutionInstanceID parameter filters which resolutions to include - only resolutions for that specific instance will be shown
+func (r *ThreatAssignmentRepository) ListWithResolutionByInstanceID(tx *gorm.DB, instanceID, resolutionInstanceID uuid.UUID) ([]ThreatAssignmentWithResolution, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	// First get the basic threat assignments for the instance
+	var assignments []ThreatAssignment
+	err := tx.Preload("Threat").Preload("Product").Preload("Instance").Preload("ControlAssignments").
+		Where("instance_id = ?", instanceID).Find(&assignments).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to ThreatAssignmentWithResolution and add resolution info
+	var results []ThreatAssignmentWithResolution
+	for _, assignment := range assignments {
+		result := ThreatAssignmentWithResolution{
+			ThreatAssignment: assignment,
+		}
+
+		// Get resolution info for this assignment filtered by resolutionInstanceID
+		var resolution struct {
+			Status      *string
+			IsDelegated bool
+		}
+		
+		err := tx.Table("threat_assignment_resolutions tar").
+			Select("tar.status, CASE WHEN tard.id IS NOT NULL THEN 1 ELSE 0 END as is_delegated").
+			Joins("LEFT JOIN threat_assignment_resolution_delegations tard ON tar.id = tard.delegated_by").
+			Where("tar.threat_assignment_id = ? AND tar.instance_id = ?", assignment.ID, resolutionInstanceID).
+			First(&resolution).Error
+
+		if err == nil && resolution.Status != nil {
+			status := ThreatAssignmentResolutionStatus(*resolution.Status)
+			result.ResolutionStatus = &status
+			result.IsDelegated = resolution.IsDelegated
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
 // isUniqueConstraintError checks if the error is a unique constraint violation
 func isUniqueConstraintError(err error) bool {
 	if err == nil {
