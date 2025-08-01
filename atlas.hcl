@@ -25,6 +25,7 @@ data "external_schema" "gorm_postgres" {
   ]
 }
 
+
 env "sqlite" {
   src = data.external_schema.gorm_sqlite.url
   dev = "sqlite://app.dev.db"
@@ -41,7 +42,8 @@ env "sqlite" {
 
 env "postgres" {
   src = data.external_schema.gorm_postgres.url
-  dev = "postgres://postgres:password@localhost:5432/dev?sslmode=disable"
+  dev = getenv("APP_DEV_DATABASE_URL")
+  url = getenv("APP_DATABASE_URL")
   migration {
     dir = "file://migrations/postgres"
   }
