@@ -245,16 +245,6 @@ func DeleteThreatResolution(id uuid.UUID) error {
 	})
 }
 
-// ListByDomainWithUnresolvedByInstancesCount retrieves threats with counts of unresolved instances within a domain.
-// Returns threats with statistics about unresolved instances or an error if database access fails.
-func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByInstancesCount, error) {
-	threatRepository, err := getThreatRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return threatRepository.ListByDomainWithUnresolvedByInstancesCount(nil, domainID)
-}
 
 // DelegateResolution creates a delegation from one threat resolution to another.
 // Updates the source resolution status to match the target and creates a delegation record.

@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   handlers.CreateControlRequest:
     properties:
@@ -184,6 +183,27 @@ definitions:
           $ref: '#/definitions/models.ThreatAssignment'
         type: array
     type: object
+  models.InstanceWithThreatStats:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/models.Domain'
+        type: array
+      id:
+        type: string
+      instanceOf:
+        type: string
+      name:
+        type: string
+      product:
+        $ref: '#/definitions/models.Product'
+      threatAssignments:
+        items:
+          $ref: '#/definitions/models.ThreatAssignment'
+        type: array
+      unresolved_threat_count:
+        type: integer
+    type: object
   models.Product:
     properties:
       description:
@@ -272,19 +292,19 @@ definitions:
       threatID:
         type: string
     type: object
-host: localhost:8080
+  models.ThreatWithUnresolvedByInstancesCount:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+      unresolved_by_instance_count:
+        type: integer
+    type: object
 info:
-  contact:
-    email: support@threatreg.io
-    name: API Support
-  description: |-
-    This is a REST API server for threat registry management.
-    It provides endpoints for managing products, instances, threats, controls, domains, and tags.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  title: Threatreg API
-  version: "1.0"
+  contact: {}
 paths:
   /controls:
     get:
@@ -608,6 +628,145 @@ paths:
       summary: Update a domain
       tags:
       - Domains
+  /domains/{id}/instances:
+    get:
+      consumes:
+      - application/json
+      description: Get all instances that belong to a specific domain
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Instance'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get instances in a domain
+      tags:
+      - Domains
+  /domains/{id}/instances/{instanceId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove the association between an instance and a domain
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Instance ID (UUID)
+        in: path
+        name: instanceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Remove instance from domain
+      tags:
+      - Domains
+    post:
+      consumes:
+      - application/json
+      description: Associate an instance with a domain
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Instance ID (UUID)
+        in: path
+        name: instanceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Add instance to domain
+      tags:
+      - Domains
+  /domains/{id}/instances/with-threat-stats:
+    get:
+      consumes:
+      - application/json
+      description: Get all instances in a domain with their unresolved threat counts
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.InstanceWithThreatStats'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get instances in a domain with threat statistics
+      tags:
+      - Domains
   /instances:
     get:
       consumes:
@@ -768,6 +927,42 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: Update an instance
+      tags:
+      - Instances
+  /instances/{id}/domains:
+    get:
+      consumes:
+      - application/json
+      description: Get all domains that contain a specific instance
+      parameters:
+      - description: Instance ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Domain'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get domains for an instance
       tags:
       - Instances
   /products:
@@ -1253,22 +1448,41 @@ paths:
       summary: Update a threat
       tags:
       - Threats
-produces:
-- application/json
-schemes:
-- http
-- https
+  /threats/by-domain/{domainId}/unresolved:
+    get:
+      consumes:
+      - application/json
+      description: Get threats in a domain showing count of instances that haven't
+        resolved each threat
+      parameters:
+      - description: Domain ID (UUID)
+        in: path
+        name: domainId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatWithUnresolvedByInstancesCount'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threats by domain with unresolved instance counts
+      tags:
+      - Threats
 swagger: "2.0"
-tags:
-- description: Operations related to product management
-  name: Products
-- description: Operations related to product instance management
-  name: Instances
-- description: Operations related to threat management
-  name: Threats
-- description: Operations related to security control management
-  name: Controls
-- description: Operations related to domain management
-  name: Domains
-- description: Operations related to tag management
-  name: Tags

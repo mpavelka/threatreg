@@ -5,21 +5,11 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
-    "produces": [
-        "application/json"
-    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {
-            "name": "API Support",
-            "email": "support@threatreg.io"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -547,6 +537,224 @@ const docTemplate = `{
                 }
             }
         },
+        "/domains/{id}/instances": {
+            "get": {
+                "description": "Get all instances that belong to a specific domain",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Get instances in a domain",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/handlers.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Instance"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/domains/{id}/instances/with-threat-stats": {
+            "get": {
+                "description": "Get all instances in a domain with their unresolved threat counts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Get instances in a domain with threat statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/handlers.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.InstanceWithThreatStats"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/domains/{id}/instances/{instanceId}": {
+            "post": {
+                "description": "Associate an instance with a domain",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Add instance to domain",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Instance ID (UUID)",
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove the association between an instance and a domain",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Remove instance from domain",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Instance ID (UUID)",
+                        "name": "instanceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/instances": {
             "get": {
                 "description": "Get a list of all product instances in the system",
@@ -791,6 +999,65 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/instances/{id}/domains": {
+            "get": {
+                "description": "Get all domains that contain a specific instance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Instances"
+                ],
+                "summary": "Get domains for an instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Instance ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/handlers.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Domain"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -1430,6 +1697,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/threats/by-domain/{domainId}/unresolved": {
+            "get": {
+                "description": "Get threats in a domain showing count of instances that haven't resolved each threat",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Threats"
+                ],
+                "summary": "List threats by domain with unresolved instance counts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain ID (UUID)",
+                        "name": "domainId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/handlers.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.ThreatWithUnresolvedByInstancesCount"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/threats/{id}": {
             "get": {
                 "description": "Get a specific security threat by its UUID",
@@ -1874,6 +2200,38 @@ const docTemplate = `{
                 }
             }
         },
+        "models.InstanceWithThreatStats": {
+            "type": "object",
+            "properties": {
+                "domains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Domain"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instanceOf": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "product": {
+                    "$ref": "#/definitions/models.Product"
+                },
+                "threatAssignments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ThreatAssignment"
+                    }
+                },
+                "unresolved_threat_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.Product": {
             "type": "object",
             "properties": {
@@ -2007,44 +2365,35 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.ThreatWithUnresolvedByInstancesCount": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "unresolved_by_instance_count": {
+                    "type": "integer"
+                }
+            }
         }
-    },
-    "tags": [
-        {
-            "description": "Operations related to product management",
-            "name": "Products"
-        },
-        {
-            "description": "Operations related to product instance management",
-            "name": "Instances"
-        },
-        {
-            "description": "Operations related to threat management",
-            "name": "Threats"
-        },
-        {
-            "description": "Operations related to security control management",
-            "name": "Controls"
-        },
-        {
-            "description": "Operations related to domain management",
-            "name": "Domains"
-        },
-        {
-            "description": "Operations related to tag management",
-            "name": "Tags"
-        }
-    ]
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
-	Schemes:          []string{"http", "https"},
-	Title:            "Threatreg API",
-	Description:      "This is a REST API server for threat registry management.\nIt provides endpoints for managing products, instances, threats, controls, domains, and tags.",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

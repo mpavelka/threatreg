@@ -151,3 +151,30 @@ func DeleteInstance(c *gin.Context) {
 
 	DeletedResponse(c, "Instance")
 }
+
+// GetDomainsByInstance handles GET /api/v1/instances/:id/domains
+// @Summary Get domains for an instance
+// @Description Get all domains that contain a specific instance
+// @Tags Instances
+// @Accept json
+// @Produce json
+// @Param id path string true "Instance ID (UUID)"
+// @Success 200 {object} handlers.SuccessResponse{data=[]models.Domain}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /instances/{id}/domains [get]
+func GetDomainsByInstance(c *gin.Context) {
+	instanceID, err := ParseUUID(c, "id")
+	if err != nil {
+		ValidationError(c, err)
+		return
+	}
+
+	domains, err := service.GetDomainsByInstance(instanceID)
+	if err != nil {
+		InternalError(c, err, "Failed to retrieve domains for instance")
+		return
+	}
+
+	ListResponse(c, domains)
+}

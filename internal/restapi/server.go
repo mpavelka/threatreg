@@ -92,6 +92,7 @@ func (s *Server) setupRoutes() {
 			instances.GET("", handlers.ListInstances)
 			instances.POST("", handlers.CreateInstance)
 			instances.GET("/:id", handlers.GetInstance)
+			instances.GET("/:id/domains", handlers.GetDomainsByInstance)
 			instances.PUT("/:id", handlers.UpdateInstance)
 			instances.DELETE("/:id", handlers.DeleteInstance)
 		}
@@ -101,6 +102,7 @@ func (s *Server) setupRoutes() {
 		{
 			threats.GET("", handlers.ListThreats)
 			threats.POST("", handlers.CreateThreat)
+			threats.GET("/by-domain/:domainId/unresolved", handlers.ListThreatsByDomainWithUnresolvedCount)
 			threats.GET("/:id", handlers.GetThreat)
 			threats.PUT("/:id", handlers.UpdateThreat)
 			threats.DELETE("/:id", handlers.DeleteThreat)
@@ -122,6 +124,10 @@ func (s *Server) setupRoutes() {
 			domains.GET("", handlers.ListDomains)
 			domains.POST("", handlers.CreateDomain)
 			domains.GET("/:id", handlers.GetDomain)
+			domains.GET("/:id/instances", handlers.GetInstancesByDomain)
+			domains.GET("/:id/instances/with-threat-stats", handlers.GetInstancesByDomainWithThreatStats)
+			domains.POST("/:id/instances/:instanceId", handlers.AddInstanceToDomain)
+			domains.DELETE("/:id/instances/:instanceId", handlers.RemoveInstanceFromDomain)
 			domains.PUT("/:id", handlers.UpdateDomain)
 			domains.DELETE("/:id", handlers.DeleteDomain)
 		}
