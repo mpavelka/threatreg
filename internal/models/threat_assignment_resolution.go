@@ -16,15 +16,15 @@ const (
 )
 
 type ThreatAssignmentResolution struct {
-	ID                 uuid.UUID                        `gorm:"type:uuid;primaryKey"`
-	ThreatAssignmentID int                              `gorm:"not null;uniqueIndex:idx_threat_assignment_resolution"`
-	InstanceID         uuid.UUID                        `gorm:"type:uuid;uniqueIndex:idx_threat_assignment_resolution"`
-	ProductID          uuid.UUID                        `gorm:"type:uuid;uniqueIndex:idx_threat_assignment_resolution"`
-	Status             ThreatAssignmentResolutionStatus `gorm:"type:varchar(20);not null"`
-	Description        string                           `gorm:"type:text"`
-	ThreatAssignment   ThreatAssignment                 `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	Instance           Instance                         `gorm:"foreignKey:InstanceID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	Product            Product                          `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	ID                 uuid.UUID                        `gorm:"type:uuid;primaryKey" json:"id"`
+	ThreatAssignmentID int                              `gorm:"not null;uniqueIndex:idx_threat_assignment_resolution" json:"threatAssignmentId"`
+	InstanceID         uuid.UUID                        `gorm:"type:uuid;uniqueIndex:idx_threat_assignment_resolution" json:"instanceId"`
+	ProductID          uuid.UUID                        `gorm:"type:uuid;uniqueIndex:idx_threat_assignment_resolution" json:"productId"`
+	Status             ThreatAssignmentResolutionStatus `gorm:"type:varchar(20);not null" json:"status"`
+	Description        string                           `gorm:"type:text" json:"description"`
+	ThreatAssignment   ThreatAssignment                 `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"threatAssignment,omitempty"`
+	Instance           Instance                         `gorm:"foreignKey:InstanceID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"instance,omitempty"`
+	Product            Product                          `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"product,omitempty"`
 }
 
 // BeforeCreate ensures exactly one of ProductID or InstanceID is set and validates status
@@ -188,6 +188,6 @@ func (r *ThreatAssignmentResolutionRepository) ListByInstanceID(tx *gorm.DB, ins
 
 // ThreatAssignmentResolutionWithDelegation extends ThreatAssignmentResolution with delegation info
 type ThreatAssignmentResolutionWithDelegation struct {
-	Resolution ThreatAssignmentResolution
-	Delegation *ThreatAssignmentResolutionDelegation
+	Resolution ThreatAssignmentResolution               `json:"resolution"`
+	Delegation *ThreatAssignmentResolutionDelegation    `json:"delegation,omitempty"`
 }
