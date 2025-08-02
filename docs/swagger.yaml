@@ -1714,6 +1714,44 @@ paths:
       summary: Update a tag
       tags:
       - Tags
+  /threat-assignments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a threat assignment by its ID
+      parameters:
+      - description: Threat Assignment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignment'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a threat assignment
+      tags:
+      - Threat Assignments
   /threat-resolutions:
     post:
       consumes:

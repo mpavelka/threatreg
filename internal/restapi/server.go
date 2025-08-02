@@ -150,6 +150,12 @@ func (s *Server) setupRoutes() {
 			tags.DELETE("/:id", handlers.DeleteTag)
 		}
 
+		// Threat Assignments endpoints
+		threatAssignments := v1.Group("/threat-assignments")
+		{
+			threatAssignments.GET("/:id", handlers.GetThreatAssignment)
+		}
+
 		// Threat Resolutions endpoints
 		threatResolutions := v1.Group("/threat-resolutions")
 		{
