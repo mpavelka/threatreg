@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   handlers.AssignThreatToInstanceRequest:
     properties:
@@ -77,6 +76,30 @@ definitions:
     - description
     - title
     type: object
+  handlers.CreateThreatResolutionRequest:
+    properties:
+      description:
+        type: string
+      instanceId:
+        type: string
+      productId:
+        type: string
+      status:
+        $ref: '#/definitions/models.ThreatAssignmentResolutionStatus'
+      threatAssignmentId:
+        type: integer
+    required:
+    - description
+    - status
+    - threatAssignmentId
+    type: object
+  handlers.DelegateResolutionRequest:
+    properties:
+      targetResolutionId:
+        type: string
+    required:
+    - targetResolutionId
+    type: object
   handlers.ErrorResponse:
     properties:
       code:
@@ -135,6 +158,13 @@ definitions:
         type: string
       title:
         type: string
+    type: object
+  handlers.UpdateThreatResolutionRequest:
+    properties:
+      description:
+        type: string
+      status:
+        $ref: '#/definitions/models.ThreatAssignmentResolutionStatus'
     type: object
   models.Control:
     properties:
@@ -294,6 +324,36 @@ definitions:
       threatID:
         type: string
     type: object
+  models.ThreatAssignmentResolution:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      instance:
+        $ref: '#/definitions/models.Instance'
+      instanceID:
+        type: string
+      product:
+        $ref: '#/definitions/models.Product'
+      productID:
+        type: string
+      status:
+        $ref: '#/definitions/models.ThreatAssignmentResolutionStatus'
+      threatAssignment:
+        $ref: '#/definitions/models.ThreatAssignment'
+      threatAssignmentID:
+        type: integer
+    type: object
+  models.ThreatAssignmentResolutionDelegation:
+    properties:
+      delegatedBy:
+        type: string
+      delegatedTo:
+        type: string
+      id:
+        type: string
+    type: object
   models.ThreatAssignmentResolutionStatus:
     enum:
     - resolved
@@ -304,6 +364,13 @@ definitions:
     - ThreatAssignmentResolutionStatusResolved
     - ThreatAssignmentResolutionStatusAwaiting
     - ThreatAssignmentResolutionStatusAccepted
+  models.ThreatAssignmentResolutionWithDelegation:
+    properties:
+      delegation:
+        $ref: '#/definitions/models.ThreatAssignmentResolutionDelegation'
+      resolution:
+        $ref: '#/definitions/models.ThreatAssignmentResolution'
+    type: object
   models.ThreatAssignmentWithResolution:
     properties:
       controlAssignments:
@@ -355,19 +422,8 @@ definitions:
       unresolved_by_instance_count:
         type: integer
     type: object
-host: localhost:8080
 info:
-  contact:
-    email: support@threatreg.io
-    name: API Support
-  description: |-
-    This is a REST API server for threat registry management.
-    It provides endpoints for managing products, instances, threats, controls, domains, and tags.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  title: Threatreg API
-  version: "1.0"
+  contact: {}
 paths:
   /controls:
     get:
@@ -1658,6 +1714,474 @@ paths:
       summary: Update a tag
       tags:
       - Tags
+  /threat-resolutions:
+    post:
+      consumes:
+      - application/json
+      description: Create a new threat resolution for either an instance or product
+      parameters:
+      - description: Threat resolution creation request
+        in: body
+        name: resolution
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateThreatResolutionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new threat resolution
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a threat resolution and update upstream delegation statuses
+      parameters:
+      - description: Resolution ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a threat resolution
+      tags:
+      - Threat Resolutions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a threat resolution by its ID
+      parameters:
+      - description: Resolution ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a threat resolution
+      tags:
+      - Threat Resolutions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing threat resolution's status and/or description
+      parameters:
+      - description: Resolution ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Threat resolution update request
+        in: body
+        name: resolution
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateThreatResolutionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a threat resolution
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/{id}/delegate:
+    post:
+      consumes:
+      - application/json
+      description: Create a delegation from one threat resolution to another
+      parameters:
+      - description: Source Resolution ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Delegation request
+        in: body
+        name: delegation
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.DelegateResolutionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delegate a threat resolution
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/{id}/delegated-to:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the target resolution of a delegation by the source resolution
+        ID
+      parameters:
+      - description: Source Resolution ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get delegated-to resolution
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/by-assignment/{assignmentId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a threat resolution by its threat assignment ID
+      parameters:
+      - description: Threat Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get threat resolution by assignment ID
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/by-instance/{instanceId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all threat resolutions for a specific instance
+      parameters:
+      - description: Instance ID
+        in: path
+        name: instanceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatAssignmentResolution'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threat resolutions by instance ID
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/by-product/{productId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all threat resolutions for a specific product
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.ThreatAssignmentResolution'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List threat resolutions by product ID
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/instance/{instanceId}/assignment/{assignmentId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a threat resolution for a specific instance and threat
+        assignment
+      parameters:
+      - description: Instance ID
+        in: path
+        name: instanceId
+        required: true
+        type: string
+      - description: Threat Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get instance-level threat resolution
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/instance/{instanceId}/assignment/{assignmentId}/with-delegation:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a threat resolution with delegation information for a
+        specific instance and threat assignment
+      parameters:
+      - description: Instance ID
+        in: path
+        name: instanceId
+        required: true
+        type: string
+      - description: Threat Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolutionWithDelegation'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get instance-level threat resolution with delegation
+      tags:
+      - Threat Resolutions
+  /threat-resolutions/product/{productId}/assignment/{assignmentId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a threat resolution for a specific product and threat
+        assignment
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      - description: Threat Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/handlers.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ThreatAssignmentResolution'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get product-level threat resolution
+      tags:
+      - Threat Resolutions
   /threats:
     get:
       consumes:
@@ -1856,22 +2380,4 @@ paths:
       summary: List threats by domain with unresolved instance counts
       tags:
       - Threats
-produces:
-- application/json
-schemes:
-- http
-- https
 swagger: "2.0"
-tags:
-- description: Operations related to product management
-  name: Products
-- description: Operations related to product instance management
-  name: Instances
-- description: Operations related to threat management
-  name: Threats
-- description: Operations related to security control management
-  name: Controls
-- description: Operations related to domain management
-  name: Domains
-- description: Operations related to tag management
-  name: Tags

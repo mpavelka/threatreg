@@ -149,6 +149,23 @@ func (s *Server) setupRoutes() {
 			tags.PUT("/:id", handlers.UpdateTag)
 			tags.DELETE("/:id", handlers.DeleteTag)
 		}
+
+		// Threat Resolutions endpoints
+		threatResolutions := v1.Group("/threat-resolutions")
+		{
+			threatResolutions.POST("", handlers.CreateThreatResolution)
+			threatResolutions.GET("/:id", handlers.GetThreatResolution)
+			threatResolutions.PUT("/:id", handlers.UpdateThreatResolution)
+			threatResolutions.DELETE("/:id", handlers.DeleteThreatResolution)
+			threatResolutions.GET("/by-assignment/:assignmentId", handlers.GetThreatResolutionByThreatAssignmentID)
+			threatResolutions.GET("/instance/:instanceId/assignment/:assignmentId", handlers.GetInstanceLevelThreatResolution)
+			threatResolutions.GET("/instance/:instanceId/assignment/:assignmentId/with-delegation", handlers.GetInstanceLevelThreatResolutionWithDelegation)
+			threatResolutions.GET("/product/:productId/assignment/:assignmentId", handlers.GetProductLevelThreatResolution)
+			threatResolutions.GET("/by-product/:productId", handlers.ListThreatResolutionsByProductID)
+			threatResolutions.GET("/by-instance/:instanceId", handlers.ListThreatResolutionsByInstanceID)
+			threatResolutions.POST("/:id/delegate", handlers.DelegateResolution)
+			threatResolutions.GET("/:id/delegated-to", handlers.GetDelegatedToResolutionByDelegatedByID)
+		}
 	}
 }
 
