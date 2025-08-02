@@ -187,13 +187,13 @@ definitions:
     properties:
       control:
         $ref: '#/definitions/models.Control'
-      controlID:
+      controlId:
         type: string
       id:
         type: integer
       threatAssignment:
         $ref: '#/definitions/models.ThreatAssignment'
-      threatAssignmentID:
+      threatAssignmentId:
         type: integer
     type: object
   models.Domain:
@@ -313,15 +313,15 @@ definitions:
         type: integer
       instance:
         $ref: '#/definitions/models.Instance'
-      instanceID:
+      instanceId:
         type: string
       product:
         $ref: '#/definitions/models.Product'
-      productID:
+      productId:
         type: string
       threat:
         $ref: '#/definitions/models.Threat'
-      threatID:
+      threatId:
         type: string
     type: object
   models.ThreatAssignmentResolution:
@@ -332,17 +332,17 @@ definitions:
         type: string
       instance:
         $ref: '#/definitions/models.Instance'
-      instanceID:
+      instanceId:
         type: string
       product:
         $ref: '#/definitions/models.Product'
-      productID:
+      productId:
         type: string
       status:
         $ref: '#/definitions/models.ThreatAssignmentResolutionStatus'
       threatAssignment:
         $ref: '#/definitions/models.ThreatAssignment'
-      threatAssignmentID:
+      threatAssignmentId:
         type: integer
     type: object
   models.ThreatAssignmentResolutionDelegation:
@@ -381,13 +381,13 @@ definitions:
         type: integer
       instance:
         $ref: '#/definitions/models.Instance'
-      instanceID:
+      instanceId:
         type: string
       isDelegated:
         type: boolean
       product:
         $ref: '#/definitions/models.Product'
-      productID:
+      productId:
         type: string
       resolutionStatus:
         allOf:
@@ -395,20 +395,20 @@ definitions:
         description: Additional fields for resolution and delegation status
       threat:
         $ref: '#/definitions/models.Threat'
-      threatID:
+      threatId:
         type: string
     type: object
   models.ThreatControl:
     properties:
       control:
         $ref: '#/definitions/models.Control'
-      controlID:
+      controlId:
         type: string
       id:
         type: integer
       threat:
         $ref: '#/definitions/models.Threat'
-      threatID:
+      threatId:
         type: string
     type: object
   models.ThreatWithUnresolvedByInstancesCount:

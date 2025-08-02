@@ -3506,7 +3506,7 @@ const docTemplate = `{
                 "control": {
                     "$ref": "#/definitions/models.Control"
                 },
-                "controlID": {
+                "controlId": {
                     "type": "string"
                 },
                 "id": {
@@ -3515,7 +3515,7 @@ const docTemplate = `{
                 "threatAssignment": {
                     "$ref": "#/definitions/models.ThreatAssignment"
                 },
-                "threatAssignmentID": {
+                "threatAssignmentId": {
                     "type": "integer"
                 }
             }
@@ -3698,19 +3698,19 @@ const docTemplate = `{
                 "instance": {
                     "$ref": "#/definitions/models.Instance"
                 },
-                "instanceID": {
+                "instanceId": {
                     "type": "string"
                 },
                 "product": {
                     "$ref": "#/definitions/models.Product"
                 },
-                "productID": {
+                "productId": {
                     "type": "string"
                 },
                 "threat": {
                     "$ref": "#/definitions/models.Threat"
                 },
-                "threatID": {
+                "threatId": {
                     "type": "string"
                 }
             }
@@ -3727,13 +3727,13 @@ const docTemplate = `{
                 "instance": {
                     "$ref": "#/definitions/models.Instance"
                 },
-                "instanceID": {
+                "instanceId": {
                     "type": "string"
                 },
                 "product": {
                     "$ref": "#/definitions/models.Product"
                 },
-                "productID": {
+                "productId": {
                     "type": "string"
                 },
                 "status": {
@@ -3742,7 +3742,7 @@ const docTemplate = `{
                 "threatAssignment": {
                     "$ref": "#/definitions/models.ThreatAssignment"
                 },
-                "threatAssignmentID": {
+                "threatAssignmentId": {
                     "type": "integer"
                 }
             }
@@ -3800,7 +3800,7 @@ const docTemplate = `{
                 "instance": {
                     "$ref": "#/definitions/models.Instance"
                 },
-                "instanceID": {
+                "instanceId": {
                     "type": "string"
                 },
                 "isDelegated": {
@@ -3809,7 +3809,7 @@ const docTemplate = `{
                 "product": {
                     "$ref": "#/definitions/models.Product"
                 },
-                "productID": {
+                "productId": {
                     "type": "string"
                 },
                 "resolutionStatus": {
@@ -3823,7 +3823,7 @@ const docTemplate = `{
                 "threat": {
                     "$ref": "#/definitions/models.Threat"
                 },
-                "threatID": {
+                "threatId": {
                     "type": "string"
                 }
             }
@@ -3834,7 +3834,7 @@ const docTemplate = `{
                 "control": {
                     "$ref": "#/definitions/models.Control"
                 },
-                "controlID": {
+                "controlId": {
                     "type": "string"
                 },
                 "id": {
@@ -3843,7 +3843,7 @@ const docTemplate = `{
                 "threat": {
                     "$ref": "#/definitions/models.Threat"
                 },
-                "threatID": {
+                "threatId": {
                     "type": "string"
                 }
             }

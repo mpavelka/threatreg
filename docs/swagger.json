@@ -3495,7 +3495,7 @@
                 "control": {
                     "$ref": "#/definitions/models.Control"
                 },
-                "controlID": {
+                "controlId": {
                     "type": "string"
                 },
                 "id": {
@@ -3504,7 +3504,7 @@
                 "threatAssignment": {
                     "$ref": "#/definitions/models.ThreatAssignment"
                 },
-                "threatAssignmentID": {
+                "threatAssignmentId": {
                     "type": "integer"
                 }
             }
@@ -3687,19 +3687,19 @@
                 "instance": {
                     "$ref": "#/definitions/models.Instance"
                 },
-                "instanceID": {
+                "instanceId": {
                     "type": "string"
                 },
                 "product": {
                     "$ref": "#/definitions/models.Product"
                 },
-                "productID": {
+                "productId": {
                     "type": "string"
                 },
                 "threat": {
                     "$ref": "#/definitions/models.Threat"
                 },
-                "threatID": {
+                "threatId": {
                     "type": "string"
                 }
             }
@@ -3716,13 +3716,13 @@
                 "instance": {
                     "$ref": "#/definitions/models.Instance"
                 },
-                "instanceID": {
+                "instanceId": {
                     "type": "string"
                 },
                 "product": {
                     "$ref": "#/definitions/models.Product"
                 },
-                "productID": {
+                "productId": {
                     "type": "string"
                 },
                 "status": {
@@ -3731,7 +3731,7 @@
                 "threatAssignment": {
                     "$ref": "#/definitions/models.ThreatAssignment"
                 },
-                "threatAssignmentID": {
+                "threatAssignmentId": {
                     "type": "integer"
                 }
             }
@@ -3789,7 +3789,7 @@
                 "instance": {
                     "$ref": "#/definitions/models.Instance"
                 },
-                "instanceID": {
+                "instanceId": {
                     "type": "string"
                 },
                 "isDelegated": {
@@ -3798,7 +3798,7 @@
                 "product": {
                     "$ref": "#/definitions/models.Product"
                 },
-                "productID": {
+                "productId": {
                     "type": "string"
                 },
                 "resolutionStatus": {
@@ -3812,7 +3812,7 @@
                 "threat": {
                     "$ref": "#/definitions/models.Threat"
                 },
-                "threatID": {
+                "threatId": {
                     "type": "string"
                 }
             }
@@ -3823,7 +3823,7 @@
                 "control": {
                     "$ref": "#/definitions/models.Control"
                 },
-                "controlID": {
+                "controlId": {
                     "type": "string"
                 },
                 "id": {
@@ -3832,7 +3832,7 @@
                 "threat": {
                     "$ref": "#/definitions/models.Threat"
                 },
-                "threatID": {
+                "threatId": {
                     "type": "string"
                 }
             }
