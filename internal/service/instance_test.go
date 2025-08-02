@@ -578,14 +578,14 @@ func TestListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(t *testing.
 		assignment1, err := AssignThreatToInstance(instance1.ID, threat1.ID)
 		require.NoError(t, err)
 		require.NotNil(t, assignment1)
-		t.Logf("Assignment1: ID=%d, ThreatID=%s, InstanceID=%s, ProductID=%s", 
+		t.Logf("Assignment1: ID=%d, ThreatID=%s, InstanceID=%s, ProductID=%s",
 			assignment1.ID, assignment1.ThreatID, assignment1.InstanceID, assignment1.ProductID)
 
 		// Assign threat2 to instance2
 		assignment2, err := AssignThreatToInstance(instance2.ID, threat2.ID)
 		require.NoError(t, err)
 		require.NotNil(t, assignment2)
-		t.Logf("Assignment2: ID=%d, ThreatID=%s, InstanceID=%s, ProductID=%s", 
+		t.Logf("Assignment2: ID=%d, ThreatID=%s, InstanceID=%s, ProductID=%s",
 			assignment2.ID, assignment2.ThreatID, assignment2.InstanceID, assignment2.ProductID)
 
 		// Create threat resolutions for both instance1 and instance2
@@ -627,7 +627,7 @@ func TestListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(t *testing.
 
 		// Assertions
 		assert.Len(t, results, 1, "Should return one threat assignment for instance1")
-		
+
 		result := results[0]
 		assert.Equal(t, assignment1.ID, result.ID)
 		assert.Equal(t, threat1.ID, result.ThreatID)
@@ -656,7 +656,7 @@ func TestListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(t *testing.
 		assert.Len(t, resultsOtherInstance, 1, "Should still return the threat assignment for instance1")
 		otherResult := resultsOtherInstance[0]
 		assert.Equal(t, assignment1.ID, otherResult.ID)
-		
+
 		// But resolution info should be nil since we filtered by instance2 but resolution1 is for instance1
 		assert.Nil(t, otherResult.ResolutionStatus, "Should not have resolution status for different instance")
 		assert.False(t, otherResult.IsDelegated, "Should not show as delegated for different instance")
@@ -665,12 +665,12 @@ func TestListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(t *testing.
 		resultsInstance2, err := ListThreatAssignmentsByInstanceIDWithResolutionByInstanceID(instance2.ID, instance2.ID)
 		require.NoError(t, err)
 		assert.Len(t, resultsInstance2, 1, "Should return one assignment for instance2")
-		
+
 		instance2Result := resultsInstance2[0]
 		assert.Equal(t, assignment2.ID, instance2Result.ID)
 		assert.Equal(t, threat2.ID, instance2Result.ThreatID)
 		assert.Equal(t, instance2.ID, instance2Result.InstanceID)
-		
+
 		// This should show resolved status since resolution2 is resolved
 		assert.NotNil(t, instance2Result.ResolutionStatus)
 		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, *instance2Result.ResolutionStatus)

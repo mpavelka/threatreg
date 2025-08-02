@@ -11,11 +11,11 @@ import (
 
 // CreateThreatResolutionRequest represents the request payload for creating a threat resolution
 type CreateThreatResolutionRequest struct {
-	ThreatAssignmentID int                                          `json:"threatAssignmentId" binding:"required"`
-	InstanceID         *uuid.UUID                                   `json:"instanceId,omitempty"`
-	ProductID          *uuid.UUID                                   `json:"productId,omitempty"`
-	Status             models.ThreatAssignmentResolutionStatus      `json:"status" binding:"required"`
-	Description        string                                       `json:"description" binding:"required"`
+	ThreatAssignmentID int                                     `json:"threatAssignmentId" binding:"required"`
+	InstanceID         *uuid.UUID                              `json:"instanceId,omitempty"`
+	ProductID          *uuid.UUID                              `json:"productId,omitempty"`
+	Status             models.ThreatAssignmentResolutionStatus `json:"status" binding:"required"`
+	Description        string                                  `json:"description" binding:"required"`
 }
 
 // UpdateThreatResolutionRequest represents the request payload for updating a threat resolution

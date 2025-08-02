@@ -452,7 +452,7 @@ func TestListThreatAssignmentsByProductIDWithResolutionByInstanceID(t *testing.T
 
 		// Assertions
 		assert.Len(t, results, 1, "Should return one threat assignment for product1")
-		
+
 		result := results[0]
 		assert.Equal(t, assignment1.ID, result.ID)
 		assert.Equal(t, threat1.ID, result.ThreatID)
@@ -481,7 +481,7 @@ func TestListThreatAssignmentsByProductIDWithResolutionByInstanceID(t *testing.T
 		assert.Len(t, resultsOtherInstance, 1, "Should still return the threat assignment for product1")
 		otherResult := resultsOtherInstance[0]
 		assert.Equal(t, assignment1.ID, otherResult.ID)
-		
+
 		// But resolution info should be nil since we filtered by instance2 but resolution1 is for instance1
 		assert.Nil(t, otherResult.ResolutionStatus, "Should not have resolution status for different instance")
 		assert.False(t, otherResult.IsDelegated, "Should not show as delegated for different instance")

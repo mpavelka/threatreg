@@ -220,7 +220,7 @@ func (r *ThreatAssignmentRepository) ListWithResolutionByInstanceID(tx *gorm.DB,
 			Status      *string
 			IsDelegated bool
 		}
-		
+
 		err := tx.Table("threat_assignment_resolutions tar").
 			Select("tar.status, CASE WHEN tard.id IS NOT NULL THEN 1 ELSE 0 END as is_delegated").
 			Joins("LEFT JOIN threat_assignment_resolution_delegations tard ON tar.id = tard.delegated_by").
