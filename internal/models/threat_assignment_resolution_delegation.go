@@ -8,9 +8,9 @@ import (
 )
 
 type ThreatAssignmentResolutionDelegation struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey"`
-	DelegatedBy uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_delegation_unique"`
-	DelegatedTo uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_delegation_unique"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	DelegatedBy uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_delegation_unique" json:"delegatedBy"`
+	DelegatedTo uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_delegation_unique" json:"delegatedTo"`
 }
 
 // BeforeCreate generates a UUID for the ID if not set

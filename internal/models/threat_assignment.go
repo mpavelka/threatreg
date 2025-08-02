@@ -10,9 +10,9 @@ import (
 
 type ThreatAssignment struct {
 	ID                 int                 `gorm:"primaryKey;autoIncrement;not null;unique" json:"id"`
-	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"threatID"`
-	ProductID          uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"productID"`
-	InstanceID         uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"instanceID"`
+	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"threatId"`
+	ProductID          uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"productId"`
+	InstanceID         uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"instanceId"`
 	Threat             Threat              `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threat"`
 	Product            Product             `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"product"`
 	Instance           Instance            `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"instance"`
