@@ -121,34 +121,25 @@ func getThreatAssignmentRepository() (*models.ThreatAssignmentRepository, error)
 }
 
 // AssignThreatToProduct creates a threat assignment linking a threat to a specific product.
+// DEPRECATED: This function is deprecated. Use AssignThreatToComponent instead.
 // Returns the created threat assignment or an error if the assignment already exists or creation fails.
 func AssignThreatToProduct(productID, threatID uuid.UUID) (*models.ThreatAssignment, error) {
-	threatAssignmentRepository, err := getThreatAssignmentRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return threatAssignmentRepository.AssignThreatToProduct(nil, threatID, productID)
+	// Redirect to component-based function
+	return AssignThreatToComponent(productID, threatID)
 }
 
 // ListThreatAssignmentsByProductID retrieves all threat assignments for a specific product.
+// DEPRECATED: This function is deprecated. Use ListThreatAssignmentsByComponentID instead.
 // Returns a slice of threat assignments with threat details or an error if database access fails.
 func ListThreatAssignmentsByProductID(productID uuid.UUID) ([]models.ThreatAssignment, error) {
-	threatAssignmentRepository, err := getThreatAssignmentRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return threatAssignmentRepository.ListByProductID(nil, productID)
+	// Redirect to component-based function
+	return ListThreatAssignmentsByComponentID(productID)
 }
 
 // ListThreatAssignmentsByProductIDWithResolutionByInstanceID retrieves all threat assignments for a product with resolution information filtered to a specific instance.
+// DEPRECATED: This function is deprecated. Use ListThreatAssignmentsByComponentIDWithResolutionByComponentID instead.
 // Returns threat assignments for the product, but only shows resolution status if it matches the given resolutionInstanceID.
 func ListThreatAssignmentsByProductIDWithResolutionByInstanceID(productID, resolutionInstanceID uuid.UUID) ([]models.ThreatAssignmentWithResolution, error) {
-	threatAssignmentRepository, err := getThreatAssignmentRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return threatAssignmentRepository.ListWithResolutionByProductID(nil, productID, resolutionInstanceID)
+	// Redirect to component-based function
+	return ListThreatAssignmentsByComponentIDWithResolutionByComponentID(productID, resolutionInstanceID)
 }

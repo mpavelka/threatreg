@@ -108,13 +108,21 @@ func ListThreats() ([]models.Threat, error) {
 	return threatRepository.List(nil)
 }
 
-// ListByDomainWithUnresolvedByInstancesCount retrieves threats with counts of unresolved instances within a domain.
-// Returns threats with statistics about unresolved instances or an error if database access fails.
-func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByInstancesCount, error) {
+// ListByDomainWithUnresolvedByComponentsCount retrieves threats with counts of unresolved components within a domain.
+// Returns threats with statistics about unresolved components or an error if database access fails.
+func ListByDomainWithUnresolvedByComponentsCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByComponentsCount, error) {
 	threatRepository, err := getThreatRepository()
 	if err != nil {
 		return nil, err
 	}
 
-	return threatRepository.ListByDomainWithUnresolvedByInstancesCount(nil, domainID)
+	return threatRepository.ListByDomainWithUnresolvedByComponentsCount(nil, domainID)
+}
+
+// DEPRECATED FUNCTIONS - These redirect to component-based implementations for backward compatibility
+
+// ListByDomainWithUnresolvedByInstancesCount returns threats in a domain with count of unresolved instances.
+// DEPRECATED: Use ListByDomainWithUnresolvedByComponentsCount instead.
+func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByComponentsCount, error) {
+	return ListByDomainWithUnresolvedByComponentsCount(domainID)
 }

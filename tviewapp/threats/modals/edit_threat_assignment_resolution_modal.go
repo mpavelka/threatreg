@@ -12,14 +12,14 @@ import (
 func CreateEditThreatAssignmentResolutionModal(
 	assignment models.ThreatAssignment,
 	existingResolution *models.ThreatAssignmentResolution,
-	resolverInstanceId *uuid.UUID,
+	resolverComponentId *uuid.UUID,
 	resolverProductId *uuid.UUID,
 	onSave func(),
 	onClose func(),
 ) tview.Primitive {
-	resolverInstanceIdIsNil := resolverInstanceId == nil
+	resolverComponentIdIsNil := resolverComponentId == nil
 	resolverProductIdIsNil := resolverProductId == nil
-	if resolverInstanceIdIsNil == resolverProductIdIsNil {
+	if resolverComponentIdIsNil == resolverProductIdIsNil {
 		return tview.NewTextView().SetText("Either resolver instance or product must be specified")
 	}
 
@@ -72,8 +72,7 @@ func CreateEditThreatAssignmentResolutionModal(
 		if existingResolution == nil {
 			_, err := service.CreateThreatResolution(
 				assignment.ID,
-				resolverInstanceId,
-				resolverProductId,
+				*resolverComponentId,
 				models.ThreatAssignmentResolutionStatus(status),
 				description,
 			)
@@ -102,10 +101,10 @@ func CreateEditThreatAssignmentResolutionModal(
 	infoText := fmt.Sprintf("Threat: %s\nType: %s",
 		assignment.Threat.Title,
 		func() string {
-			if assignment.InstanceID != uuid.Nil {
-				return fmt.Sprintf("Instance (%s)", assignment.Instance.Name)
+			if assignment.ComponentID != uuid.Nil {
+				return fmt.Sprintf("Component (%s)", assignment.Component.Name)
 			}
-			return fmt.Sprintf("Product (%s)", assignment.Product.Name)
+			return fmt.Sprintf("Product (%s)", "Currently no way to determine product name")
 		}())
 
 	infoView := tview.NewTextView()

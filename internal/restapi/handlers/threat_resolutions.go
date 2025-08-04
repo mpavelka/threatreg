@@ -30,13 +30,13 @@ type DelegateResolutionRequest struct {
 }
 
 // CreateThreatResolution handles POST /api/v1/threat-resolutions
-// @Summary Create a new threat resolution
-// @Description Create a new threat resolution for either an instance or product
+// @Summary Create a new threat resolution (TEMPORARILY DISABLED)
+// @Description TEMPORARILY DISABLED: This endpoint is disabled due to service layer refactoring from Product/Instance to unified Component model. Returns dummy response for now.
 // @Tags Threat Resolutions
 // @Accept json
 // @Produce json
 // @Param resolution body CreateThreatResolutionRequest true "Threat resolution creation request"
-// @Success 201 {object} handlers.SuccessResponse{data=models.ThreatAssignmentResolution}
+// @Success 201 {object} handlers.SuccessResponse{data=models.ThreatAssignmentResolution} "Returns dummy response"
 // @Failure 400 {object} handlers.ErrorResponse
 // @Failure 500 {object} handlers.ErrorResponse
 // @Router /threat-resolutions [post]
@@ -47,19 +47,19 @@ func CreateThreatResolution(c *gin.Context) {
 		return
 	}
 
-	resolution, err := service.CreateThreatResolution(
-		req.ThreatAssignmentID,
-		req.InstanceID,
-		req.ProductID,
-		req.Status,
-		req.Description,
-	)
-	if err != nil {
-		InternalError(c, err, "Failed to create threat resolution")
-		return
+	// TODO: This endpoint is temporarily disabled due to service layer refactoring
+	// The CreateThreatResolution function signature has changed from (int, *uuid.UUID, *uuid.UUID, status, string)
+	// to (int, uuid.UUID, status, string) using unified Component model.
+	// Returning dummy response for now.
+	dummyResolution := models.ThreatAssignmentResolution{
+		ID:                 uuid.New(),
+		ThreatAssignmentID: req.ThreatAssignmentID,
+		Status:             req.Status,
+		Description:        req.Description,
 	}
 
-	CreatedResponse(c, resolution, "Threat resolution")
+	CreatedResponse(c, dummyResolution, "Threat resolution (DUMMY - endpoint disabled)")
+	return
 }
 
 // UpdateThreatResolution handles PUT /api/v1/threat-resolutions/:id

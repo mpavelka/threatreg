@@ -9,20 +9,15 @@ import (
 type PatternConditionType int
 
 const (
-	ConditionTypeProduct PatternConditionType = iota
-	ConditionTypeTag
+	ConditionTypeTag PatternConditionType = iota
 	ConditionTypeRelationship
 	ConditionTypeRelationshipTargetID
 	ConditionTypeRelationshipTargetTag
-	ConditionTypeProductTag
-	ConditionTypeProductID
 )
 
 // String returns the string representation of the condition type
 func (ct PatternConditionType) String() string {
 	switch ct {
-	case ConditionTypeProduct:
-		return "PRODUCT"
 	case ConditionTypeTag:
 		return "TAG"
 	case ConditionTypeRelationship:
@@ -31,10 +26,6 @@ func (ct PatternConditionType) String() string {
 		return "RELATIONSHIP_TARGET_ID"
 	case ConditionTypeRelationshipTargetTag:
 		return "RELATIONSHIP_TARGET_TAG"
-	case ConditionTypeProductTag:
-		return "PRODUCT_TAG"
-	case ConditionTypeProductID:
-		return "PRODUCT_ID"
 	default:
 		return ""
 	}
@@ -43,8 +34,6 @@ func (ct PatternConditionType) String() string {
 // ParsePatternConditionType parses a string to PatternConditionType
 func ParsePatternConditionType(s string) (PatternConditionType, bool) {
 	switch s {
-	case "PRODUCT":
-		return ConditionTypeProduct, true
 	case "TAG":
 		return ConditionTypeTag, true
 	case "RELATIONSHIP":
@@ -53,10 +42,6 @@ func ParsePatternConditionType(s string) (PatternConditionType, bool) {
 		return ConditionTypeRelationshipTargetID, true
 	case "RELATIONSHIP_TARGET_TAG":
 		return ConditionTypeRelationshipTargetTag, true
-	case "PRODUCT_TAG":
-		return ConditionTypeProductTag, true
-	case "PRODUCT_ID":
-		return ConditionTypeProductID, true
 	default:
 		return 0, false
 	}
@@ -127,13 +112,10 @@ func ParsePatternOperator(s string) (PatternOperator, bool) {
 // GetAllConditionTypes returns all valid pattern condition types
 func GetAllConditionTypes() []PatternConditionType {
 	return []PatternConditionType{
-		ConditionTypeProduct,
 		ConditionTypeTag,
 		ConditionTypeRelationship,
 		ConditionTypeRelationshipTargetID,
 		ConditionTypeRelationshipTargetTag,
-		ConditionTypeProductTag,
-		ConditionTypeProductID,
 	}
 }
 

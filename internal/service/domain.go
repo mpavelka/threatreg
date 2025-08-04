@@ -111,57 +111,89 @@ func ListDomains() ([]models.Domain, error) {
 	return domainRepository.List(nil)
 }
 
-// GetInstancesByDomainId retrieves all instances that belong to a specific domain.
-// Returns a slice of instances with their product information or an error if database access fails.
-func GetInstancesByDomainId(domainID uuid.UUID) ([]models.Instance, error) {
-	instanceRepository, err := getInstanceRepository()
+// GetComponentsByDomainId retrieves all components that belong to a specific domain.
+// Returns a slice of components with their information or an error if database access fails.
+func GetComponentsByDomainId(domainID uuid.UUID) ([]models.Component, error) {
+	componentRepository, err := getComponentRepository()
 	if err != nil {
 		return nil, err
 	}
 
-	return instanceRepository.ListByDomainId(nil, domainID)
+	return componentRepository.ListByDomainId(nil, domainID)
 }
 
-// AddInstanceToDomain associates an instance with a domain.
-// Returns an error if the domain or instance does not exist, or if the association fails.
-func AddInstanceToDomain(domainID, instanceID uuid.UUID) error {
+// AddComponentToDomain associates a component with a domain.
+// Returns an error if the domain or component does not exist, or if the association fails.
+func AddComponentToDomain(domainID, componentID uuid.UUID) error {
 	domainRepository, err := getDomainRepository()
 	if err != nil {
 		return err
 	}
 
-	return domainRepository.AddInstance(nil, domainID, instanceID)
+	return domainRepository.AddComponent(nil, domainID, componentID)
 }
 
-// RemoveInstanceFromDomain removes the association between an instance and a domain.
+// RemoveComponentFromDomain removes the association between a component and a domain.
 // Returns an error if the association does not exist or if removal fails.
-func RemoveInstanceFromDomain(domainID, instanceID uuid.UUID) error {
+func RemoveComponentFromDomain(domainID, componentID uuid.UUID) error {
 	domainRepository, err := getDomainRepository()
 	if err != nil {
 		return err
 	}
 
-	return domainRepository.RemoveInstance(nil, domainID, instanceID)
+	return domainRepository.RemoveComponent(nil, domainID, componentID)
 }
 
-// GetDomainsByInstance retrieves all domains that contain a specific instance.
+// GetDomainsByComponent retrieves all domains that contain a specific component.
 // Returns a slice of domains or an error if database access fails.
-func GetDomainsByInstance(instanceID uuid.UUID) ([]models.Domain, error) {
+func GetDomainsByComponent(componentID uuid.UUID) ([]models.Domain, error) {
 	domainRepository, err := getDomainRepository()
 	if err != nil {
 		return nil, err
 	}
 
-	return domainRepository.GetDomainsByInstanceID(nil, instanceID)
+	return domainRepository.GetDomainsByComponentID(nil, componentID)
 }
 
-// GetInstancesByDomainIdWithThreatStats retrieves all instances in a domain with their threat statistics.
-// Returns instances with counts of total, resolved, and unresolved threats, or an error if database access fails.
-func GetInstancesByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.InstanceWithThreatStats, error) {
-	instanceRepository, err := getInstanceRepository()
+// GetComponentsByDomainIdWithThreatStats retrieves all components in a domain with their threat statistics.
+// Returns components with counts of total, resolved, and unresolved threats, or an error if database access fails.
+func GetComponentsByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.ComponentWithThreatStats, error) {
+	componentRepository, err := getComponentRepository()
 	if err != nil {
 		return nil, err
 	}
 
-	return instanceRepository.ListByDomainIdWithThreatStats(nil, domainID)
+	return componentRepository.ListByDomainIdWithThreatStats(nil, domainID)
+}
+
+// DEPRECATED FUNCTIONS - These redirect to component-based implementations for backward compatibility
+
+// AddInstanceToDomain adds an instance (component) to a domain.
+// DEPRECATED: Use AddComponentToDomain instead.
+func AddInstanceToDomain(domainID, instanceID uuid.UUID) error {
+	return AddComponentToDomain(domainID, instanceID)
+}
+
+// GetInstancesByDomainId retrieves all instances (components) in a domain.
+// DEPRECATED: Use GetComponentsByDomainId instead.
+func GetInstancesByDomainId(domainID uuid.UUID) ([]models.Component, error) {
+	return GetComponentsByDomainId(domainID)
+}
+
+// GetInstancesByDomainIdWithThreatStats retrieves all instances (components) in a domain with threat stats.
+// DEPRECATED: Use GetComponentsByDomainIdWithThreatStats instead.
+func GetInstancesByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.ComponentWithThreatStats, error) {
+	return GetComponentsByDomainIdWithThreatStats(domainID)
+}
+
+// RemoveInstanceFromDomain removes an instance (component) from a domain.
+// DEPRECATED: Use RemoveComponentFromDomain instead.
+func RemoveInstanceFromDomain(domainID, instanceID uuid.UUID) error {
+	return RemoveComponentFromDomain(domainID, instanceID)
+}
+
+// GetDomainsByInstance retrieves all domains that contain a specific instance (component).
+// DEPRECATED: Use GetDomainsByComponent instead.
+func GetDomainsByInstance(instanceID uuid.UUID) ([]models.Domain, error) {
+	return GetDomainsByComponent(instanceID)
 }

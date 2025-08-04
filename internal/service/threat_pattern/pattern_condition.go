@@ -198,10 +198,7 @@ func validatePatternCondition(condition *models.PatternCondition) error {
 
 	// Most conditions require a value (except EXISTS/NOT_EXISTS)
 	valueRequiredTypes := []models.PatternConditionType{
-		models.ConditionTypeProduct,
 		models.ConditionTypeTag,
-		models.ConditionTypeProductTag,
-		models.ConditionTypeProductID,
 		models.ConditionTypeRelationshipTargetID,
 		models.ConditionTypeRelationshipTargetTag,
 	}

@@ -93,21 +93,20 @@ func (r *ThreatRepository) ListByDomainWithUnresolvedByComponentsCount(tx *gorm.
 	var results []ThreatWithUnresolvedByComponentsCount
 
 	query := `
-		WITH domain_components AS (
+		WITH domain_component_ids AS (
 			-- Get all components in the domain
-			SELECT c.id as component_id
-			FROM components c
-			INNER JOIN domain_components dc ON c.id = dc.component_id
-			WHERE dc.domain_id = ?
+			SELECT component_id
+			FROM domain_components
+			WHERE domain_id = ?
 		),
 		threat_assignments_in_domain AS (
 			-- Get all threat assignments for components in domain
 			SELECT DISTINCT 
 				ta.threat_id,
-				dc.component_id,
+				ta.component_id,
 				ta.id as assignment_id
 			FROM threat_assignments ta
-			INNER JOIN domain_components dc ON ta.component_id = dc.component_id
+			INNER JOIN domain_component_ids dc ON ta.component_id = dc.component_id
 		),
 		component_threat_resolution_status AS (
 			-- Determine if each component has resolved each threat

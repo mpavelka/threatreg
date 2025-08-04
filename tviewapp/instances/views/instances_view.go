@@ -96,7 +96,7 @@ func initInstancesTable(contentContainer ContentContainer) {
 			} else {
 				// Navigate to instance detail for other columns
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return NewInstanceThreatManager(instancesList[row-1].ID, contentContainer)
+					return NewComponentThreatManager(instancesList[row-1].ID, contentContainer)
 				})
 			}
 		}

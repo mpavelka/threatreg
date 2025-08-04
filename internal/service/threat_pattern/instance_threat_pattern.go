@@ -9,21 +9,21 @@ import (
 	"github.com/google/uuid"
 )
 
-// ThreatPatternMatch represents a matched threat pattern for an instance
+// ThreatPatternMatch represents a matched threat pattern for an component
 type ThreatPatternMatch struct {
-	InstanceID uuid.UUID
-	ThreatID   uuid.UUID
-	PatternID  uuid.UUID
-	Pattern    models.ThreatPattern
+	ComponentID uuid.UUID
+	ThreatID    uuid.UUID
+	PatternID   uuid.UUID
+	Pattern     models.ThreatPattern
 }
 
-// GetAllInstancesThreatsByThreatPattern evaluates all instances against threat patterns
-// and returns a map of instance IDs to their matching threat patterns
-func GetAllInstancesThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch, error) {
-	// Get all instances
-	instances, err := ListInstances()
+// GetAllComponentsThreatsByThreatPattern evaluates all components against threat patterns
+// and returns a map of component IDs to their matching threat patterns
+func GetAllComponentsThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch, error) {
+	// Get all components
+	components, err := ListComponents()
 	if err != nil {
-		return nil, fmt.Errorf("error getting instances: %w", err)
+		return nil, fmt.Errorf("error getting components: %w", err)
 	}
 
 	// Get all active threat patterns
@@ -34,49 +34,49 @@ func GetAllInstancesThreatsByThreatPattern() (map[uuid.UUID][]ThreatPatternMatch
 
 	result := make(map[uuid.UUID][]ThreatPatternMatch)
 
-	// Evaluate each instance against all active patterns
-	for _, instance := range instances {
+	// Evaluate each component against all active patterns
+	for _, component := range components {
 		var matches []ThreatPatternMatch
 
 		for _, pattern := range activePatterns {
-			if evaluatePattern(instance, pattern) {
+			if evaluatePattern(component, pattern) {
 				matches = append(matches, ThreatPatternMatch{
-					InstanceID: instance.ID,
-					ThreatID:   pattern.ThreatID,
-					PatternID:  pattern.ID,
-					Pattern:    pattern,
+					ComponentID: component.ID,
+					ThreatID:    pattern.ThreatID,
+					PatternID:   pattern.ID,
+					Pattern:     pattern,
 				})
 			}
 		}
 
 		if len(matches) > 0 {
-			result[instance.ID] = matches
+			result[component.ID] = matches
 		}
 	}
 
 	return result, nil
 }
 
-// GetInstanceThreatsByThreatPattern evaluates a single instance against a single threat pattern
-// and returns the threat pattern matches if the instance matches the pattern
-func GetInstanceThreatsByThreatPattern(instance models.Instance, pattern models.ThreatPattern) ([]ThreatPatternMatch, error) {
+// GetComponentThreatsByThreatPattern evaluates a single component against a single threat pattern
+// and returns the threat pattern matches if the component matches the pattern
+func GetComponentThreatsByThreatPattern(component models.Component, pattern models.ThreatPattern) ([]ThreatPatternMatch, error) {
 	var matches []ThreatPatternMatch
 
-	if evaluatePattern(instance, pattern) {
+	if evaluatePattern(component, pattern) {
 		matches = append(matches, ThreatPatternMatch{
-			InstanceID: instance.ID,
-			ThreatID:   pattern.ThreatID,
-			PatternID:  pattern.ID,
-			Pattern:    pattern,
+			ComponentID: component.ID,
+			ThreatID:    pattern.ThreatID,
+			PatternID:   pattern.ID,
+			Pattern:     pattern,
 		})
 	}
 
 	return matches, nil
 }
 
-// GetInstanceThreatsByExistingThreatPatterns evaluates a single instance against all active threat patterns
-// and returns all matching threat patterns for that instance
-func GetInstanceThreatsByExistingThreatPatterns(instance models.Instance) ([]ThreatPatternMatch, error) {
+// GetComponentThreatsByExistingThreatPatterns evaluates a single component against all active threat patterns
+// and returns all matching threat patterns for that component
+func GetComponentThreatsByExistingThreatPatterns(component models.Component) ([]ThreatPatternMatch, error) {
 	// Get all active threat patterns
 	activePatterns, err := ListActiveThreatPatterns()
 	if err != nil {
@@ -85,14 +85,14 @@ func GetInstanceThreatsByExistingThreatPatterns(instance models.Instance) ([]Thr
 
 	var matches []ThreatPatternMatch
 
-	// Evaluate the instance against all active patterns
+	// Evaluate the component against all active patterns
 	for _, pattern := range activePatterns {
-		if evaluatePattern(instance, pattern) {
+		if evaluatePattern(component, pattern) {
 			matches = append(matches, ThreatPatternMatch{
-				InstanceID: instance.ID,
-				ThreatID:   pattern.ThreatID,
-				PatternID:  pattern.ID,
-				Pattern:    pattern,
+				ComponentID: component.ID,
+				ThreatID:    pattern.ThreatID,
+				PatternID:   pattern.ID,
+				Pattern:     pattern,
 			})
 		}
 	}
@@ -100,15 +100,15 @@ func GetInstanceThreatsByExistingThreatPatterns(instance models.Instance) ([]Thr
 	return matches, nil
 }
 
-// evaluatePattern checks if an instance matches a threat pattern
-func evaluatePattern(instance models.Instance, pattern models.ThreatPattern) bool {
+// evaluatePattern checks if an component matches a threat pattern
+func evaluatePattern(component models.Component, pattern models.ThreatPattern) bool {
 	if !pattern.IsActive {
 		return false
 	}
 
 	// All conditions must be met for the pattern to match
 	for _, condition := range pattern.Conditions {
-		if !evaluateCondition(instance, condition) {
+		if !evaluateCondition(component, condition) {
 			return false
 		}
 	}
@@ -116,52 +116,35 @@ func evaluatePattern(instance models.Instance, pattern models.ThreatPattern) boo
 	return true
 }
 
-// evaluateCondition evaluates a single pattern condition against an instance
-func evaluateCondition(instance models.Instance, condition models.PatternCondition) bool {
+// evaluateCondition evaluates a single pattern condition against an component
+func evaluateCondition(component models.Component, condition models.PatternCondition) bool {
 	conditionType, _ := models.ParsePatternConditionType(condition.ConditionType)
 	operator, _ := models.ParsePatternOperator(condition.Operator)
 
 	switch conditionType {
-	case models.ConditionTypeProduct:
-		productName, err := getProductName(instance.InstanceOf)
-		if err != nil {
-			return false
-		}
-		return applyOperator(productName, operator, condition.Value)
-
-	case models.ConditionTypeProductID:
-		return applyOperator(instance.InstanceOf.String(), operator, condition.Value)
-
-	case models.ConditionTypeProductTag:
-		productTags, err := getProductTagNames(instance.InstanceOf)
-		if err != nil {
-			return false
-		}
-		return evaluateTagCondition(productTags, operator, condition.Value)
-
 	case models.ConditionTypeTag:
-		instanceTags, err := getInstanceTagNames(instance.ID)
+		componentTags, err := getComponentTagNames(component.ID)
 		if err != nil {
 			return false
 		}
-		return evaluateTagCondition(instanceTags, operator, condition.Value)
+		return evaluateTagCondition(componentTags, operator, condition.Value)
 
 	case models.ConditionTypeRelationship:
-		relationships, err := getInstanceRelationships(instance.ID)
+		relationships, err := getComponentRelationships(component.ID)
 		if err != nil {
 			return false
 		}
 		return evaluateRelationshipCondition(relationships, operator, condition.RelationshipType, condition.Value)
 
 	case models.ConditionTypeRelationshipTargetID:
-		relationships, err := getInstanceRelationships(instance.ID)
+		relationships, err := getComponentRelationships(component.ID)
 		if err != nil {
 			return false
 		}
 		return evaluateRelationshipTargetIDCondition(relationships, operator, condition.RelationshipType, condition.Value)
 
 	case models.ConditionTypeRelationshipTargetTag:
-		relationships, err := getInstanceRelationships(instance.ID)
+		relationships, err := getComponentRelationships(component.ID)
 		if err != nil {
 			return false
 		}
@@ -172,17 +155,8 @@ func evaluateCondition(instance models.Instance, condition models.PatternConditi
 	}
 }
 
-// Helper functions for getting data
-func getProductName(productID uuid.UUID) (string, error) {
-	product, err := GetProduct(productID)
-	if err != nil {
-		return "", err
-	}
-	return product.Name, nil
-}
-
-func getProductTagNames(productID uuid.UUID) ([]string, error) {
-	tags, err := ListTagsByProductID(productID)
+func getComponentTagNames(componentID uuid.UUID) ([]string, error) {
+	tags, err := service.ListTagsByComponentID(componentID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,20 +167,8 @@ func getProductTagNames(productID uuid.UUID) ([]string, error) {
 	return tagNames, nil
 }
 
-func getInstanceTagNames(instanceID uuid.UUID) ([]string, error) {
-	tags, err := ListTagsByInstanceID(instanceID)
-	if err != nil {
-		return nil, err
-	}
-	var tagNames []string
-	for _, tag := range tags {
-		tagNames = append(tagNames, tag.Name)
-	}
-	return tagNames, nil
-}
-
-func getInstanceRelationships(instanceID uuid.UUID) ([]models.Relationship, error) {
-	relationships, err := ListRelationshipsByFromInstanceID(instanceID)
+func getComponentRelationships(componentID uuid.UUID) ([]models.Relationship, error) {
+	relationships, err := service.ListRelationshipsByFromComponentID(componentID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,15 +219,15 @@ func evaluateRelationshipTargetIDCondition(relationships []models.Relationship, 
 func evaluateRelationshipTargetTagCondition(relationships []models.Relationship, operator models.PatternOperator, relationshipType, targetTag string) bool {
 	for _, rel := range relationships {
 		if rel.Type == relationshipType {
-			// Check if target instance has the specified tag
-			var targetInstanceID uuid.UUID
-			if rel.ToInstanceID != nil {
-				targetInstanceID = *rel.ToInstanceID
+			// Check if target component has the specified tag
+			var targetComponentID uuid.UUID
+			if rel.ToComponentID != uuid.Nil {
+				targetComponentID = rel.ToComponentID
 			} else {
-				continue // Skip if no target instance
+				continue // Skip if no target component
 			}
 
-			targetTags, err := getInstanceTagNames(targetInstanceID)
+			targetTags, err := getComponentTagNames(targetComponentID)
 			if err != nil {
 				continue
 			}
@@ -325,10 +287,7 @@ func hasRelationshipType(relationships []models.Relationship, relationshipType s
 func hasRelationshipToTarget(relationships []models.Relationship, relationshipType, targetID string) bool {
 	for _, rel := range relationships {
 		if rel.Type == relationshipType {
-			if rel.ToInstanceID != nil && rel.ToInstanceID.String() == targetID {
-				return true
-			}
-			if rel.ToProductID != nil && rel.ToProductID.String() == targetID {
+			if rel.ToComponentID != uuid.Nil && rel.ToComponentID.String() == targetID {
 				return true
 			}
 		}
@@ -338,10 +297,10 @@ func hasRelationshipToTarget(relationships []models.Relationship, relationshipTy
 
 // Helper functions to call service functions from the main service package
 
-// ListInstances is a wrapper around the main service package function to list all instances.
-// Returns all instances with their product information or an error if database access fails.
-func ListInstances() ([]models.Instance, error) {
-	return service.ListInstances()
+// ListComponents is a wrapper around the main service package function to list all components.
+// Returns all components with their product information or an error if database access fails.
+func ListComponents() ([]models.Component, error) {
+	return service.ListComponents()
 }
 
 // GetProduct is a wrapper around the main service package function to retrieve a product by ID.
@@ -356,14 +315,14 @@ func ListTagsByProductID(productID uuid.UUID) ([]models.Tag, error) {
 	return service.ListTagsByProductID(productID)
 }
 
-// ListTagsByInstanceID is a wrapper around the main service package function to list tags by instance.
-// Returns all tags assigned to the specified instance or an error if database access fails.
-func ListTagsByInstanceID(instanceID uuid.UUID) ([]models.Tag, error) {
-	return service.ListTagsByInstanceID(instanceID)
+// ListTagsByComponentID is a wrapper around the main service package function to list tags by component.
+// Returns all tags assigned to the specified component or an error if database access fails.
+func ListTagsByComponentID(componentID uuid.UUID) ([]models.Tag, error) {
+	return service.ListTagsByComponentID(componentID)
 }
 
-// ListRelationshipsByFromInstanceID is a wrapper around the main service package function to list relationships.
-// Returns all relationships originating from the specified instance or an error if database access fails.
-func ListRelationshipsByFromInstanceID(instanceID uuid.UUID) ([]models.Relationship, error) {
-	return service.ListRelationshipsByFromInstanceID(instanceID)
+// ListRelationshipsByFromComponentID is a wrapper around the main service package function to list relationships.
+// Returns all relationships originating from the specified component or an error if database access fails.
+func ListRelationshipsByFromComponentID(componentID uuid.UUID) ([]models.Relationship, error) {
+	return service.ListRelationshipsByFromComponentID(componentID)
 }

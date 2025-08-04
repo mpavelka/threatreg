@@ -21,8 +21,9 @@ import (
 // - Returns a cleanup function that closes the database and removes temp files
 func SetupTestDatabase(t *testing.T) func() {
 	return SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
+		&models.Domain{},
+		&models.Tag{},
 		&models.Threat{},
 		&models.Control{},
 		&models.ThreatAssignment{},
@@ -30,6 +31,7 @@ func SetupTestDatabase(t *testing.T) func() {
 		&models.ThreatControl{},
 		&models.ThreatAssignmentResolution{},
 		&models.ThreatAssignmentResolutionDelegation{},
+		&models.Relationship{},
 	)
 }
 

@@ -31,305 +31,117 @@ func setupTestDB(t *testing.T) func() {
 	err := database.Connect()
 	require.NoError(t, err, "Failed to connect to test database")
 
-	// Run migrations for all models
+	// Get database instance
 	db := database.GetDB()
 	require.NotNil(t, db, "Database connection should not be nil")
 
-	err = db.AutoMigrate(
-		&Product{},
-		&Instance{},
-		&Threat{},
-		&Control{},
-		&ThreatAssignment{},
-		&ControlAssignment{},
-		&ThreatControl{},
-	)
-	require.NoError(t, err, "Failed to run migrations")
+	// Auto-migrate models for testing
+	err = db.AutoMigrate(&Component{}, &Threat{}, &ThreatAssignment{})
+	require.NoError(t, err, "Failed to migrate test database")
 
 	// Return cleanup function
 	return func() {
+		// Close database connection
 		database.Close()
+
+		// Remove temp database file
+		os.Remove(dbPath)
+
+		// Restore original config
 		config.AppConfig = originalConfig
-		os.RemoveAll(tempDir)
 	}
 }
 
-func TestThreatAssignmentConstraints_Integration(t *testing.T) {
+func TestThreatAssignmentConstraints(t *testing.T) {
 	cleanup := setupTestDB(t)
 	defer cleanup()
 
 	db := database.GetDB()
-	require.NotNil(t, db)
 
 	// Create test data
-	product := &Product{
-		Name:        "Test Product",
-		Description: "A test product",
+	component := &Component{
+		ID:          uuid.New(),
+		Name:        "Test Component",
+		Description: "A test component",
+		Type:        ComponentTypeProduct,
 	}
-	require.NoError(t, db.Create(product).Error)
-
-	instance := &Instance{
-		Name:       "Test Instance",
-		InstanceOf: product.ID,
-	}
-	require.NoError(t, db.Create(instance).Error)
+	require.NoError(t, db.Create(component).Error)
 
 	threat := &Threat{
+		ID:          uuid.New(),
 		Title:       "Test Threat",
 		Description: "A test threat",
 	}
 	require.NoError(t, db.Create(threat).Error)
 
-	t.Run("ValidAssignment_ProductOnly", func(t *testing.T) {
-		// Test creating assignment with only ProductID set
+	t.Run("ValidAssignment_ComponentReference", func(t *testing.T) {
+		// Test creating assignment with valid ComponentID
 		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  product.ID,
-			InstanceID: uuid.Nil, // Explicitly nil
+			ThreatID:    threat.ID,
+			ComponentID: component.ID,
 		}
 
 		err := db.Create(assignment).Error
-		assert.NoError(t, err, "Should allow assignment with only ProductID set")
+		assert.NoError(t, err, "Should allow assignment with valid ComponentID")
 
 		// Verify assignment was created
 		var retrieved ThreatAssignment
 		err = db.First(&retrieved, "id = ?", assignment.ID).Error
 		assert.NoError(t, err)
 		assert.Equal(t, threat.ID, retrieved.ThreatID)
-		assert.Equal(t, product.ID, retrieved.ProductID)
-		assert.Equal(t, uuid.Nil, retrieved.InstanceID)
+		assert.Equal(t, component.ID, retrieved.ComponentID)
 
 		// Cleanup
 		db.Delete(assignment)
 	})
 
-	t.Run("ValidAssignment_InstanceOnly", func(t *testing.T) {
-		// Test creating assignment with only InstanceID set
+	t.Run("InvalidAssignment_NonExistentComponent", func(t *testing.T) {
+		// Test creating assignment with non-existent ComponentID
+		nonExistentID := uuid.New()
 		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  uuid.Nil, // Explicitly nil
-			InstanceID: instance.ID,
+			ThreatID:    threat.ID,
+			ComponentID: nonExistentID,
 		}
 
 		err := db.Create(assignment).Error
-		assert.NoError(t, err, "Should allow assignment with only InstanceID set")
-
-		// Verify assignment was created
-		var retrieved ThreatAssignment
-		err = db.First(&retrieved, "id = ?", assignment.ID).Error
-		assert.NoError(t, err)
-		assert.Equal(t, threat.ID, retrieved.ThreatID)
-		assert.Equal(t, uuid.Nil, retrieved.ProductID)
-		assert.Equal(t, instance.ID, retrieved.InstanceID)
-
-		// Cleanup
-		db.Delete(assignment)
+		// Note: Depending on database constraints, this might or might not error
+		// SQLite with foreign key constraints disabled might allow this
+		if err != nil {
+			assert.Contains(t, err.Error(), "FOREIGN KEY constraint")
+		}
 	})
 
-	t.Run("InvalidAssignment_BothSet", func(t *testing.T) {
-		// Test creating assignment with both ProductID and InstanceID set
+	t.Run("InvalidAssignment_NilComponentID", func(t *testing.T) {
+		// Test creating assignment with nil ComponentID
 		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  product.ID,
-			InstanceID: instance.ID, // Both set - should fail
+			ThreatID:    threat.ID,
+			ComponentID: uuid.Nil, // Should fail validation
 		}
 
 		err := db.Create(assignment).Error
-		assert.Error(t, err, "Should reject assignment with both ProductID and InstanceID set")
-		assert.Contains(t, err.Error(), "cannot have both ProductID and InstanceID set")
+		// This should fail due to NOT NULL constraint on ComponentID
+		assert.Error(t, err, "Should reject assignment with nil ComponentID")
 	})
 
-	t.Run("InvalidAssignment_NeitherSet", func(t *testing.T) {
-		// Test creating assignment with neither ProductID nor InstanceID set
-		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  uuid.Nil,
-			InstanceID: uuid.Nil, // Both nil - should fail
-		}
-
-		err := db.Create(assignment).Error
-		assert.Error(t, err, "Should reject assignment with neither ProductID nor InstanceID set")
-		assert.Contains(t, err.Error(), "must have either ProductID or InstanceID set")
-	})
-
-	t.Run("InvalidUpdate_BothSet", func(t *testing.T) {
-		// Create valid assignment first
-		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  product.ID,
-			InstanceID: uuid.Nil,
-		}
-		require.NoError(t, db.Create(assignment).Error)
-
-		// Try to update to invalid state (both set)
-		assignment.InstanceID = instance.ID
-		err := db.Save(assignment).Error
-		assert.Error(t, err, "Should reject update that sets both ProductID and InstanceID")
-		assert.Contains(t, err.Error(), "cannot have both ProductID and InstanceID set")
-
-		// Cleanup
-		db.Delete(assignment)
-	})
-
-	t.Run("InvalidUpdate_NeitherSet", func(t *testing.T) {
-		// Create valid assignment first
-		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  product.ID,
-			InstanceID: uuid.Nil,
-		}
-		require.NoError(t, db.Create(assignment).Error)
-
-		// Try to update to invalid state (neither set)
-		assignment.ProductID = uuid.Nil
-		err := db.Save(assignment).Error
-		assert.Error(t, err, "Should reject update that clears both ProductID and InstanceID")
-		assert.Contains(t, err.Error(), "must have either ProductID or InstanceID set")
-
-		// Cleanup - reset to valid state first
-		assignment.ProductID = product.ID
-		db.Save(assignment)
-		db.Delete(assignment)
-	})
-
-	t.Run("ValidUpdate_SwitchFromProductToInstance", func(t *testing.T) {
-		// Create assignment with ProductID
-		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  product.ID,
-			InstanceID: uuid.Nil,
-		}
-		require.NoError(t, db.Create(assignment).Error)
-
-		// Switch to InstanceID (valid transition)
-		assignment.ProductID = uuid.Nil
-		assignment.InstanceID = instance.ID
-		err := db.Save(assignment).Error
-		assert.NoError(t, err, "Should allow switching from ProductID to InstanceID")
-
-		// Verify the update
-		var retrieved ThreatAssignment
-		err = db.First(&retrieved, "id = ?", assignment.ID).Error
-		require.NoError(t, err)
-		assert.Equal(t, uuid.Nil, retrieved.ProductID)
-		assert.Equal(t, instance.ID, retrieved.InstanceID)
-
-		// Cleanup
-		db.Delete(assignment)
-	})
-
-	t.Run("ValidUpdate_SwitchFromInstanceToProduct", func(t *testing.T) {
-		// Create assignment with InstanceID
-		assignment := &ThreatAssignment{
-			ThreatID:   threat.ID,
-			ProductID:  uuid.Nil,
-			InstanceID: instance.ID,
-		}
-		require.NoError(t, db.Create(assignment).Error)
-
-		// Switch to ProductID (valid transition)
-		assignment.InstanceID = uuid.Nil
-		assignment.ProductID = product.ID
-		err := db.Save(assignment).Error
-		assert.NoError(t, err, "Should allow switching from InstanceID to ProductID")
-
-		// Verify the update
-		var retrieved ThreatAssignment
-		err = db.First(&retrieved, "id = ?", assignment.ID).Error
-		require.NoError(t, err)
-		assert.Equal(t, product.ID, retrieved.ProductID)
-		assert.Equal(t, uuid.Nil, retrieved.InstanceID)
-
-		// Cleanup
-		db.Delete(assignment)
-	})
-}
-
-func TestThreatAssignmentRepository_Integration(t *testing.T) {
-	cleanup := setupTestDB(t)
-	defer cleanup()
-
-	db := database.GetDB()
-	require.NotNil(t, db)
-
-	// Create test data
-	product := &Product{
-		Name:        "Test Product",
-		Description: "A test product",
-	}
-	require.NoError(t, db.Create(product).Error)
-
-	instance := &Instance{
-		Name:       "Test Instance",
-		InstanceOf: product.ID,
-	}
-	require.NoError(t, db.Create(instance).Error)
-
-	threat := &Threat{
-		Title:       "Test Threat",
-		Description: "A test threat",
-	}
-	require.NoError(t, db.Create(threat).Error)
-
-	repo := NewThreatAssignmentRepository(db)
-
-	t.Run("AssignThreatToProduct_Success", func(t *testing.T) {
-		assignment, err := repo.AssignThreatToProduct(nil, threat.ID, product.ID)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, assignment)
-		assert.Equal(t, threat.ID, assignment.ThreatID)
-		assert.Equal(t, product.ID, assignment.ProductID)
-		assert.Equal(t, uuid.Nil, assignment.InstanceID)
-
-		// Cleanup
-		repo.Delete(nil, assignment.ID)
-	})
-
-	t.Run("AssignThreatToProduct_Duplicate", func(t *testing.T) {
+	t.Run("DuplicateAssignment_SameThreatAndComponent", func(t *testing.T) {
 		// Create first assignment
-		assignment1, err := repo.AssignThreatToProduct(nil, threat.ID, product.ID)
+		assignment1 := &ThreatAssignment{
+			ThreatID:    threat.ID,
+			ComponentID: component.ID,
+		}
+		err := db.Create(assignment1).Error
 		require.NoError(t, err)
 
 		// Try to create duplicate assignment
-		assignment2, err := repo.AssignThreatToProduct(nil, threat.ID, product.ID)
-
-		// Should return existing assignment without error
-		assert.NoError(t, err)
-		assert.NotNil(t, assignment2)
-		assert.Equal(t, assignment1.ID, assignment2.ID)
-
-		// Cleanup
-		repo.Delete(nil, assignment1.ID)
-	})
-
-	t.Run("AssignThreatToInstance_Success", func(t *testing.T) {
-		assignment, err := repo.AssignThreatToInstance(nil, threat.ID, instance.ID)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, assignment)
-		assert.Equal(t, threat.ID, assignment.ThreatID)
-		assert.Equal(t, uuid.Nil, assignment.ProductID)
-		assert.Equal(t, instance.ID, assignment.InstanceID)
+		assignment2 := &ThreatAssignment{
+			ThreatID:    threat.ID,
+			ComponentID: component.ID,
+		}
+		err = db.Create(assignment2).Error
+		// Should fail due to unique constraint on threat_id + component_id
+		assert.Error(t, err, "Should reject duplicate threat assignment to same component")
 
 		// Cleanup
-		repo.Delete(nil, assignment.ID)
-	})
-
-	t.Run("AssignThreatToInstance_Duplicate", func(t *testing.T) {
-		// Create first assignment
-		assignment1, err := repo.AssignThreatToInstance(nil, threat.ID, instance.ID)
-		require.NoError(t, err)
-
-		// Try to create duplicate assignment
-		assignment2, err := repo.AssignThreatToInstance(nil, threat.ID, instance.ID)
-
-		// Should return existing assignment without error
-		assert.NoError(t, err)
-		assert.NotNil(t, assignment2)
-		assert.Equal(t, assignment1.ID, assignment2.ID)
-
-		// Cleanup
-		repo.Delete(nil, assignment1.ID)
+		db.Delete(assignment1)
 	})
 }

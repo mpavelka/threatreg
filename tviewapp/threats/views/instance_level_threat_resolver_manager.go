@@ -10,9 +10,9 @@ import (
 	"github.com/rivo/tview"
 )
 
-// NewInstanceLevelThreatResolverManager creates a threat resolver management view for a specific instance
-func NewInstanceLevelThreatResolverManager(assignment models.ThreatAssignment, resolverInstanceId uuid.UUID, contentContainer ContentContainer) tview.Primitive {
-	resolver, err := service.GetInstance(resolverInstanceId)
+// NewComponentLevelThreatResolverManager creates a threat resolver management view for a specific instance
+func NewComponentLevelThreatResolverManager(assignment models.ThreatAssignment, resolverComponentId uuid.UUID, contentContainer ContentContainer) tview.Primitive {
+	resolver, err := service.GetComponent(resolverComponentId)
 	if err != nil {
 		return tview.NewTextView().SetText(fmt.Sprintf("Error loading resolver instance: %v", err))
 	}
@@ -31,7 +31,7 @@ func NewInstanceLevelThreatResolverManager(assignment models.ThreatAssignment, r
 }
 
 // buildTopSection creates the top two-column section with threat info and resolver details
-func buildTopSection(assignment models.ThreatAssignment, resolver *models.Instance, contentContainer ContentContainer) *tview.Flex {
+func buildTopSection(assignment models.ThreatAssignment, resolver *models.Component, contentContainer ContentContainer) *tview.Flex {
 	top := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	// Left: Threat Assignment Information
@@ -52,15 +52,10 @@ func buildThreatInfoSection(assignment models.ThreatAssignment) *tview.TextView 
 	info.SetBorder(true).SetTitle("Threat Assignment Information")
 
 	var instanceName string
-	if assignment.InstanceID != uuid.Nil {
-		instanceName = assignment.Instance.Name
-		info.SetText(fmt.Sprintf("Instance: %s\nThreat: %s\n\n%s",
+	if assignment.ComponentID != uuid.Nil {
+		instanceName = assignment.Component.Name
+		info.SetText(fmt.Sprintf("Component: %s\nThreat: %s\n\n%s",
 			instanceName,
-			assignment.Threat.Title,
-			assignment.Threat.Description))
-	} else if assignment.ProductID != uuid.Nil {
-		info.SetText(fmt.Sprintf("Product: %s\nThreat: %s\n\n%s",
-			assignment.Product.Name,
 			assignment.Threat.Title,
 			assignment.Threat.Description))
 	} else {
@@ -75,7 +70,7 @@ func buildThreatInfoSection(assignment models.ThreatAssignment) *tview.TextView 
 // buildResolverColumn creates the right column with resolver info, resolution, and actions
 func buildResolverColumn(
 	assignment models.ThreatAssignment,
-	resolverInstance *models.Instance,
+	resolverComponent *models.Component,
 	contentContainer ContentContainer,
 ) *tview.Flex {
 	column := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -83,14 +78,14 @@ func buildResolverColumn(
 	// Resolver information
 	resolverInfo := tview.NewTextView()
 	resolverInfo.SetBorder(true).SetTitle("Resolver Information")
-	resolverInfo.SetText(fmt.Sprintf("Instance: %s\nProduct: %s",
-		resolverInstance.Name, resolverInstance.Product.Name))
+	resolverInfo.SetText(fmt.Sprintf("Component: %s\nProduct: %s",
+		resolverComponent.Name, "Currently no way to determine product name")) // Product name not available in this context
 
 	// Resolution status
-	resolutionInfo := buildResolutionSection(assignment, resolverInstance)
+	resolutionInfo := buildResolutionSection(assignment, resolverComponent)
 
 	// Action buttons
-	actions := buildActionBar(assignment, resolverInstance, contentContainer)
+	actions := buildActionBar(assignment, resolverComponent, contentContainer)
 
 	column.AddItem(resolverInfo, 3, 0, false)
 	column.AddItem(resolutionInfo, 5, 0, false)
@@ -100,17 +95,17 @@ func buildResolverColumn(
 }
 
 // buildResolutionSection creates the resolution information display
-func buildResolutionSection(assignment models.ThreatAssignment, resolverInstance *models.Instance) *tview.TextView {
+func buildResolutionSection(assignment models.ThreatAssignment, resolverComponent *models.Component) *tview.TextView {
 	section := tview.NewTextView()
 	section.SetBorder(true).SetTitle("Resolution")
 
-	resolution, err := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
+	resolution, err := service.GetComponentLevelThreatResolution(assignment.ID, resolverComponent.ID)
 	if err == nil && resolution != nil {
 		// Check if this resolution has been delegated by looking for delegation info
 		targetResolution, err := service.GetDelegatedToResolutionByDelegatedByID(resolution.ID)
 		if err == nil && targetResolution != nil {
 			section.SetText(fmt.Sprintf("Delegated to: %s (%s)",
-				targetResolution.Instance.Name,
+				targetResolution.Component.Name,
 				targetResolution.ThreatAssignment.Threat.Title))
 		} else {
 			section.SetText(fmt.Sprintf("Status: %s\nDescription: %s",
@@ -124,19 +119,19 @@ func buildResolutionSection(assignment models.ThreatAssignment, resolverInstance
 }
 
 // buildActionBar creates the action buttons bar
-func buildActionBar(assignment models.ThreatAssignment, resolverInstance *models.Instance, contentContainer ContentContainer) *tview.Flex {
+func buildActionBar(assignment models.ThreatAssignment, resolverComponent *models.Component, contentContainer ContentContainer) *tview.Flex {
 	bar := tview.NewFlex().SetDirection(tview.FlexColumn)
 	bar.SetTitle("Actions").SetBorder(true)
 
 	editBtn := tview.NewButton("Edit Resolution").SetSelectedFunc(func() {
-		resolutionWithDelegation, _ := service.GetInstanceLevelThreatResolutionWithDelegation(assignment.ID, resolverInstance.ID)
+		resolutionWithDelegation, _ := service.GetComponentLevelThreatResolutionWithDelegation(assignment.ID, resolverComponent.ID)
 		var resolutionPtr *models.ThreatAssignmentResolution
 		if resolutionWithDelegation != nil {
 			resolutionPtr = &resolutionWithDelegation.Resolution
 		}
 		contentContainer.PushContent(modals.CreateEditThreatAssignmentResolutionModal(
 			assignment, resolutionPtr,
-			&resolverInstance.ID,
+			&resolverComponent.ID,
 			nil, // resolverProductId is nil for instance-level resolution
 			func() { contentContainer.PopContent() },
 			func() { contentContainer.PopContent() },
@@ -148,7 +143,7 @@ func buildActionBar(assignment models.ThreatAssignment, resolverInstance *models
 	})
 
 	delegateBtn := tview.NewButton("Delegate").SetSelectedFunc(func() {
-		resolution, err := service.GetInstanceLevelThreatResolution(assignment.ID, resolverInstance.ID)
+		resolution, err := service.GetComponentLevelThreatResolution(assignment.ID, resolverComponent.ID)
 		if err != nil || resolution == nil {
 			// TODO: Show error message that resolution must exist to delegate
 			return

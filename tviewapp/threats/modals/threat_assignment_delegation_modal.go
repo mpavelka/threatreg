@@ -12,11 +12,11 @@ import (
 // DelegationModalState holds the state for the delegation modal
 type DelegationModalState struct {
 	sourceResolution        models.ThreatAssignmentResolution
-	availableInstances      []models.Instance
+	availableComponents     []models.Component
 	instanceOptions         []string
 	filteredResolutions     []models.ThreatAssignmentResolution
 	resolutionOptions       []string
-	selectedInstanceIndex   int
+	selectedComponentIndex  int
 	selectedResolutionIndex int
 	onSave                  func(targetResolution models.ThreatAssignmentResolution)
 	onClose                 func()
@@ -30,26 +30,26 @@ func NewDelegationModalState(
 	onClose func(),
 ) (*DelegationModalState, error) {
 	// Load instances for the dropdown
-	instances, err := service.ListInstances()
+	instances, err := service.ListComponents()
 	if err != nil {
 		return nil, fmt.Errorf("error loading instances: %v", err)
 	}
 
 	// Filter out the current instance
-	var availableInstances []models.Instance
+	var availableComponents []models.Component
 	instanceOptions := []string{}
 	for _, instance := range instances {
-		if instance.ID != sourceResolution.InstanceID {
-			availableInstances = append(availableInstances, instance)
+		if instance.ID != sourceResolution.ComponentID {
+			availableComponents = append(availableComponents, instance)
 			instanceOptions = append(instanceOptions, instance.Name)
 		}
 	}
 
 	return &DelegationModalState{
 		sourceResolution:        sourceResolution,
-		availableInstances:      availableInstances,
+		availableComponents:     availableComponents,
 		instanceOptions:         instanceOptions,
-		selectedInstanceIndex:   -1,
+		selectedComponentIndex:  -1,
 		selectedResolutionIndex: -1,
 		onSave:                  onSave,
 		onClose:                 onClose,
@@ -65,16 +65,16 @@ func (state *DelegationModalState) GetSelectedResolution() *models.ThreatAssignm
 	return nil
 }
 
-// LoadResolutionsForInstance loads threat resolutions for the selected instance
-func (state *DelegationModalState) LoadResolutionsForInstance(instanceIndex int) error {
-	if instanceIndex < 0 || instanceIndex >= len(state.availableInstances) {
+// LoadResolutionsForComponent loads threat resolutions for the selected instance
+func (state *DelegationModalState) LoadResolutionsForComponent(instanceIndex int) error {
+	if instanceIndex < 0 || instanceIndex >= len(state.availableComponents) {
 		state.filteredResolutions = []models.ThreatAssignmentResolution{}
 		state.resolutionOptions = []string{}
 		return nil
 	}
 
-	selectedInstanceID := state.availableInstances[instanceIndex].ID
-	resolutions, err := service.ListThreatResolutionsByInstanceID(selectedInstanceID)
+	selectedComponentID := state.availableComponents[instanceIndex].ID
+	resolutions, err := service.ListThreatResolutionsByComponentID(selectedComponentID)
 	if err != nil {
 		return fmt.Errorf("error loading resolutions: %v", err)
 	}
@@ -85,8 +85,8 @@ func (state *DelegationModalState) LoadResolutionsForInstance(instanceIndex int)
 
 	for _, resolution := range resolutions {
 		var assignmentType string
-		if resolution.ThreatAssignment.InstanceID != uuid.Nil {
-			assignmentType = "Instance-level"
+		if resolution.ThreatAssignment.ComponentID != uuid.Nil {
+			assignmentType = "Component-level"
 		} else {
 			assignmentType = "Product-level"
 		}
@@ -103,15 +103,15 @@ func (state *DelegationModalState) LoadResolutionsForInstance(instanceIndex int)
 // PopulateForm populates the form with current state
 func (state *DelegationModalState) PopulateForm() {
 	state.form.Clear(false)
-	state.form.SetBorder(true).SetTitle("Delegate To Instance")
+	state.form.SetBorder(true).SetTitle("Delegate To Component")
 
-	// Instance dropdown
-	state.form.AddDropDown("Target Instance", state.instanceOptions, state.selectedInstanceIndex, func(option string, optionIndex int) {
-		state.selectedInstanceIndex = optionIndex
+	// Component dropdown
+	state.form.AddDropDown("Target Component", state.instanceOptions, state.selectedComponentIndex, func(option string, optionIndex int) {
+		state.selectedComponentIndex = optionIndex
 		state.selectedResolutionIndex = -1 // Reset resolution selection
 
 		// Load resolutions for selected instance
-		err := state.LoadResolutionsForInstance(optionIndex)
+		err := state.LoadResolutionsForComponent(optionIndex)
 		if err != nil {
 			// TODO: Handle error properly
 			return
@@ -156,8 +156,8 @@ func CreateThreatAssignmentDelegationModal(
 	onSave func(targetResolution models.ThreatAssignmentResolution),
 	onClose func(),
 ) tview.Primitive {
-	// Validate that source resolution has InstanceID
-	if sourceResolution.InstanceID == uuid.Nil {
+	// Validate that source resolution has ComponentID
+	if sourceResolution.ComponentID == uuid.Nil {
 		return createErrorModal("Error: Threat resolutions can only be delegated from an instance to another instance.\nThis resolution is not associated with an instance.", "Delegation Error", onClose)
 	}
 
@@ -168,17 +168,17 @@ func CreateThreatAssignmentDelegationModal(
 	}
 
 	// Check if there are available instances
-	if len(state.availableInstances) == 0 {
-		return createErrorModal("No other instances available for delegation.", "No Instances Available", onClose)
+	if len(state.availableComponents) == 0 {
+		return createErrorModal("No other instances available for delegation.", "No Components Available", onClose)
 	}
 
 	// Populate the form initially
 	state.PopulateForm()
 
 	// Show source resolution information
-	infoText := fmt.Sprintf("Threat: %s\nInstance: %s",
+	infoText := fmt.Sprintf("Threat: %s\nComponent: %s",
 		sourceResolution.ThreatAssignment.Threat.Title,
-		sourceResolution.Instance.Name,
+		sourceResolution.Component.Name,
 	)
 
 	infoView := tview.NewTextView()

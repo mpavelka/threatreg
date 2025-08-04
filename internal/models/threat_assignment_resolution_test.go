@@ -32,13 +32,13 @@ func setupTestDBWithResolution(t *testing.T) func() {
 	err := database.Connect()
 	require.NoError(t, err, "Failed to connect to test database")
 
-	// Run migrations for all models
+	// Get database instance
 	db := database.GetDB()
 	require.NotNil(t, db, "Database connection should not be nil")
 
+	// Run migrations for all models
 	err = db.AutoMigrate(
-		&Product{},
-		&Instance{},
+		&Component{},
 		&Threat{},
 		&Control{},
 		&ThreatAssignment{},
@@ -62,96 +62,78 @@ func TestThreatAssignmentResolutionConstraints_Integration(t *testing.T) {
 	defer cleanup()
 
 	// Create test data
-	product := createTestProduct(t)
-	instance := createTestInstance(t, product.ID)
+	component := createTestComponent(t, ComponentTypeProduct)
+	instanceComponent := createTestComponent(t, ComponentTypeInstance)
 	threat := createTestThreat(t)
-	threatAssignment := createTestThreatAssignment(t, threat.ID, product.ID, uuid.Nil)
+	threatAssignment := createTestThreatAssignment(t, threat.ID, component.ID)
 
-	t.Run("ValidResolution_ProductOnly", func(t *testing.T) {
+	t.Run("ValidResolution_ComponentOnly", func(t *testing.T) {
 		resolution := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             ThreatAssignmentResolutionStatusResolved,
 			Description:        "Test resolution",
 		}
 
 		repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
 		err := repo.Create(nil, resolution)
-		assert.NoError(t, err, "Should allow resolution with only ProductID set")
+		assert.NoError(t, err, "Should allow resolution with ComponentID set")
 
 		// Verify resolution was created
 		retrieved, err := repo.GetByID(nil, resolution.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, threatAssignment.ID, retrieved.ThreatAssignmentID)
-		assert.Equal(t, product.ID, retrieved.ProductID)
-		assert.Equal(t, uuid.Nil, retrieved.InstanceID)
+		assert.Equal(t, component.ID, retrieved.ComponentID)
 		assert.Equal(t, ThreatAssignmentResolutionStatusResolved, retrieved.Status)
 
 		// Cleanup
 		repo.Delete(nil, resolution.ID)
 	})
 
-	t.Run("ValidResolution_InstanceOnly", func(t *testing.T) {
+	t.Run("ValidResolution_InstanceComponent", func(t *testing.T) {
+		// Create separate threat assignment for instance component
+		instanceThreatAssignment := createTestThreatAssignment(t, threat.ID, instanceComponent.ID)
+		
 		resolution := &ThreatAssignmentResolution{
-			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          uuid.Nil,
-			InstanceID:         instance.ID,
+			ThreatAssignmentID: instanceThreatAssignment.ID,
+			ComponentID:        instanceComponent.ID,
 			Status:             ThreatAssignmentResolutionStatusAwaiting,
 			Description:        "Test resolution",
 		}
 
 		repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
 		err := repo.Create(nil, resolution)
-		assert.NoError(t, err, "Should allow resolution with only InstanceID set")
+		assert.NoError(t, err, "Should allow resolution with ComponentID set")
 
 		// Verify resolution was created
 		retrieved, err := repo.GetByID(nil, resolution.ID)
 		assert.NoError(t, err)
-		assert.Equal(t, threatAssignment.ID, retrieved.ThreatAssignmentID)
-		assert.Equal(t, uuid.Nil, retrieved.ProductID)
-		assert.Equal(t, instance.ID, retrieved.InstanceID)
+		assert.Equal(t, instanceThreatAssignment.ID, retrieved.ThreatAssignmentID)
+		assert.Equal(t, instanceComponent.ID, retrieved.ComponentID)
 		assert.Equal(t, ThreatAssignmentResolutionStatusAwaiting, retrieved.Status)
 
 		// Cleanup
 		repo.Delete(nil, resolution.ID)
 	})
 
-	t.Run("InvalidResolution_BothSet", func(t *testing.T) {
+	t.Run("InvalidResolution_NilComponentID", func(t *testing.T) {
 		resolution := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          product.ID,
-			InstanceID:         instance.ID, // Both set - should fail
+			ComponentID:        uuid.Nil, // Nil ComponentID - should fail
 			Status:             ThreatAssignmentResolutionStatusResolved,
 			Description:        "Test resolution",
 		}
 
 		repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
 		err := repo.Create(nil, resolution)
-		assert.Error(t, err, "Should reject resolution with both ProductID and InstanceID set")
-		assert.Contains(t, err.Error(), "cannot have both ProductID and InstanceID set")
+		assert.Error(t, err, "Should reject resolution with nil ComponentID")
 	})
 
-	t.Run("InvalidResolution_NeitherSet", func(t *testing.T) {
-		resolution := &ThreatAssignmentResolution{
-			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          uuid.Nil,
-			InstanceID:         uuid.Nil, // Both nil - should fail
-			Status:             ThreatAssignmentResolutionStatusResolved,
-			Description:        "Test resolution",
-		}
-
-		repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
-		err := repo.Create(nil, resolution)
-		assert.Error(t, err, "Should reject resolution with neither ProductID nor InstanceID set")
-		assert.Contains(t, err.Error(), "must have either ProductID or InstanceID set")
-	})
 
 	t.Run("InvalidStatus", func(t *testing.T) {
 		resolution := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             "invalid_status",
 			Description:        "Test resolution",
 		}
@@ -174,8 +156,7 @@ func TestThreatAssignmentResolutionConstraints_Integration(t *testing.T) {
 		for i, status := range validStatuses {
 			resolution := &ThreatAssignmentResolution{
 				ThreatAssignmentID: threatAssignment.ID,
-				ProductID:          product.ID,
-				InstanceID:         uuid.Nil,
+				ComponentID:        component.ID,
 				Status:             status,
 				Description:        "Test resolution",
 			}
@@ -189,7 +170,7 @@ func TestThreatAssignmentResolutionConstraints_Integration(t *testing.T) {
 			// Avoid unique constraint violations by using different threats
 			if i < len(validStatuses)-1 {
 				newThreat := createTestThreat(t)
-				threatAssignment = createTestThreatAssignment(t, newThreat.ID, product.ID, uuid.Nil)
+				threatAssignment = createTestThreatAssignment(t, newThreat.ID, component.ID)
 			}
 		}
 	})
@@ -200,18 +181,17 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 	defer cleanup()
 
 	// Create test data
-	product := createTestProduct(t)
-	instance := createTestInstance(t, product.ID)
+	component := createTestComponent(t, ComponentTypeProduct)
+	instanceComponent := createTestComponent(t, ComponentTypeInstance)
 	threat := createTestThreat(t)
-	threatAssignment := createTestThreatAssignment(t, threat.ID, product.ID, uuid.Nil)
+	threatAssignment := createTestThreatAssignment(t, threat.ID, component.ID)
 
 	repo := NewThreatAssignmentResolutionRepository(getTestDB(t))
 
 	t.Run("CreateAndGet", func(t *testing.T) {
 		resolution := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             ThreatAssignmentResolutionStatusResolved,
 			Description:        "Test resolution description",
 		}
@@ -225,7 +205,7 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 		retrieved, err := repo.GetByID(nil, resolution.ID)
 		require.NoError(t, err)
 		assert.Equal(t, resolution.ThreatAssignmentID, retrieved.ThreatAssignmentID)
-		assert.Equal(t, resolution.ProductID, retrieved.ProductID)
+		assert.Equal(t, resolution.ComponentID, retrieved.ComponentID)
 		assert.Equal(t, resolution.Status, retrieved.Status)
 		assert.Equal(t, resolution.Description, retrieved.Description)
 
@@ -241,8 +221,7 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 	t.Run("Update", func(t *testing.T) {
 		resolution := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             ThreatAssignmentResolutionStatusAwaiting,
 			Description:        "Original description",
 		}
@@ -266,12 +245,11 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 		repo.Delete(nil, resolution.ID)
 	})
 
-	t.Run("ListByProductID", func(t *testing.T) {
-		// Create resolutions for the product
+	t.Run("ListByComponentID", func(t *testing.T) {
+		// Create resolutions for the component
 		resolution1 := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             ThreatAssignmentResolutionStatusResolved,
 			Description:        "Resolution 1",
 		}
@@ -280,19 +258,18 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 
 		// Create another threat assignment for second resolution
 		threat2 := createTestThreat(t)
-		threatAssignment2 := createTestThreatAssignment(t, threat2.ID, product.ID, uuid.Nil)
+		threatAssignment2 := createTestThreatAssignment(t, threat2.ID, component.ID)
 		resolution2 := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment2.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             ThreatAssignmentResolutionStatusAwaiting,
 			Description:        "Resolution 2",
 		}
 		err = repo.Create(nil, resolution2)
 		require.NoError(t, err)
 
-		// List by ProductID
-		resolutions, err := repo.ListByProductID(nil, product.ID)
+		// List by ComponentID
+		resolutions, err := repo.ListByComponentID(nil, component.ID)
 		require.NoError(t, err)
 		assert.Len(t, resolutions, 2)
 
@@ -301,22 +278,21 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 		repo.Delete(nil, resolution2.ID)
 	})
 
-	t.Run("ListByInstanceID", func(t *testing.T) {
-		// Create threat assignment for instance
-		threatAssignmentForInstance := createTestThreatAssignment(t, threat.ID, uuid.Nil, instance.ID)
+	t.Run("ListByInstanceComponentID", func(t *testing.T) {
+		// Create threat assignment for instance component
+		threatAssignmentForInstance := createTestThreatAssignment(t, threat.ID, instanceComponent.ID)
 
 		resolution := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignmentForInstance.ID,
-			ProductID:          uuid.Nil,
-			InstanceID:         instance.ID,
+			ComponentID:        instanceComponent.ID,
 			Status:             ThreatAssignmentResolutionStatusResolved,
 			Description:        "Instance resolution",
 		}
 		err := repo.Create(nil, resolution)
 		require.NoError(t, err)
 
-		// List by InstanceID
-		resolutions, err := repo.ListByInstanceID(nil, instance.ID)
+		// List by ComponentID
+		resolutions, err := repo.ListByComponentID(nil, instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, resolutions, 1)
 		assert.Equal(t, resolution.ID, resolutions[0].ID)
@@ -327,24 +303,15 @@ func TestThreatAssignmentResolutionRepository_Integration(t *testing.T) {
 }
 
 // Helper functions for creating test data
-func createTestProduct(t *testing.T) *Product {
-	product := &Product{
-		Name:        "Test Product",
-		Description: "A test product",
+func createTestComponent(t *testing.T, componentType ComponentType) *Component {
+	component := &Component{
+		Name:        "Test Component",
+		Description: "A test component",
+		Type:        componentType,
 	}
-	err := getTestDB(t).Create(product).Error
+	err := getTestDB(t).Create(component).Error
 	require.NoError(t, err)
-	return product
-}
-
-func createTestInstance(t *testing.T, productID uuid.UUID) *Instance {
-	instance := &Instance{
-		Name:       "Test Instance",
-		InstanceOf: productID,
-	}
-	err := getTestDB(t).Create(instance).Error
-	require.NoError(t, err)
-	return instance
+	return component
 }
 
 func createTestThreat(t *testing.T) *Threat {
@@ -357,11 +324,10 @@ func createTestThreat(t *testing.T) *Threat {
 	return threat
 }
 
-func createTestThreatAssignment(t *testing.T, threatID, productID, instanceID uuid.UUID) *ThreatAssignment {
+func createTestThreatAssignment(t *testing.T, threatID, componentID uuid.UUID) *ThreatAssignment {
 	assignment := &ThreatAssignment{
-		ThreatID:   threatID,
-		ProductID:  productID,
-		InstanceID: instanceID,
+		ThreatID:    threatID,
+		ComponentID: componentID,
 	}
 	err := getTestDB(t).Create(assignment).Error
 	require.NoError(t, err)
@@ -377,25 +343,23 @@ func TestThreatAssignmentResolutionDelegation_Integration(t *testing.T) {
 	defer cleanup()
 
 	// Create test data
-	product := createTestProduct(t)
+	component := createTestComponent(t, ComponentTypeProduct)
 	threat := createTestThreat(t)
-	threatAssignment := createTestThreatAssignment(t, threat.ID, product.ID, uuid.Nil)
+	threatAssignment := createTestThreatAssignment(t, threat.ID, component.ID)
 
 	// Create two threat resolutions for delegation
 	resolution1 := &ThreatAssignmentResolution{
 		ThreatAssignmentID: threatAssignment.ID,
-		ProductID:          product.ID,
-		InstanceID:         uuid.Nil,
+		ComponentID:        component.ID,
 		Status:             ThreatAssignmentResolutionStatusAwaiting,
 		Description:        "Source resolution",
 	}
 
 	threat2 := createTestThreat(t)
-	threatAssignment2 := createTestThreatAssignment(t, threat2.ID, product.ID, uuid.Nil)
+	threatAssignment2 := createTestThreatAssignment(t, threat2.ID, component.ID)
 	resolution2 := &ThreatAssignmentResolution{
 		ThreatAssignmentID: threatAssignment2.ID,
-		ProductID:          product.ID,
-		InstanceID:         uuid.Nil,
+		ComponentID:        component.ID,
 		Status:             ThreatAssignmentResolutionStatusAwaiting,
 		Description:        "Target resolution",
 	}
@@ -412,11 +376,10 @@ func TestThreatAssignmentResolutionDelegation_Integration(t *testing.T) {
 	t.Run("TestUniqueDelegationConstraint", func(t *testing.T) {
 		// Create new resolutions for this test
 		threat4 := createTestThreat(t)
-		threatAssignment4 := createTestThreatAssignment(t, threat4.ID, product.ID, uuid.Nil)
+		threatAssignment4 := createTestThreatAssignment(t, threat4.ID, component.ID)
 		resolution4 := &ThreatAssignmentResolution{
 			ThreatAssignmentID: threatAssignment4.ID,
-			ProductID:          product.ID,
-			InstanceID:         uuid.Nil,
+			ComponentID:        component.ID,
 			Status:             ThreatAssignmentResolutionStatusAwaiting,
 			Description:        "Resolution for unique test",
 		}

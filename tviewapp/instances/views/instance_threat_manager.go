@@ -5,30 +5,29 @@ import (
 	"threatreg/internal/models"
 	"threatreg/internal/service"
 	instancesModals "threatreg/tviewapp/instances/modals"
-	productsModals "threatreg/tviewapp/products/modals"
 	threatsViews "threatreg/tviewapp/threats/views"
 
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
 
-// NewInstanceThreatManager creates a threat management view for an instance
-func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentContainer) tview.Primitive {
-	instance, err := service.GetInstance(instanceID)
+// NewComponentThreatManager creates a threat management view for an instance
+func NewComponentThreatManager(instanceID uuid.UUID, contentContainer ContentContainer) tview.Primitive {
+	instance, err := service.GetComponent(instanceID)
 	if err != nil {
 		return tview.NewTextView().SetText(fmt.Sprintf("Error loading instance: %v", err))
 	}
 
-	// Left column - Instance section
+	// Left column - Component section
 	instanceText := tview.NewTextView()
-	instanceText.SetBorder(true).SetTitle("Instance Information")
+	instanceText.SetBorder(true).SetTitle("Component Information")
 	instanceText.SetText(fmt.Sprintf("Name: %s\n", instance.Name))
 
-	instanceButton := tview.NewButton("Edit Instance").SetSelectedFunc(func() {
+	instanceButton := tview.NewButton("Edit Component").SetSelectedFunc(func() {
 		contentContainer.PushContent(instancesModals.CreateEditInstanceModal(
 			instance.Name,
 			func(name string) {
-				_, err := service.UpdateInstance(instance.ID, &name, nil)
+				_, err := service.UpdateComponent(instance.ID, &name, nil)
 				if err != nil {
 					// TODO: Show error message
 					return
@@ -37,7 +36,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 				contentContainer.PopContent()
 				contentContainer.PopContent()
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return NewInstanceThreatManager(instanceID, contentContainer)
+					return NewComponentThreatManager(instanceID, contentContainer)
 				})
 			},
 			func() {
@@ -53,34 +52,10 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	// Left column - Product section
 	productText := tview.NewTextView()
 	productText.SetBorder(true).SetTitle("Product Information")
-	productText.SetText(fmt.Sprintf("Name: %s\nDescription: %s", instance.Product.Name, instance.Product.Description))
-
-	productButton := tview.NewButton("Edit Product").SetSelectedFunc(func() {
-		contentContainer.PushContent(productsModals.CreateEditProductModal(
-			instance.Product.Name,
-			instance.Product.Description,
-			func(name, description string) {
-				_, err := service.UpdateProduct(instance.Product.ID, &name, &description)
-				if err != nil {
-					// TODO: Show error message
-					return
-				}
-				// Refresh the view
-				contentContainer.PopContent()
-				contentContainer.PopContent()
-				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return NewInstanceThreatManager(instanceID, contentContainer)
-				})
-			},
-			func() {
-				contentContainer.PopContent()
-			},
-		))
-	})
+	productText.SetText(fmt.Sprintf("Not available"))
 
 	productSection := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(productText, 0, 1, false).
-		AddItem(productButton, 1, 0, false)
+		AddItem(productText, 0, 1, false)
 
 	// Left column container
 	leftColumn := tview.NewFlex().SetDirection(tview.FlexRow).
@@ -91,16 +66,16 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	actionBar := tview.NewFlex().SetDirection(tview.FlexColumn)
 	actionBar.SetTitle("Actions").SetBorder(true)
 
-	actionBar.AddItem(tview.NewButton("Add Instance Threat").SetSelectedFunc(func() {
+	actionBar.AddItem(tview.NewButton("Add Component Threat").SetSelectedFunc(func() {
 		contentContainer.PushContent(instancesModals.CreateInstanceSelectThreatModal(instance.ID, func() {
 			contentContainer.PopContent()
 		}))
 	}), 0, 1, false)
-	actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {
-		contentContainer.PushContent(instancesModals.CreateProductSelectThreatModal(instance.Product.ID, func() {
-			contentContainer.PopContent()
-		}))
-	}), 0, 1, false)
+	// actionBar.AddItem(tview.NewButton("Add Product Threat").SetSelectedFunc(func() {
+	// 	contentContainer.PushContent(instancesModals.CreateProductSelectThreatModal(instance.Product.ID, func() {
+	// 		contentContainer.PopContent()
+	// 	}))
+	// }), 0, 1, false)
 	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
 
 	// Right column - Threat Assignments table
@@ -112,7 +87,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 	threatTable.SetCell(0, 3, tview.NewTableCell("[::b]Description").SetSelectable(false))
 
 	// Load actual threat assignments for this instance
-	instanceAssignments, err := service.ListThreatAssignmentsByInstanceID(instance.ID)
+	instanceAssignments, err := service.ListThreatAssignmentsByComponentID(instance.ID)
 	if err != nil {
 		// Show error in table
 		threatTable.SetCell(1, 0, tview.NewTableCell("Error"))
@@ -121,7 +96,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 		threatTable.SetCell(1, 3, tview.NewTableCell(""))
 	} else {
 		// Load product-level assignments as well (instance inherits product threats)
-		productAssignments, err := service.ListThreatAssignmentsByProductID(instance.Product.ID)
+		productAssignments, err := service.ListThreatAssignmentsByProductID(uuid.Nil)
 		if err != nil {
 			productAssignments = []models.ThreatAssignment{}
 		}
@@ -133,7 +108,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 
 		// Add instance-specific threats
 		for _, assignment := range instanceAssignments {
-			threatTable.SetCell(row, 0, tview.NewTableCell("Instance"))
+			threatTable.SetCell(row, 0, tview.NewTableCell("Component"))
 			threatTable.SetCell(row, 1, tview.NewTableCell(getResolutionStatus(assignment, instance.ID)))
 			threatTable.SetCell(row, 2, tview.NewTableCell(assignment.Threat.Title))
 			threatTable.SetCell(row, 3, tview.NewTableCell(assignment.Threat.Description))
@@ -155,7 +130,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 			if row > 0 && row-1 < len(allAssignments) {
 				assignment := allAssignments[row-1]
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return threatsViews.NewInstanceLevelThreatResolverManager(assignment, instanceID, contentContainer)
+					return threatsViews.NewComponentLevelThreatResolverManager(assignment, instanceID, contentContainer)
 				})
 			}
 		})
@@ -195,7 +170,7 @@ func NewInstanceThreatManager(instanceID uuid.UUID, contentContainer ContentCont
 
 func getResolutionStatus(assignment models.ThreatAssignment, instanceId uuid.UUID) string {
 
-	resolutionWithDelegation, err := service.GetInstanceLevelThreatResolutionWithDelegation(assignment.ID, instanceId)
+	resolutionWithDelegation, err := service.GetComponentLevelThreatResolutionWithDelegation(assignment.ID, instanceId)
 	if err != nil || resolutionWithDelegation == nil {
 		return "-"
 	}

@@ -21,7 +21,7 @@ func NewDomainDetailView(domain models.Domain, contentContainer ContentContainer
 		domain.ID.String(), domain.Name, domain.Description))
 
 	horizontalFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	horizontalFlex.AddItem(createDomainInstancesTable(domain, contentContainer), 0, 2, true)
+	horizontalFlex.AddItem(createDomainComponentsTable(domain, contentContainer), 0, 2, true)
 	horizontalFlex.AddItem(createThreatsInDomainTable(domain, contentContainer), 0, 2, true)
 
 	flex.AddItem(info, 5, 1, false)
@@ -48,43 +48,43 @@ func createActionBar(contentContainer ContentContainer, domain models.Domain) tv
 			))
 		})
 
-	addInstanceButton := tview.NewButton("Add Instance").
+	addComponentButton := tview.NewButton("Add Component").
 		SetSelectedFunc(func() {
-			contentContainer.PushContent(modals.CreateSelectInstanceModal(domain.ID, func() {
+			contentContainer.PushContent(modals.CreateSelectComponentModal(domain.ID, func() {
 				contentContainer.PopContent()
 			}))
 		})
 
 	actionBar.AddItem(editButton, 0, 1, false)
-	actionBar.AddItem(addInstanceButton, 0, 1, false)
+	actionBar.AddItem(addComponentButton, 0, 1, false)
 	actionBar.AddItem(tview.NewBox(), 0, 3, false) // Spacer
 
 	return actionBar
 }
 
-func createDomainInstancesTable(domain models.Domain, contentContainer ContentContainer) tview.Primitive {
+func createDomainComponentsTable(domain models.Domain, contentContainer ContentContainer) tview.Primitive {
 	instancesTable := tview.NewTable().SetBorders(true)
-	instancesTable.SetTitle("Instances in Domain").SetBorder(true)
+	instancesTable.SetTitle("Components in Domain").SetBorder(true)
 
 	instancesTable.SetCell(0, 0, tview.NewTableCell("[::b]Name").SetSelectable(false))
 	instancesTable.SetCell(0, 1, tview.NewTableCell("[::b]Product").SetSelectable(false))
 	instancesTable.SetCell(0, 2, tview.NewTableCell("[::b]Unresolved Threats").SetSelectable(false))
 	instancesTable.SetCell(0, 3, tview.NewTableCell("[::b]Actions").SetSelectable(false))
 
-	instances, err := service.GetInstancesByDomainIdWithThreatStats(domain.ID)
+	instances, err := service.GetComponentsByDomainIdWithThreatStats(domain.ID)
 	if err != nil {
 		// If we can't load instances, show an error message in the table
 		instancesTable.SetCell(1, 0, tview.NewTableCell(fmt.Sprintf("Error loading instances: %v", err)))
 		instancesTable.SetCell(1, 1, tview.NewTableCell(""))
 		instancesTable.SetCell(1, 2, tview.NewTableCell(""))
 		instancesTable.SetCell(1, 3, tview.NewTableCell(""))
-		instances = []models.InstanceWithThreatStats{} // Set to empty slice to avoid nil access
+		instances = []models.ComponentWithThreatStats{} // Set to empty slice to avoid nil access
 	} else {
 		for i, instance := range instances {
-			productName := ""
-			if instance.Product.Name != "" {
-				productName = instance.Product.Name
-			}
+			productName := "Not Available"
+			// if instance.Product.Name != "" {
+			// 	productName = instance.Product.Name
+			// }
 			instancesTable.SetCell(i+1, 0, tview.NewTableCell(instance.Name))
 			instancesTable.SetCell(i+1, 1, tview.NewTableCell(productName))
 			instancesTable.SetCell(i+1, 2, tview.NewTableCell(fmt.Sprintf("%d", instance.UnresolvedThreatCount)))
@@ -104,11 +104,11 @@ func createDomainInstancesTable(domain models.Domain, contentContainer ContentCo
 			if column == 3 {
 				// Show confirmation modal
 				contentContainer.PushContent(common.CreateConfirmationModal(
-					"Remove Instance",
+					"Remove Component",
 					fmt.Sprintf("Are you sure you want to remove instance '%s' from this domain?", instance.Name),
 					func() {
 						// onYes callback - remove instance from domain
-						err := service.RemoveInstanceFromDomain(domain.ID, instance.ID)
+						err := service.RemoveComponentFromDomain(domain.ID, instance.ID)
 						if err != nil {
 							// TODO: Show error message in the future
 							return
@@ -124,7 +124,7 @@ func createDomainInstancesTable(domain models.Domain, contentContainer ContentCo
 			} else {
 				// Navigate to instance detail for other columns
 				contentContainer.PushContentWithFactory(func() tview.Primitive {
-					return instancesViews.NewInstanceThreatManager(instance.ID, contentContainer)
+					return instancesViews.NewComponentThreatManager(instance.ID, contentContainer)
 				})
 			}
 		}
@@ -138,20 +138,20 @@ func createThreatsInDomainTable(domain models.Domain, contentContainer ContentCo
 	threatsTable.SetTitle("Threats").SetBorder(true)
 
 	threatsTable.SetCell(0, 0, tview.NewTableCell("[::b]Name").SetSelectable(false))
-	threatsTable.SetCell(0, 1, tview.NewTableCell("[::b]Affected Instances").SetSelectable(false))
+	threatsTable.SetCell(0, 1, tview.NewTableCell("[::b]Affected Components").SetSelectable(false))
 	threatsTable.SetCell(0, 2, tview.NewTableCell("[::b]Actions").SetSelectable(false))
 
-	threats, err := service.ListByDomainWithUnresolvedByInstancesCount(domain.ID)
+	threats, err := service.ListByDomainWithUnresolvedByComponentsCount(domain.ID)
 	if err != nil {
 		// If we can't load threats, show an error message in the table
 		threatsTable.SetCell(1, 0, tview.NewTableCell(fmt.Sprintf("Error loading threats: %v", err)))
 		threatsTable.SetCell(1, 1, tview.NewTableCell(""))
 		threatsTable.SetCell(1, 2, tview.NewTableCell(""))
-		threats = []models.ThreatWithUnresolvedByInstancesCount{} // Set to empty slice to avoid nil access
+		threats = []models.ThreatWithUnresolvedByComponentsCount{} // Set to empty slice to avoid nil access
 	} else {
 		for i, threat := range threats {
 			threatsTable.SetCell(i+1, 0, tview.NewTableCell(threat.Title))
-			threatsTable.SetCell(i+1, 1, tview.NewTableCell(fmt.Sprintf("%d", threat.UnresolvedByInstancesCount)))
+			threatsTable.SetCell(i+1, 1, tview.NewTableCell(fmt.Sprintf("%d", threat.UnresolvedByComponentsCount)))
 
 			// Add view details button in Actions column
 			viewButton := "[green]View Details[-]"

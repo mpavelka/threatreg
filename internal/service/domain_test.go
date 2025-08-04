@@ -191,111 +191,99 @@ func TestDomainService_Integration(t *testing.T) {
 		assert.Len(t, domains, 0)
 	})
 
-	t.Run("AddInstanceToDomain", func(t *testing.T) {
+	t.Run("AddComponentToDomain", func(t *testing.T) {
 		domain, err := CreateDomain("Test Domain", "Test Description")
 		require.NoError(t, err)
 
-		product, err := CreateProduct("Test Product", "Test Product Description")
+		component, err := CreateComponent("Test Component", "Test Component Description", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		instance, err := CreateInstance("Test Instance", product.ID)
+		err = AddComponentToDomain(domain.ID, component.ID)
 		require.NoError(t, err)
 
-		err = AddInstanceToDomain(domain.ID, instance.ID)
+		components, err := GetComponentsByDomainId(domain.ID)
 		require.NoError(t, err)
+		assert.Len(t, components, 1)
+		assert.Equal(t, component.ID, components[0].ID)
+		assert.Equal(t, component.Name, components[0].Name)
 
-		instances, err := GetInstancesByDomainId(domain.ID)
-		require.NoError(t, err)
-		assert.Len(t, instances, 1)
-		assert.Equal(t, instance.ID, instances[0].ID)
-		assert.Equal(t, instance.Name, instances[0].Name)
-
-		domains, err := GetDomainsByInstance(instance.ID)
+		domains, err := GetDomainsByComponent(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, domains, 1)
 		assert.Equal(t, domain.ID, domains[0].ID)
 		assert.Equal(t, domain.Name, domains[0].Name)
 	})
 
-	t.Run("AddInstanceToDomain_Multiple", func(t *testing.T) {
+	t.Run("AddComponentToDomain_Multiple", func(t *testing.T) {
 		domain, err := CreateDomain("Multi Test Domain", "Test Description")
 		require.NoError(t, err)
 
-		product, err := CreateProduct("Multi Test Product", "Test Product Description")
-		require.NoError(t, err)
-
-		var instances []*models.Instance
+		var components []*models.Component
 		for i := 0; i < 3; i++ {
-			instance, err := CreateInstance(fmt.Sprintf("Test Instance %d", i+1), product.ID)
+			component, err := CreateComponent(fmt.Sprintf("Test Component %d", i+1), fmt.Sprintf("Test Component %d Description", i+1), models.ComponentTypeInstance)
 			require.NoError(t, err)
-			instances = append(instances, instance)
+			components = append(components, component)
 
-			err = AddInstanceToDomain(domain.ID, instance.ID)
+			err = AddComponentToDomain(domain.ID, component.ID)
 			require.NoError(t, err)
 		}
 
-		retrievedInstances, err := GetInstancesByDomainId(domain.ID)
+		retrievedComponents, err := GetComponentsByDomainId(domain.ID)
 		require.NoError(t, err)
-		assert.Len(t, retrievedInstances, 3)
+		assert.Len(t, retrievedComponents, 3)
 
-		instanceMap := make(map[uuid.UUID]models.Instance)
-		for _, inst := range retrievedInstances {
-			instanceMap[inst.ID] = inst
+		componentMap := make(map[uuid.UUID]models.Component)
+		for _, comp := range retrievedComponents {
+			componentMap[comp.ID] = comp
 		}
 
-		for _, created := range instances {
-			retrieved, exists := instanceMap[created.ID]
-			assert.True(t, exists, "Created instance should exist in domain")
+		for _, created := range components {
+			retrieved, exists := componentMap[created.ID]
+			assert.True(t, exists, "Created component should exist in domain")
 			assert.Equal(t, created.Name, retrieved.Name)
 		}
 	})
 
-	t.Run("RemoveInstanceFromDomain", func(t *testing.T) {
+	t.Run("RemoveComponentFromDomain", func(t *testing.T) {
 		domain, err := CreateDomain("Remove Test Domain", "Test Description")
 		require.NoError(t, err)
 
-		product, err := CreateProduct("Remove Test Product", "Test Product Description")
+		component1, err := CreateComponent("Remove Test Component 1", "Test Component 1 Description", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		instance1, err := CreateInstance("Remove Test Instance 1", product.ID)
+		component2, err := CreateComponent("Remove Test Component 2", "Test Component 2 Description", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		instance2, err := CreateInstance("Remove Test Instance 2", product.ID)
+		err = AddComponentToDomain(domain.ID, component1.ID)
 		require.NoError(t, err)
 
-		err = AddInstanceToDomain(domain.ID, instance1.ID)
+		err = AddComponentToDomain(domain.ID, component2.ID)
 		require.NoError(t, err)
 
-		err = AddInstanceToDomain(domain.ID, instance2.ID)
+		components, err := GetComponentsByDomainId(domain.ID)
+		require.NoError(t, err)
+		assert.Len(t, components, 2)
+
+		err = RemoveComponentFromDomain(domain.ID, component1.ID)
 		require.NoError(t, err)
 
-		instances, err := GetInstancesByDomainId(domain.ID)
+		components, err = GetComponentsByDomainId(domain.ID)
 		require.NoError(t, err)
-		assert.Len(t, instances, 2)
+		assert.Len(t, components, 1)
+		assert.Equal(t, component2.ID, components[0].ID)
 
-		err = RemoveInstanceFromDomain(domain.ID, instance1.ID)
-		require.NoError(t, err)
-
-		instances, err = GetInstancesByDomainId(domain.ID)
-		require.NoError(t, err)
-		assert.Len(t, instances, 1)
-		assert.Equal(t, instance2.ID, instances[0].ID)
-
-		domains, err := GetDomainsByInstance(instance1.ID)
+		domains, err := GetDomainsByComponent(component1.ID)
 		require.NoError(t, err)
 		assert.Len(t, domains, 0)
 
-		domains, err = GetDomainsByInstance(instance2.ID)
+		domains, err = GetDomainsByComponent(component2.ID)
 		require.NoError(t, err)
 		assert.Len(t, domains, 1)
 		assert.Equal(t, domain.ID, domains[0].ID)
 	})
 
-	t.Run("MultipleDomainsPerInstance", func(t *testing.T) {
-		product, err := CreateProduct("Multi Domain Product", "Test Product Description")
-		require.NoError(t, err)
-
-		instance, err := CreateInstance("Multi Domain Instance", product.ID)
+	t.Run("MultipleDomainsPerComponent", func(t *testing.T) {
+		component, err := CreateComponent("Multi Domain Component", "Test Component Description", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
 		var domains []*models.Domain
@@ -304,11 +292,11 @@ func TestDomainService_Integration(t *testing.T) {
 			require.NoError(t, err)
 			domains = append(domains, domain)
 
-			err = AddInstanceToDomain(domain.ID, instance.ID)
+			err = AddComponentToDomain(domain.ID, component.ID)
 			require.NoError(t, err)
 		}
 
-		retrievedDomains, err := GetDomainsByInstance(instance.ID)
+		retrievedDomains, err := GetDomainsByComponent(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, retrievedDomains, 3)
 
@@ -319,58 +307,51 @@ func TestDomainService_Integration(t *testing.T) {
 
 		for _, created := range domains {
 			retrieved, exists := domainMap[created.ID]
-			assert.True(t, exists, "Created domain should contain the instance")
+			assert.True(t, exists, "Created domain should contain the component")
 			assert.Equal(t, created.Name, retrieved.Name)
 		}
 	})
 
-	t.Run("AddInstanceToDomain_NonExistentDomain", func(t *testing.T) {
-		product, err := CreateProduct("Non-Existent Domain Product", "Test Product Description")
-		require.NoError(t, err)
-
-		instance, err := CreateInstance("Non-Existent Domain Instance", product.ID)
+	t.Run("AddComponentToDomain_NonExistentDomain", func(t *testing.T) {
+		component, err := CreateComponent("Non-Existent Domain Component", "Test Component Description", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
 		nonExistentDomainID := uuid.New()
-		err = AddInstanceToDomain(nonExistentDomainID, instance.ID)
+		err = AddComponentToDomain(nonExistentDomainID, component.ID)
 		assert.Error(t, err)
 	})
 
-	t.Run("AddInstanceToDomain_NonExistentInstance", func(t *testing.T) {
-		domain, err := CreateDomain("Non-Existent Instance Domain", "Test Description")
+	t.Run("AddComponentToDomain_NonExistentComponent", func(t *testing.T) {
+		domain, err := CreateDomain("Non-Existent Component Domain", "Test Description")
 		require.NoError(t, err)
 
-		nonExistentInstanceID := uuid.New()
-		err = AddInstanceToDomain(domain.ID, nonExistentInstanceID)
+		nonExistentComponentID := uuid.New()
+		err = AddComponentToDomain(domain.ID, nonExistentComponentID)
 		assert.Error(t, err)
 	})
 }
 
-func TestGetInstancesByDomainIdWithThreatStats(t *testing.T) {
+func TestGetComponentsByDomainIdWithThreatStats(t *testing.T) {
 
 	// Create shared test entities at top level
 	cleanupShared := testutil.SetupTestDatabase(t)
 	defer cleanupShared()
 
 	var domain *models.Domain
-	var product1, product2 *models.Product
-	var instance1, instance2, instance3 *models.Instance
+	var component1, component2, component3 *models.Component
 	var threat1, threat2, threat3, threat4, threat5 *models.Threat
 
 	var setUp = func() {
 		// Create test domain
 		domain, _ = CreateDomain("Test Domain for Stats", "Domain for threat stats testing")
-		// Create test products
-		product1, _ = CreateProduct("Product 1", "First test product")
-		product2, _ = CreateProduct("Product 2", "Second test product")
-		// Create test instances
-		instance1, _ = CreateInstance("Instance 1", product1.ID)
-		instance2, _ = CreateInstance("Instance 2", product1.ID)
-		instance3, _ = CreateInstance("Instance 3", product2.ID)
-		// Add instances to domain
-		AddInstanceToDomain(domain.ID, instance1.ID)
-		AddInstanceToDomain(domain.ID, instance2.ID)
-		AddInstanceToDomain(domain.ID, instance3.ID)
+		// Create test components
+		component1, _ = CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
+		component2, _ = CreateComponent("Component 2", "Second test component", models.ComponentTypeInstance)
+		component3, _ = CreateComponent("Component 3", "Third test component", models.ComponentTypeProduct)
+		// Add components to domain
+		AddComponentToDomain(domain.ID, component1.ID)
+		AddComponentToDomain(domain.ID, component2.ID)
+		AddComponentToDomain(domain.ID, component3.ID)
 		// Create test threats
 		threat1, _ = CreateThreat("Threat 1", "First test threat")
 		threat2, _ = CreateThreat("Threat 2", "Second test threat")
@@ -379,228 +360,191 @@ func TestGetInstancesByDomainIdWithThreatStats(t *testing.T) {
 		threat5, _ = CreateThreat("Threat 5", "Fifth test threat")
 	}
 
-	t.Run("MixedInstanceAndProductThreats", func(t *testing.T) {
+	t.Run("MixedComponentThreats", func(t *testing.T) {
 		setUp()
-		// Instance1 has direct threat assignments:
+		// Component1 has direct threat assignments:
 		// - threat1: no resolution (unresolved)
 		// - threat2: awaiting status (unresolved)
 		// - threat3: resolved status (resolved - NOT counted)
-		AssignThreatToInstance(instance1.ID, threat1.ID)
-		assignment2, _ := AssignThreatToInstance(instance1.ID, threat2.ID)
-		assignment3, _ := AssignThreatToInstance(instance1.ID, threat3.ID)
+		AssignThreatToComponent(component1.ID, threat1.ID)
+		assignment2, _ := AssignThreatToComponent(component1.ID, threat2.ID)
+		assignment3, _ := AssignThreatToComponent(component1.ID, threat3.ID)
 
 		// Create resolutions
 		CreateThreatResolution(
 			assignment2.ID,
-			&instance1.ID,
-			nil,
+			component1.ID,
 			models.ThreatAssignmentResolutionStatusAwaiting,
 			"Awaiting resolution",
 		)
 		CreateThreatResolution(
 			assignment3.ID,
-			&instance1.ID,
-			nil,
+			component1.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
 			"Resolved threat",
 		)
 
-		// Product1 threats (inherited by instance1 and instance2):
-		// - threat4: no resolution (unresolved)
-		// - threat5: accepted status (resolved - NOT counted)
-		AssignThreatToProduct(product1.ID, threat4.ID)
-		prodAssignment, _ := AssignThreatToProduct(product1.ID, threat5.ID)
+		// Component2 and Component3 threats:
+		// - threat4: assigned to component2, no resolution (unresolved)
+		// - threat5: assigned to component3, accepted status (resolved - NOT counted)
+		AssignThreatToComponent(component2.ID, threat4.ID)
+		compAssignment, _ := AssignThreatToComponent(component3.ID, threat5.ID)
 		CreateThreatResolution(
-			prodAssignment.ID,
-			nil,
-			&product1.ID,
+			compAssignment.ID,
+			component3.ID,
 			models.ThreatAssignmentResolutionStatusAccepted,
 			"Accepted risk",
 		)
 
-		// Instance3 has both instance and product threats:
-		// - threat1: instance-level, no resolution (unresolved)
-		// - threat4: product-level, no resolution (unresolved)
-		AssignThreatToInstance(instance3.ID, threat1.ID)
-		AssignThreatToProduct(product2.ID, threat4.ID)
-
 		// Test the function
-		instances, err := GetInstancesByDomainIdWithThreatStats(domain.ID)
+		components, err := GetComponentsByDomainIdWithThreatStats(domain.ID)
 		require.NoError(t, err)
-		assert.Len(t, instances, 3)
+		assert.Len(t, components, 3)
 
 		// Create a map for easier assertions
-		instanceMap := make(map[uuid.UUID]models.InstanceWithThreatStats)
-		for _, inst := range instances {
-			instanceMap[inst.ID] = inst
+		componentMap := make(map[uuid.UUID]models.ComponentWithThreatStats)
+		for _, comp := range components {
+			componentMap[comp.ID] = comp
 		}
 
-		// Instance1: 3 unresolved threats (threat1 + threat2 + threat4)
-		inst1, exists := instanceMap[instance1.ID]
+		// Component1: 2 unresolved threats (threat1 + threat2)
+		comp1, exists := componentMap[component1.ID]
 		assert.True(t, exists)
-		assert.Equal(t, "Instance 1", inst1.Name)
-		assert.Equal(t, 3, inst1.UnresolvedThreatCount)
+		assert.Equal(t, "Component 1", comp1.Name)
+		assert.Equal(t, 2, comp1.UnresolvedThreatCount)
 
-		// Instance2: 1 unresolved threat (threat4 from product)
-		inst2, exists := instanceMap[instance2.ID]
+		// Component2: 1 unresolved threat (threat4)
+		comp2, exists := componentMap[component2.ID]
 		assert.True(t, exists)
-		assert.Equal(t, "Instance 2", inst2.Name)
-		assert.Equal(t, 1, inst2.UnresolvedThreatCount)
+		assert.Equal(t, "Component 2", comp2.Name)
+		assert.Equal(t, 1, comp2.UnresolvedThreatCount)
 
-		// Instance3: 2 unresolved threats (threat1 + threat4)
-		inst3, exists := instanceMap[instance3.ID]
+		// Component3: 0 unresolved threats (threat5 is accepted/resolved)
+		comp3, exists := componentMap[component3.ID]
 		assert.True(t, exists)
-		assert.Equal(t, "Instance 3", inst3.Name)
-		assert.Equal(t, 2, inst3.UnresolvedThreatCount)
-
-		// Verify product information is properly loaded
-		assert.Equal(t, product1.Name, inst1.Product.Name)
-		assert.Equal(t, product1.Name, inst2.Product.Name)
-		assert.Equal(t, product2.Name, inst3.Product.Name)
+		assert.Equal(t, "Component 3", comp3.Name)
+		assert.Equal(t, 0, comp3.UnresolvedThreatCount)
 	})
 
 	t.Run("EmptyDomain", func(t *testing.T) {
-		// Test with domain that has no instances
-		emptyDomain, _ := CreateDomain("Empty Domain", "Domain with no instances")
-		instances, _ := GetInstancesByDomainIdWithThreatStats(emptyDomain.ID)
-		assert.Len(t, instances, 0)
+		// Test with domain that has no components
+		emptyDomain, _ := CreateDomain("Empty Domain", "Domain with no components")
+		components, _ := GetComponentsByDomainIdWithThreatStats(emptyDomain.ID)
+		assert.Len(t, components, 0)
 	})
 
 	t.Run("NoThreats", func(t *testing.T) {
 		setUp()
-		// Test instances with no threat assignments
-		instances, _ := GetInstancesByDomainIdWithThreatStats(domain.ID)
-		assert.Len(t, instances, 3)
-		// All instances should have 0 unresolved threats
-		for _, inst := range instances {
-			assert.Equal(t, 0, inst.UnresolvedThreatCount)
+		// Test components with no threat assignments
+		components, _ := GetComponentsByDomainIdWithThreatStats(domain.ID)
+		assert.Len(t, components, 3)
+		// All components should have 0 unresolved threats
+		for _, comp := range components {
+			assert.Equal(t, 0, comp.UnresolvedThreatCount)
 		}
 	})
 
 	t.Run("AllThreatsResolved", func(t *testing.T) {
 		// Assign threats and resolve all of them
 
-		// Instance threat assignments
-		instAssignment1, _ := AssignThreatToInstance(instance1.ID, threat1.ID)
-		instAssignment2, _ := AssignThreatToInstance(instance2.ID, threat2.ID)
-
-		// Product threat assignments
-		prodAssignment1, _ := AssignThreatToProduct(product1.ID, threat3.ID)
-		prodAssignment2, _ := AssignThreatToProduct(product2.ID, threat4.ID)
+		// Component threat assignments
+		compAssignment1, _ := AssignThreatToComponent(component1.ID, threat1.ID)
+		compAssignment2, _ := AssignThreatToComponent(component2.ID, threat2.ID)
+		compAssignment3, _ := AssignThreatToComponent(component3.ID, threat3.ID)
 
 		// Resolve all threats with "resolved" or "accepted" status
 		CreateThreatResolution(
-			instAssignment1.ID,
-			&instance1.ID,
-			nil,
+			compAssignment1.ID,
+			component1.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
-			"Instance threat resolved",
+			"Component threat resolved",
 		)
 		CreateThreatResolution(
-			instAssignment2.ID,
-			&instance2.ID,
-			nil,
+			compAssignment2.ID,
+			component2.ID,
 			models.ThreatAssignmentResolutionStatusAccepted,
-			"Instance threat accepted",
+			"Component threat accepted",
 		)
 		CreateThreatResolution(
-			prodAssignment1.ID,
-			nil,
-			&product1.ID,
+			compAssignment3.ID,
+			component3.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
-			"Product threat resolved",
-		)
-		CreateThreatResolution(
-			prodAssignment2.ID,
-			nil,
-			&product2.ID,
-			models.ThreatAssignmentResolutionStatusAccepted,
-			"Product threat accepted",
+			"Component threat resolved",
 		)
 
-		instances, _ := GetInstancesByDomainIdWithThreatStats(domain.ID)
-		assert.Len(t, instances, 3)
+		components, _ := GetComponentsByDomainIdWithThreatStats(domain.ID)
+		assert.Len(t, components, 3)
 
-		// All instances should have 0 unresolved threats since all are resolved/accepted
-		for _, inst := range instances {
-			assert.Equal(t, 0, inst.UnresolvedThreatCount)
+		// All components should have 0 unresolved threats since all are resolved/accepted
+		for _, comp := range components {
+			assert.Equal(t, 0, comp.UnresolvedThreatCount)
 		}
 	})
 
 	t.Run("NonExistentDomain", func(t *testing.T) {
 		nonExistentDomainID := uuid.New()
-		instances, _ := GetInstancesByDomainIdWithThreatStats(nonExistentDomainID)
-		assert.Len(t, instances, 0)
+		components, _ := GetComponentsByDomainIdWithThreatStats(nonExistentDomainID)
+		assert.Len(t, components, 0)
 	})
 
 	t.Run("ComplexMixedResolutionStates", func(t *testing.T) {
 		setUp()
-		// Complex scenario testing various resolution states and inheritance patterns
+		// Complex scenario testing various resolution states
 
-		// Product1 threats (affect instance1 and instance2):
-		// - threat1: resolved (should NOT count)
-		// - threat2: accepted (should NOT count)
-		prodAssignment1, _ := AssignThreatToProduct(product1.ID, threat1.ID)
-		prodAssignment2, _ := AssignThreatToProduct(product1.ID, threat2.ID)
-
-		// Product2 threats (affect instance3):
-		// - threat3: no resolution (should count)
-		_, _ = AssignThreatToProduct(product2.ID, threat3.ID)
-
-		// Instance-specific threats:
-		// - instance1 + threat4: no resolution (should count)
-		// - instance3 + threat5: awaiting (should count)
-		_, _ = AssignThreatToInstance(instance1.ID, threat4.ID)
-		instAssignment, _ := AssignThreatToInstance(instance3.ID, threat5.ID)
+		// Component threat assignments:
+		// - component1 + threat1: resolved (should NOT count)
+		// - component1 + threat2: accepted (should NOT count)
+		// - component2 + threat3: no resolution (should count)
+		// - component2 + threat4: awaiting (should count)
+		// - component3 + threat5: no resolution (should count)
+		compAssignment1, _ := AssignThreatToComponent(component1.ID, threat1.ID)
+		compAssignment2, _ := AssignThreatToComponent(component1.ID, threat2.ID)
+		_, _ = AssignThreatToComponent(component2.ID, threat3.ID)
+		compAssignment4, _ := AssignThreatToComponent(component2.ID, threat4.ID)
+		_, _ = AssignThreatToComponent(component3.ID, threat5.ID)
 
 		// Create resolutions
 		CreateThreatResolution(
-			prodAssignment1.ID,
-			nil,
-			&product1.ID,
+			compAssignment1.ID,
+			component1.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
-			"Product1 threat1 resolved",
+			"Component1 threat1 resolved",
 		)
 		CreateThreatResolution(
-			prodAssignment2.ID,
-			nil,
-			&product1.ID,
+			compAssignment2.ID,
+			component1.ID,
 			models.ThreatAssignmentResolutionStatusAccepted,
-			"Product1 threat2 accepted",
+			"Component1 threat2 accepted",
 		)
 		CreateThreatResolution(
-			instAssignment.ID,
-			&instance3.ID,
-			nil,
+			compAssignment4.ID,
+			component2.ID,
 			models.ThreatAssignmentResolutionStatusAwaiting,
-			"Instance3 threat5 awaiting",
+			"Component2 threat4 awaiting",
 		)
 
-		instances, _ := GetInstancesByDomainIdWithThreatStats(domain.ID)
-		assert.Len(t, instances, 3)
+		components, _ := GetComponentsByDomainIdWithThreatStats(domain.ID)
+		assert.Len(t, components, 3)
 
-		instanceMap := make(map[uuid.UUID]models.InstanceWithThreatStats)
-		for _, inst := range instances {
-			instanceMap[inst.ID] = inst
+		componentMap := make(map[uuid.UUID]models.ComponentWithThreatStats)
+		for _, comp := range components {
+			componentMap[comp.ID] = comp
 		}
 
-		// Instance1: 1 unresolved (threat4 instance-level)
-		// Product threats (threat1, threat2) are resolved/accepted
-		inst1, exists := instanceMap[instance1.ID]
+		// Component1: 0 unresolved (both threats resolved/accepted)
+		comp1, exists := componentMap[component1.ID]
 		assert.True(t, exists)
-		assert.Equal(t, 1, inst1.UnresolvedThreatCount)
+		assert.Equal(t, 0, comp1.UnresolvedThreatCount)
 
-		// Instance2: 0 unresolved
-		// Product threats (threat1, threat2) are resolved/accepted, no instance-specific threats
-		inst2, exists := instanceMap[instance2.ID]
+		// Component2: 2 unresolved (threat3 no resolution + threat4 awaiting)
+		comp2, exists := componentMap[component2.ID]
 		assert.True(t, exists)
-		assert.Equal(t, 0, inst2.UnresolvedThreatCount)
+		assert.Equal(t, 2, comp2.UnresolvedThreatCount)
 
-		// Instance3: 2 unresolved
-		// 1 product threat (threat3) + 1 instance threat (threat5 awaiting)
-		inst3, exists := instanceMap[instance3.ID]
+		// Component3: 1 unresolved (threat5 no resolution)
+		comp3, exists := componentMap[component3.ID]
 		assert.True(t, exists)
-		assert.Equal(t, 2, inst3.UnresolvedThreatCount)
+		assert.Equal(t, 1, comp3.UnresolvedThreatCount)
 	})
 
 }

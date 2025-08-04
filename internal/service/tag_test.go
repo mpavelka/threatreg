@@ -331,7 +331,7 @@ func TestTagService_ListTags_Empty(t *testing.T) {
 	})
 }
 
-func TestTagService_AssignTagToProduct(t *testing.T) {
+func TestTagService_AssignTagToComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
 		&models.Product{},
 		&models.Instance{},
@@ -341,80 +341,80 @@ func TestTagService_AssignTagToProduct(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("Test Product", "A test product for tagging")
+		component, err := CreateComponent("Test Component", "A test component for tagging", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Product Tag", "A tag for products", "#AAAAAA")
+		tag, err := CreateTag("Component Tag", "A tag for components", "#AAAAAA")
 		require.NoError(t, err)
 
-		// Assign tag to product
-		err = AssignTagToProduct(tag.ID, product.ID)
+		// Assign tag to component
+		err = AssignTagToComponent(tag.ID, component.ID)
 		require.NoError(t, err)
 
 		// Verify assignment
-		tags, err := ListTagsByProductID(product.ID)
+		tags, err := ListTagsByComponentID(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tag.ID, tags[0].ID)
 		assert.Equal(t, tag.Name, tags[0].Name)
 
 		// Verify reverse lookup
-		products, err := ListProductsByTagID(tag.ID)
+		components, err := ListComponentsByTagID(tag.ID)
 		require.NoError(t, err)
-		assert.Len(t, products, 1)
-		assert.Equal(t, product.ID, products[0].ID)
-		assert.Equal(t, product.Name, products[0].Name)
+		assert.Len(t, components, 1)
+		assert.Equal(t, component.ID, components[0].ID)
+		assert.Equal(t, component.Name, components[0].Name)
 	})
 
 	t.Run("Duplicate", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("Duplicate Test Product", "A test product for duplicate tagging")
+		component, err := CreateComponent("Duplicate Test Component", "A test component for duplicate tagging", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
 		tag, err := CreateTag("Duplicate Tag", "A tag for duplicate test", "#BBBBBB")
 		require.NoError(t, err)
 
-		// Assign tag to product first time
-		err = AssignTagToProduct(tag.ID, product.ID)
+		// Assign tag to component first time
+		err = AssignTagToComponent(tag.ID, component.ID)
 		require.NoError(t, err)
 
-		// Try to assign the same tag to the same product again
-		err = AssignTagToProduct(tag.ID, product.ID)
+		// Try to assign the same tag to the same component again
+		err = AssignTagToComponent(tag.ID, component.ID)
 		require.NoError(t, err) // Should not error
 
 		// Verify only one assignment exists
-		tags, err := ListTagsByProductID(product.ID)
+		tags, err := ListTagsByComponentID(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tag.ID, tags[0].ID)
 	})
 
 	t.Run("InvalidTagID", func(t *testing.T) {
-		// Create test product
-		product, err := CreateProduct("Invalid Tag Test Product", "A test product")
+		// Create test component
+		component, err := CreateComponent("Invalid Tag Test Component", "A test component", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
 		// Try to assign non-existent tag
 		nonExistentTagID := uuid.New()
-		err = AssignTagToProduct(nonExistentTagID, product.ID)
+		err = AssignTagToComponent(nonExistentTagID, component.ID)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "tag not found")
 	})
 
-	t.Run("InvalidProductID", func(t *testing.T) {
+	t.Run("InvalidComponentID", func(t *testing.T) {
 		// Create test tag
-		tag, err := CreateTag("Invalid Product Test Tag", "A test tag", "#DDDDDD")
+		tag, err := CreateTag("Invalid Component Test Tag", "A test tag", "#DDDDDD")
 		require.NoError(t, err)
 
-		// Try to assign to non-existent product
-		nonExistentProductID := uuid.New()
-		err = AssignTagToProduct(tag.ID, nonExistentProductID)
+		// Try to assign to non-existent component
+		nonExistentComponentID := uuid.New()
+		err = AssignTagToComponent(tag.ID, nonExistentComponentID)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "product not found")
+		assert.Contains(t, err.Error(), "component not found")
 	})
 }
 
-func TestTagService_UnassignTagFromProduct(t *testing.T) {
+func TestTagService_UnassignTagFromComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
 		&models.Product{},
 		&models.Instance{},
@@ -424,32 +424,32 @@ func TestTagService_UnassignTagFromProduct(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data and assign tag
-		product, err := CreateProduct("Unassign Test Product", "A test product for unassigning tags")
+		component, err := CreateComponent("Unassign Test Component", "A test component for unassigning tags", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
 		tag, err := CreateTag("Unassign Tag", "A tag for unassign test", "#EEEEEE")
 		require.NoError(t, err)
 
-		err = AssignTagToProduct(tag.ID, product.ID)
+		err = AssignTagToComponent(tag.ID, component.ID)
 		require.NoError(t, err)
 
 		// Verify assignment exists
-		tags, err := ListTagsByProductID(product.ID)
+		tags, err := ListTagsByComponentID(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 
-		// Unassign tag from product
-		err = UnassignTagFromProduct(tag.ID, product.ID)
+		// Unassign tag from component
+		err = UnassignTagFromComponent(tag.ID, component.ID)
 		require.NoError(t, err)
 
 		// Verify assignment was removed
-		tags, err = ListTagsByProductID(product.ID)
+		tags, err = ListTagsByComponentID(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 0)
 	})
 }
 
-func TestTagService_AssignTagToInstance(t *testing.T) {
+func TestTagService_AssignTagToInstanceComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
 		&models.Product{},
 		&models.Instance{},
@@ -459,62 +459,56 @@ func TestTagService_AssignTagToInstance(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("Instance Tag Product", "A product for instance tagging")
+		instanceComponent, err := CreateComponent("Test Instance Component", "A test instance component for tagging", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		instance, err := CreateInstance("Test Instance", product.ID)
+		tag, err := CreateTag("Instance Tag", "A tag for instance components", "#FFFFFF")
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Instance Tag", "A tag for instances", "#FFFFFF")
-		require.NoError(t, err)
-
-		// Assign tag to instance
-		err = AssignTagToInstance(tag.ID, instance.ID)
+		// Assign tag to instance component
+		err = AssignTagToComponent(tag.ID, instanceComponent.ID)
 		require.NoError(t, err)
 
 		// Verify assignment
-		tags, err := ListTagsByInstanceID(instance.ID)
+		tags, err := ListTagsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tag.ID, tags[0].ID)
 		assert.Equal(t, tag.Name, tags[0].Name)
 
 		// Verify reverse lookup
-		instances, err := ListInstancesByTagID(tag.ID)
+		components, err := ListComponentsByTagID(tag.ID)
 		require.NoError(t, err)
-		assert.Len(t, instances, 1)
-		assert.Equal(t, instance.ID, instances[0].ID)
-		assert.Equal(t, instance.Name, instances[0].Name)
+		assert.Len(t, components, 1)
+		assert.Equal(t, instanceComponent.ID, components[0].ID)
+		assert.Equal(t, instanceComponent.Name, components[0].Name)
 	})
 
 	t.Run("Duplicate", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("Duplicate Instance Product", "A product for duplicate instance tagging")
-		require.NoError(t, err)
-
-		instance, err := CreateInstance("Duplicate Test Instance", product.ID)
+		instanceComponent, err := CreateComponent("Duplicate Test Instance Component", "A test instance component for duplicate tagging", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
 		tag, err := CreateTag("Duplicate Instance Tag", "A tag for duplicate instance test", "#000000")
 		require.NoError(t, err)
 
-		// Assign tag to instance first time
-		err = AssignTagToInstance(tag.ID, instance.ID)
+		// Assign tag to instance component first time
+		err = AssignTagToComponent(tag.ID, instanceComponent.ID)
 		require.NoError(t, err)
 
-		// Try to assign the same tag to the same instance again
-		err = AssignTagToInstance(tag.ID, instance.ID)
+		// Try to assign the same tag to the same instance component again
+		err = AssignTagToComponent(tag.ID, instanceComponent.ID)
 		require.NoError(t, err) // Should not error
 
 		// Verify only one assignment exists
-		tags, err := ListTagsByInstanceID(instance.ID)
+		tags, err := ListTagsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tag.ID, tags[0].ID)
 	})
 }
 
-func TestTagService_UnassignTagFromInstance(t *testing.T) {
+func TestTagService_UnassignTagFromInstanceComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
 		&models.Product{},
 		&models.Instance{},
@@ -524,29 +518,26 @@ func TestTagService_UnassignTagFromInstance(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data and assign tag
-		product, err := CreateProduct("Unassign Instance Product", "A product for unassigning instance tags")
+		instanceComponent, err := CreateComponent("Unassign Test Instance Component", "A test instance component for unassigning tags", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		instance, err := CreateInstance("Unassign Test Instance", product.ID)
+		tag, err := CreateTag("Unassign Instance Tag", "A tag for instance component unassign test", "#999999")
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Unassign Instance Tag", "A tag for instance unassign test", "#999999")
-		require.NoError(t, err)
-
-		err = AssignTagToInstance(tag.ID, instance.ID)
+		err = AssignTagToComponent(tag.ID, instanceComponent.ID)
 		require.NoError(t, err)
 
 		// Verify assignment exists
-		tags, err := ListTagsByInstanceID(instance.ID)
+		tags, err := ListTagsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 
-		// Unassign tag from instance
-		err = UnassignTagFromInstance(tag.ID, instance.ID)
+		// Unassign tag from instance component
+		err = UnassignTagFromComponent(tag.ID, instanceComponent.ID)
 		require.NoError(t, err)
 
 		// Verify assignment was removed
-		tags, err = ListTagsByInstanceID(instance.ID)
+		tags, err = ListTagsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 0)
 	})
@@ -560,39 +551,39 @@ func TestTagService_AssignTagByName(t *testing.T) {
 	)
 	defer cleanup()
 
-	t.Run("AssignToProduct_ExistingTag", func(t *testing.T) {
+	t.Run("AssignToComponent_ExistingTag", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("ByName Test Product", "A test product for tag assignment by name")
+		component, err := CreateComponent("ByName Test Component", "A test component for tag assignment by name", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
 		tag, err := CreateTag("ByName Tag", "A tag for by name test", "#ABCDEF")
 		require.NoError(t, err)
 
-		// Assign tag to product by name
-		err = AssignTagToProductByName(tag.Name, product.ID)
+		// Assign tag to component by name
+		err = AssignTagToComponentByName(tag.Name, component.ID)
 		require.NoError(t, err)
 
 		// Verify assignment
-		tags, err := ListTagsByProductID(product.ID)
+		tags, err := ListTagsByComponentID(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tag.ID, tags[0].ID)
 		assert.Equal(t, tag.Name, tags[0].Name)
 	})
 
-	t.Run("AssignToProduct_NewTag", func(t *testing.T) {
+	t.Run("AssignToComponent_NewTag", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("NewTag Test Product", "A test product for new tag creation")
+		component, err := CreateComponent("NewTag Test Component", "A test component for new tag creation", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
 		tagName := "New Auto-Created Tag"
 
-		// Assign non-existent tag to product by name (should create the tag)
-		err = AssignTagToProductByName(tagName, product.ID)
+		// Assign non-existent tag to component by name (should create the tag)
+		err = AssignTagToComponentByName(tagName, component.ID)
 		require.NoError(t, err)
 
 		// Verify tag was created and assigned
-		tags, err := ListTagsByProductID(product.ID)
+		tags, err := ListTagsByComponentID(component.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tagName, tags[0].Name)
@@ -600,45 +591,39 @@ func TestTagService_AssignTagByName(t *testing.T) {
 		assert.Empty(t, tags[0].Color)       // Should be empty for auto-created tag
 	})
 
-	t.Run("AssignToInstance_ExistingTag", func(t *testing.T) {
+	t.Run("AssignToInstanceComponent_ExistingTag", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("Instance ByName Product", "A product for instance tag assignment by name")
+		instanceComponent, err := CreateComponent("ByName Test Instance Component", "A test instance component for tag assignment by name", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		instance, err := CreateInstance("ByName Test Instance", product.ID)
+		tag, err := CreateTag("Instance ByName Tag", "A tag for instance component by name test", "#FEDCBA")
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Instance ByName Tag", "A tag for instance by name test", "#FEDCBA")
-		require.NoError(t, err)
-
-		// Assign tag to instance by name
-		err = AssignTagToInstanceByName(tag.Name, instance.ID)
+		// Assign tag to instance component by name
+		err = AssignTagToComponentByName(tag.Name, instanceComponent.ID)
 		require.NoError(t, err)
 
 		// Verify assignment
-		tags, err := ListTagsByInstanceID(instance.ID)
+		tags, err := ListTagsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tag.ID, tags[0].ID)
 		assert.Equal(t, tag.Name, tags[0].Name)
 	})
 
-	t.Run("AssignToInstance_NewTag", func(t *testing.T) {
+	t.Run("AssignToInstanceComponent_NewTag", func(t *testing.T) {
 		// Create test data
-		product, err := CreateProduct("Instance NewTag Product", "A product for new instance tag creation")
-		require.NoError(t, err)
-
-		instance, err := CreateInstance("NewTag Test Instance", product.ID)
+		instanceComponent, err := CreateComponent("NewTag Test Instance Component", "A test instance component for new tag creation", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
 		tagName := "New Instance Auto-Created Tag"
 
-		// Assign non-existent tag to instance by name (should create the tag)
-		err = AssignTagToInstanceByName(tagName, instance.ID)
+		// Assign non-existent tag to instance component by name (should create the tag)
+		err = AssignTagToComponentByName(tagName, instanceComponent.ID)
 		require.NoError(t, err)
 
 		// Verify tag was created and assigned
-		tags, err := ListTagsByInstanceID(instance.ID)
+		tags, err := ListTagsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, tags, 1)
 		assert.Equal(t, tagName, tags[0].Name)

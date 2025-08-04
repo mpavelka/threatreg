@@ -164,7 +164,7 @@ func TestThreatPatternService_UpdatePatternCondition(t *testing.T) {
 		require.NoError(t, err)
 
 		// Update the condition
-		newConditionType := models.ConditionTypeProductTag.String()
+		newConditionType := models.ConditionTypeRelationshipTargetID.String()
 		newOperator := models.OperatorNotContains.String()
 		newValue := "updated-tag"
 		newRelationshipType := ""
@@ -247,8 +247,7 @@ func TestThreatPatternService_ListPatternConditions(t *testing.T) {
 			value         string
 		}{
 			{models.ConditionTypeTag.String(), models.OperatorContains.String(), "tag1"},
-			{models.ConditionTypeProduct.String(), models.OperatorEquals.String(), "product1"},
-			{models.ConditionTypeProductTag.String(), models.OperatorNotContains.String(), "tag2"},
+			{models.ConditionTypeTag.String(), models.OperatorNotContains.String(), "tag2"},
 		}
 
 		var createdConditions []*models.PatternCondition
@@ -320,7 +319,7 @@ func TestThreatPatternService_ListAllPatternConditions(t *testing.T) {
 		condition1, err := CreatePatternCondition(pattern1.ID, models.ConditionTypeTag.String(), models.OperatorContains.String(), "tag1", "")
 		require.NoError(t, err)
 
-		condition2, err := CreatePatternCondition(pattern2.ID, models.ConditionTypeProduct.String(), models.OperatorEquals.String(), "product1", "")
+		condition2, err := CreatePatternCondition(pattern2.ID, models.ConditionTypeTag.String(), models.OperatorEquals.String(), "tag1", "")
 		require.NoError(t, err)
 
 		// List all conditions
@@ -363,7 +362,7 @@ func TestThreatPatternService_DeletePatternConditionsByPatternID(t *testing.T) {
 		condition1, err := CreatePatternCondition(pattern.ID, models.ConditionTypeTag.String(), models.OperatorContains.String(), "tag1", "")
 		require.NoError(t, err)
 
-		condition2, err := CreatePatternCondition(pattern.ID, models.ConditionTypeProduct.String(), models.OperatorEquals.String(), "product1", "")
+		condition2, err := CreatePatternCondition(pattern.ID, models.ConditionTypeTag.String(), models.OperatorEquals.String(), "tag1", "")
 		require.NoError(t, err)
 
 		// Delete all conditions for pattern

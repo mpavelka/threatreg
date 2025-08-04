@@ -340,9 +340,10 @@ func TestThreatPatternService_CreateThreatPatternWithConditions(t *testing.T) {
 				Value:         "test-tag",
 			},
 			{
-				ConditionType: models.ConditionTypeProduct.String(),
-				Operator:      models.OperatorEquals.String(),
-				Value:         "test-product",
+				ConditionType:    models.ConditionTypeRelationshipTargetTag.String(),
+				Operator:         models.OperatorEquals.String(),
+				Value:            "test-product",
+				RelationshipType: "RELATED_TO",
 			},
 		}
 

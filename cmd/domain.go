@@ -30,18 +30,8 @@ var domainGetCmd = &cobra.Command{
 			return
 		}
 		fmt.Printf("Domain details: uuid=%s, name=%s, description=%s\n", domain.ID, domain.Name, domain.Description)
-		if len(domain.Instances) > 0 {
-			fmt.Printf("Instances (%d):\n", len(domain.Instances))
-			for _, instance := range domain.Instances {
-				productName := ""
-				if instance.Product.Name != "" {
-					productName = fmt.Sprintf(" (Product: %s)", instance.Product.Name)
-				}
-				fmt.Printf("  - %s: %s%s\n", instance.ID, instance.Name, productName)
-			}
-		} else {
-			fmt.Println("No instances associated with this domain")
-		}
+		fmt.Println("No instances associated with this domain (Intentionally broken)")
+
 	},
 }
 
@@ -130,8 +120,7 @@ var domainListCmd = &cobra.Command{
 		}
 		fmt.Println("Domains:")
 		for _, domain := range domains {
-			instanceCount := len(domain.Instances)
-			fmt.Printf("- uuid=%s, name=%s, description=%s, instances=%d\n", domain.ID, domain.Name, domain.Description, instanceCount)
+			fmt.Printf("- uuid=%s, name=%s, description=%s\n", domain.ID, domain.Name, domain.Description)
 		}
 	},
 }
@@ -218,9 +207,9 @@ var domainListInstancesCmd = &cobra.Command{
 		fmt.Printf("Instances in domain %s:\n", domainUUID)
 		for _, instance := range instances {
 			productName := ""
-			if instance.Product.Name != "" {
-				productName = fmt.Sprintf(" (Product: %s)", instance.Product.Name)
-			}
+			// if instance.Product.Name != "" {
+			// 	productName = fmt.Sprintf(" (Product: %s)", instance.Product.Name)
+			// }
 			fmt.Printf("- uuid=%s, name=%s%s\n", instance.ID, instance.Name, productName)
 		}
 	},

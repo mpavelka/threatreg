@@ -16,27 +16,26 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 	defer cleanup()
 
 	// Create test data
-	product, err := CreateProduct("Test Product", "A test product")
+	productComponent, err := CreateComponent("Test Product Component", "A test product component", models.ComponentTypeProduct)
 	require.NoError(t, err)
 
-	instance, err := CreateInstance("Test Instance", product.ID)
+	instanceComponent, err := CreateComponent("Test Instance Component", "A test instance component", models.ComponentTypeInstance)
 	require.NoError(t, err)
 
 	threat, err := CreateThreat("Test Threat", "A test threat")
 	require.NoError(t, err)
 
 	// Create threat assignments
-	productAssignment, err := AssignThreatToProduct(threat.ID, product.ID)
+	productAssignment, err := AssignThreatToComponent(productComponent.ID, threat.ID)
 	require.NoError(t, err)
 
-	instanceAssignment, err := AssignThreatToInstance(threat.ID, instance.ID)
+	instanceAssignment, err := AssignThreatToComponent(instanceComponent.ID, threat.ID)
 	require.NoError(t, err)
 
 	t.Run("CreateThreatResolution_Product", func(t *testing.T) {
 		resolution, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil,         // instanceID
-			&product.ID, // productID
+			productComponent.ID, // componentID
 			models.ThreatAssignmentResolutionStatusResolved,
 			"Product threat resolved",
 		)
@@ -45,8 +44,7 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		assert.NotNil(t, resolution)
 		assert.NotEqual(t, uuid.Nil, resolution.ID)
 		assert.Equal(t, productAssignment.ID, resolution.ThreatAssignmentID)
-		assert.Equal(t, product.ID, resolution.ProductID)
-		assert.Equal(t, uuid.Nil, resolution.InstanceID)
+		assert.Equal(t, productComponent.ID, resolution.ComponentID)
 		assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, resolution.Status)
 		assert.Equal(t, "Product threat resolved", resolution.Description)
 
@@ -57,8 +55,7 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 	t.Run("CreateThreatResolution_Instance", func(t *testing.T) {
 		resolution, err := CreateThreatResolution(
 			instanceAssignment.ID,
-			&instance.ID, // instanceID
-			nil,          // productID
+			instanceComponent.ID, // componentID
 			models.ThreatAssignmentResolutionStatusAwaiting,
 			"Instance threat awaiting resolution",
 		)
@@ -66,34 +63,31 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, resolution)
 		assert.Equal(t, instanceAssignment.ID, resolution.ThreatAssignmentID)
-		assert.Equal(t, uuid.Nil, resolution.ProductID)
-		assert.Equal(t, instance.ID, resolution.InstanceID)
+		assert.Equal(t, instanceComponent.ID, resolution.ComponentID)
 		assert.Equal(t, models.ThreatAssignmentResolutionStatusAwaiting, resolution.Status)
 
 		// Cleanup
 		DeleteThreatResolution(resolution.ID)
 	})
 
-	t.Run("CreateThreatResolution_NeitherProvided", func(t *testing.T) {
+	t.Run("CreateThreatResolution_NilComponentID", func(t *testing.T) {
 		resolution, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil, // instanceID
-			nil, // productID
+			uuid.Nil, // nil componentID
 			models.ThreatAssignmentResolutionStatusResolved,
 			"Invalid resolution",
 		)
 
 		assert.Error(t, err)
 		assert.Nil(t, resolution)
-		assert.Contains(t, err.Error(), "either instanceID or productID must be provided")
+		assert.Contains(t, err.Error(), "ComponentID")
 	})
 
 	t.Run("GetThreatResolution", func(t *testing.T) {
 		// Create resolution
 		created, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusAccepted,
 			"Test description",
 		)
@@ -123,8 +117,7 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		// Create resolution
 		created, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
 			"Resolved threat",
 		)
@@ -144,8 +137,7 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		// Create resolution
 		created, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusAwaiting,
 			"Original description",
 		)
@@ -175,8 +167,7 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		// Create resolution
 		created, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusAwaiting,
 			"Original description",
 		)
@@ -204,34 +195,32 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
 	})
 
-	t.Run("ListThreatResolutionsByProductID", func(t *testing.T) {
-		// Create multiple resolutions for the product
+	t.Run("ListThreatResolutionsByComponentID", func(t *testing.T) {
+		// Create multiple resolutions for the product component
 		resolution1, err := CreateThreatResolution(
 			productAssignment.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
 			"Resolution 1",
 		)
 		require.NoError(t, err)
 
-		// Create another threat assignment for the same product
+		// Create another threat assignment for the same product component
 		threat2, err := CreateThreat("Another Test Threat", "Another test threat")
 		require.NoError(t, err)
-		assignment2, err := AssignThreatToProduct(threat2.ID, product.ID)
+		assignment2, err := AssignThreatToComponent(productComponent.ID, threat2.ID)
 		require.NoError(t, err)
 
 		resolution2, err := CreateThreatResolution(
 			assignment2.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusAwaiting,
 			"Resolution 2",
 		)
 		require.NoError(t, err)
 
-		// List resolutions for product
-		resolutions, err := ListThreatResolutionsByProductID(product.ID)
+		// List resolutions for component
+		resolutions, err := ListThreatResolutionsByComponentID(productComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, resolutions, 2)
 
@@ -245,19 +234,18 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		DeleteThreatResolution(resolution2.ID)
 	})
 
-	t.Run("ListThreatResolutionsByInstanceID", func(t *testing.T) {
-		// Create resolution for instance
+	t.Run("ListThreatResolutionsByComponentID_Instance", func(t *testing.T) {
+		// Create resolution for instance component
 		resolution, err := CreateThreatResolution(
 			instanceAssignment.ID,
-			&instance.ID,
-			nil,
+			instanceComponent.ID,
 			models.ThreatAssignmentResolutionStatusAccepted,
-			"Instance resolution",
+			"Instance component resolution",
 		)
 		require.NoError(t, err)
 
-		// List resolutions for instance
-		resolutions, err := ListThreatResolutionsByInstanceID(instance.ID)
+		// List resolutions for instance component
+		resolutions, err := ListThreatResolutionsByComponentID(instanceComponent.ID)
 		require.NoError(t, err)
 		assert.Len(t, resolutions, 1)
 		assert.Equal(t, resolution.ID, resolutions[0].ID)
@@ -270,14 +258,13 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 		// Create a new threat assignment for this test
 		threat3, err := CreateThreat("Delete Test Threat", "Threat for delete test")
 		require.NoError(t, err)
-		assignment3, err := AssignThreatToProduct(threat3.ID, product.ID)
+		assignment3, err := AssignThreatToComponent(productComponent.ID, threat3.ID)
 		require.NoError(t, err)
 
 		// Create resolution
 		created, err := CreateThreatResolution(
 			assignment3.ID,
-			nil,
-			&product.ID,
+			productComponent.ID,
 			models.ThreatAssignmentResolutionStatusResolved,
 			"To be deleted",
 		)
@@ -307,15 +294,14 @@ func TestDelegationFunctionality(t *testing.T) {
 	defer cleanup()
 
 	t.Run("DelegateResolution_UpdatesStatus", func(t *testing.T) {
-		product, _ := CreateProduct("Test Product", "A test product")
-		instance1, _ := CreateInstance("Instance 1", product.ID)
-		instance2, _ := CreateInstance("Instance 2", product.ID)
+		component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
+		component2, _ := CreateComponent("Component 2", "Second test component", models.ComponentTypeInstance)
 		threat, _ := CreateThreat("Test Threat", "A test threat")
-		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
-		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+		assignment1, _ := AssignThreatToComponent(component1.ID, threat.ID)
+		assignment2, _ := AssignThreatToComponent(component2.ID, threat.ID)
 
-		source, _ := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
-		target, _ := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target")
+		source, _ := CreateThreatResolution(assignment1.ID, component1.ID, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
+		target, _ := CreateThreatResolution(assignment2.ID, component2.ID, models.ThreatAssignmentResolutionStatusResolved, "Target")
 		defer func() { DeleteThreatResolution(source.ID); DeleteThreatResolution(target.ID) }()
 
 		err := DelegateResolution(*source, *target)
@@ -326,20 +312,19 @@ func TestDelegationFunctionality(t *testing.T) {
 	})
 
 	t.Run("DelegateResolution_MultipleTimes", func(t *testing.T) {
-		product, _ := CreateProduct("Test Product 2", "A test product")
-		instance1, _ := CreateInstance("Instance 1", product.ID)
-		instance2, _ := CreateInstance("Instance 2", product.ID)
-		instance3, _ := CreateInstance("Instance 3", product.ID)
+		component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
+		component2, _ := CreateComponent("Component 2", "Second test component", models.ComponentTypeInstance)
+		component3, _ := CreateComponent("Component 3", "Third test component", models.ComponentTypeInstance)
 		threat, _ := CreateThreat("Test Threat 2", "A test threat")
-		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
-		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
-		assignment3, _ := AssignThreatToInstance(threat.ID, instance3.ID)
+		assignment1, _ := AssignThreatToComponent(component1.ID, threat.ID)
+		assignment2, _ := AssignThreatToComponent(component2.ID, threat.ID)
+		assignment3, _ := AssignThreatToComponent(component3.ID, threat.ID)
 
-		source, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
+		source, err := CreateThreatResolution(assignment1.ID, component1.ID, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
 		require.NoError(t, err)
-		target1, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusAccepted, "Target1")
+		target1, err := CreateThreatResolution(assignment2.ID, component2.ID, models.ThreatAssignmentResolutionStatusAccepted, "Target1")
 		require.NoError(t, err)
-		target2, err := CreateThreatResolution(assignment3.ID, &instance3.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target2")
+		target2, err := CreateThreatResolution(assignment3.ID, component3.ID, models.ThreatAssignmentResolutionStatusResolved, "Target2")
 		require.NoError(t, err)
 		defer func() {
 			DeleteThreatResolution(source.ID)
@@ -369,16 +354,15 @@ func TestDelegationFunctionality(t *testing.T) {
 	})
 
 	t.Run("UpdateThreatResolution_RemovesDelegation", func(t *testing.T) {
-		product, _ := CreateProduct("Test Product 3", "A test product")
-		instance1, _ := CreateInstance("Instance 1", product.ID)
-		instance2, _ := CreateInstance("Instance 2", product.ID)
+		component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
+		component2, _ := CreateComponent("Component 2", "Second test component", models.ComponentTypeInstance)
 		threat, _ := CreateThreat("Test Threat 3", "A test threat")
-		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
-		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+		assignment1, _ := AssignThreatToComponent(component1.ID, threat.ID)
+		assignment2, _ := AssignThreatToComponent(component2.ID, threat.ID)
 
-		source, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
+		source, err := CreateThreatResolution(assignment1.ID, component1.ID, models.ThreatAssignmentResolutionStatusAwaiting, "Source")
 		require.NoError(t, err)
-		target, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target")
+		target, err := CreateThreatResolution(assignment2.ID, component2.ID, models.ThreatAssignmentResolutionStatusResolved, "Target")
 		require.NoError(t, err)
 		defer func() { DeleteThreatResolution(source.ID); DeleteThreatResolution(target.ID) }()
 
@@ -405,21 +389,20 @@ func TestDelegationFunctionality(t *testing.T) {
 	})
 
 	t.Run("DelegationChain_StatusPropagation", func(t *testing.T) {
-		product, _ := CreateProduct("Test Product 4", "A test product")
-		instance1, _ := CreateInstance("Instance 1", product.ID)
-		instance2, _ := CreateInstance("Instance 2", product.ID)
-		instance3, _ := CreateInstance("Instance 3", product.ID)
+		component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
+		component2, _ := CreateComponent("Component 2", "Second test component", models.ComponentTypeInstance)
+		component3, _ := CreateComponent("Component 3", "Third test component", models.ComponentTypeInstance)
 		threat, _ := CreateThreat("Test Threat 4", "A test threat")
-		assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
-		assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
-		assignment3, _ := AssignThreatToInstance(threat.ID, instance3.ID)
+		assignment1, _ := AssignThreatToComponent(component1.ID, threat.ID)
+		assignment2, _ := AssignThreatToComponent(component2.ID, threat.ID)
+		assignment3, _ := AssignThreatToComponent(component3.ID, threat.ID)
 
 		// Create chain: resA -> resB -> resC
-		resA, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "ResA")
+		resA, err := CreateThreatResolution(assignment1.ID, component1.ID, models.ThreatAssignmentResolutionStatusAwaiting, "ResA")
 		require.NoError(t, err)
-		resB, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "ResB")
+		resB, err := CreateThreatResolution(assignment2.ID, component2.ID, models.ThreatAssignmentResolutionStatusAwaiting, "ResB")
 		require.NoError(t, err)
-		resC, err := CreateThreatResolution(assignment3.ID, &instance3.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "ResC")
+		resC, err := CreateThreatResolution(assignment3.ID, component3.ID, models.ThreatAssignmentResolutionStatusAwaiting, "ResC")
 		require.NoError(t, err)
 		defer func() {
 			DeleteThreatResolution(resA.ID)
@@ -452,37 +435,36 @@ func TestDelegationFunctionality(t *testing.T) {
 	})
 }
 
-func TestGetInstanceLevelThreatResolutionWithDelegation(t *testing.T) {
+func TestGetComponentLevelThreatResolutionWithDelegation(t *testing.T) {
 	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
 	// Create test data
-	product, _ := CreateProduct("Test Product", "A test product")
-	instance1, _ := CreateInstance("Instance 1", product.ID)
-	instance2, _ := CreateInstance("Instance 2", product.ID)
+	component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
+	component2, _ := CreateComponent("Component 2", "Second test component", models.ComponentTypeInstance)
 	threat, _ := CreateThreat("Test Threat", "A test threat")
-	assignment1, _ := AssignThreatToInstance(threat.ID, instance1.ID)
-	assignment2, _ := AssignThreatToInstance(threat.ID, instance2.ID)
+	assignment1, _ := AssignThreatToComponent(component1.ID, threat.ID)
+	assignment2, _ := AssignThreatToComponent(component2.ID, threat.ID)
 
 	// Create two resolutions
-	resolution1, err := CreateThreatResolution(assignment1.ID, &instance1.ID, nil, models.ThreatAssignmentResolutionStatusAwaiting, "Source resolution")
+	resolution1, err := CreateThreatResolution(assignment1.ID, component1.ID, models.ThreatAssignmentResolutionStatusAwaiting, "Source resolution")
 	require.NoError(t, err)
-	resolution2, err := CreateThreatResolution(assignment2.ID, &instance2.ID, nil, models.ThreatAssignmentResolutionStatusResolved, "Target resolution")
+	resolution2, err := CreateThreatResolution(assignment2.ID, component2.ID, models.ThreatAssignmentResolutionStatusResolved, "Target resolution")
 	require.NoError(t, err)
 
 	// Create delegation from resolution1 to resolution2
 	err = DelegateResolution(*resolution1, *resolution2)
 	require.NoError(t, err)
 
-	// Test GetInstanceLevelThreatResolutionWithDelegation for resolution1 (has delegation)
-	resultWithDelegation, err := GetInstanceLevelThreatResolutionWithDelegation(assignment1.ID, instance1.ID)
+	// Test GetComponentLevelThreatResolutionWithDelegation for resolution1 (has delegation)
+	resultWithDelegation, err := GetComponentLevelThreatResolutionWithDelegation(assignment1.ID, component1.ID)
 	require.NoError(t, err)
 	require.NotNil(t, resultWithDelegation)
 
 	// Verify resolution data
 	assert.Equal(t, resolution1.ID, resultWithDelegation.Resolution.ID)
 	assert.Equal(t, assignment1.ID, resultWithDelegation.Resolution.ThreatAssignmentID)
-	assert.Equal(t, instance1.ID, resultWithDelegation.Resolution.InstanceID)
+	assert.Equal(t, component1.ID, resultWithDelegation.Resolution.ComponentID)
 	assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, resultWithDelegation.Resolution.Status)
 
 	// Verify delegation data
@@ -490,15 +472,15 @@ func TestGetInstanceLevelThreatResolutionWithDelegation(t *testing.T) {
 	assert.Equal(t, resolution1.ID, resultWithDelegation.Delegation.DelegatedBy)
 	assert.Equal(t, resolution2.ID, resultWithDelegation.Delegation.DelegatedTo)
 
-	// Test GetInstanceLevelThreatResolutionWithDelegation for resolution2 (no delegation)
-	resultNoDelegation, err := GetInstanceLevelThreatResolutionWithDelegation(assignment2.ID, instance2.ID)
+	// Test GetComponentLevelThreatResolutionWithDelegation for resolution2 (no delegation)
+	resultNoDelegation, err := GetComponentLevelThreatResolutionWithDelegation(assignment2.ID, component2.ID)
 	require.NoError(t, err)
 	require.NotNil(t, resultNoDelegation)
 
 	// Verify resolution data
 	assert.Equal(t, resolution2.ID, resultNoDelegation.Resolution.ID)
 	assert.Equal(t, assignment2.ID, resultNoDelegation.Resolution.ThreatAssignmentID)
-	assert.Equal(t, instance2.ID, resultNoDelegation.Resolution.InstanceID)
+	assert.Equal(t, component2.ID, resultNoDelegation.Resolution.ComponentID)
 	assert.Equal(t, models.ThreatAssignmentResolutionStatusResolved, resultNoDelegation.Resolution.Status)
 
 	// Verify no delegation
