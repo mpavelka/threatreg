@@ -121,22 +121,6 @@ func ListTags() ([]models.Tag, error) {
 	return tagRepository.List(nil)
 }
 
-// ListTagsByProductID retrieves all tags assigned to a specific product.
-// DEPRECATED: This function is deprecated. Use ListTagsByComponentID instead.
-// Returns a slice of tags or an error if database access fails.
-func ListTagsByProductID(productID uuid.UUID) ([]models.Tag, error) {
-	// Redirect to component-based function
-	return ListTagsByComponentID(productID)
-}
-
-// ListTagsByInstanceID retrieves all tags assigned to a specific instance.
-// DEPRECATED: This function is deprecated. Use ListTagsByComponentID instead.
-// Returns a slice of tags or an error if database access fails.
-func ListTagsByInstanceID(instanceID uuid.UUID) ([]models.Tag, error) {
-	// Redirect to component-based function
-	return ListTagsByComponentID(instanceID)
-}
-
 // ListTagsByComponentID retrieves all tags assigned to a specific component.
 // Returns a slice of tags or an error if database access fails.
 func ListTagsByComponentID(componentID uuid.UUID) ([]models.Tag, error) {
@@ -146,30 +130,6 @@ func ListTagsByComponentID(componentID uuid.UUID) ([]models.Tag, error) {
 	}
 
 	return tagRepository.ListByComponentID(nil, componentID)
-}
-
-// AssignTagToProduct creates an assignment between a tag and a product.
-// DEPRECATED: This function is deprecated. Use AssignTagToComponent instead.
-// Validates that both entities exist and prevents duplicate assignments. Returns an error if assignment fails.
-func AssignTagToProduct(tagID, productID uuid.UUID) error {
-	// Redirect to component-based function
-	return AssignTagToComponent(tagID, productID)
-}
-
-// UnassignTagFromProduct removes the assignment between a tag and a product.
-// DEPRECATED: This function is deprecated. Use UnassignTagFromComponent instead.
-// Returns an error if the assignment does not exist or if removal fails.
-func UnassignTagFromProduct(tagID, productID uuid.UUID) error {
-	// Redirect to component-based function
-	return UnassignTagFromComponent(tagID, productID)
-}
-
-// AssignTagToInstance creates an assignment between a tag and an instance.
-// DEPRECATED: This function is deprecated. Use AssignTagToComponent instead.
-// Validates that both entities exist and prevents duplicate assignments. Returns an error if assignment fails.
-func AssignTagToInstance(tagID, instanceID uuid.UUID) error {
-	// Redirect to component-based function
-	return AssignTagToComponent(tagID, instanceID)
 }
 
 // AssignTagToComponent creates an assignment between a tag and a component.
@@ -201,14 +161,6 @@ func AssignTagToComponent(tagID, componentID uuid.UUID) error {
 	})
 }
 
-// UnassignTagFromInstance removes the assignment between a tag and an instance.
-// DEPRECATED: This function is deprecated. Use UnassignTagFromComponent instead.
-// Returns an error if the assignment does not exist or if removal fails.
-func UnassignTagFromInstance(tagID, instanceID uuid.UUID) error {
-	// Redirect to component-based function
-	return UnassignTagFromComponent(tagID, instanceID)
-}
-
 // UnassignTagFromComponent removes the assignment between a tag and a component.
 // Returns an error if the assignment does not exist or if removal fails.
 func UnassignTagFromComponent(tagID, componentID uuid.UUID) error {
@@ -220,24 +172,6 @@ func UnassignTagFromComponent(tagID, componentID uuid.UUID) error {
 	return tagRepository.UnassignFromComponent(nil, tagID, componentID)
 }
 
-// ListProductsByTagID retrieves all products that have a specific tag assigned.
-// DEPRECATED: This function is deprecated. Use ListComponentsByTagID instead.
-// Returns a slice of products or an error if database access fails.
-func ListProductsByTagID(tagID uuid.UUID) ([]models.Product, error) {
-	// This needs to filter components by type=product and convert to Product models
-	// For now, return empty slice to avoid build errors
-	return []models.Product{}, nil
-}
-
-// ListInstancesByTagID retrieves all instances that have a specific tag assigned.
-// DEPRECATED: This function is deprecated. Use ListComponentsByTagID instead.
-// Returns a slice of instances or an error if database access fails.
-func ListInstancesByTagID(tagID uuid.UUID) ([]models.Instance, error) {
-	// This needs to filter components by type=instance and convert to Instance models
-	// For now, return empty slice to avoid build errors
-	return []models.Instance{}, nil
-}
-
 // ListComponentsByTagID retrieves all components that have a specific tag assigned.
 // Returns a slice of components or an error if database access fails.
 func ListComponentsByTagID(tagID uuid.UUID) ([]models.Component, error) {
@@ -247,22 +181,6 @@ func ListComponentsByTagID(tagID uuid.UUID) ([]models.Component, error) {
 	}
 
 	return tagRepository.ListComponentsByTagID(nil, tagID)
-}
-
-// AssignTagToProductByName assigns a tag to a product by tag name, creating the tag if it doesn't exist.
-// DEPRECATED: This function is deprecated. Use AssignTagToComponentByName instead.
-// If the tag doesn't exist, creates it with default values. Returns an error if assignment fails.
-func AssignTagToProductByName(tagName string, productID uuid.UUID) error {
-	// Redirect to component-based function
-	return AssignTagToComponentByName(tagName, productID)
-}
-
-// AssignTagToInstanceByName assigns a tag to an instance by tag name, creating the tag if it doesn't exist.
-// DEPRECATED: This function is deprecated. Use AssignTagToComponentByName instead.
-// If the tag doesn't exist, creates it with default values. Returns an error if assignment fails.
-func AssignTagToInstanceByName(tagName string, instanceID uuid.UUID) error {
-	// Redirect to component-based function
-	return AssignTagToComponentByName(tagName, instanceID)
 }
 
 // AssignTagToComponentByName assigns a tag to a component by tag name, creating the tag if it doesn't exist.

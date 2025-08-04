@@ -355,35 +355,3 @@ func FindResolutionRoot(resolution models.ThreatAssignmentResolution, tx *gorm.D
 		currentResolution = *targetResolution
 	}
 }
-
-// DEPRECATED FUNCTIONS - These redirect to component-based implementations for backward compatibility
-
-// GetInstanceLevelThreatResolution retrieves threat resolution for an instance (component).
-// DEPRECATED: Use GetComponentLevelThreatResolution instead.
-func GetInstanceLevelThreatResolution(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
-	return GetComponentLevelThreatResolution(threatAssignmentID, instanceID)
-}
-
-// GetInstanceLevelThreatResolutionWithDelegation retrieves threat resolution with delegation info for an instance.
-// DEPRECATED: Use GetComponentLevelThreatResolutionWithDelegation instead.
-func GetInstanceLevelThreatResolutionWithDelegation(threatAssignmentID int, instanceID uuid.UUID) (*models.ThreatAssignmentResolutionWithDelegation, error) {
-	return GetComponentLevelThreatResolutionWithDelegation(threatAssignmentID, instanceID)
-}
-
-// GetProductLevelThreatResolution retrieves threat resolution for a product (component).
-// DEPRECATED: Use GetComponentLevelThreatResolution instead.
-func GetProductLevelThreatResolution(threatAssignmentID int, productID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
-	return GetComponentLevelThreatResolution(threatAssignmentID, productID)
-}
-
-// ListThreatResolutionsByInstanceID retrieves all threat resolutions for an instance (component).
-// DEPRECATED: Use ListThreatResolutionsByComponentID instead.
-func ListThreatResolutionsByInstanceID(instanceID uuid.UUID) ([]models.ThreatAssignmentResolution, error) {
-	return ListThreatResolutionsByComponentID(instanceID)
-}
-
-// ListThreatResolutionsByProductID retrieves all threat resolutions for a product (component).
-// DEPRECATED: Use ListThreatResolutionsByComponentID instead.
-func ListThreatResolutionsByProductID(productID uuid.UUID) ([]models.ThreatAssignmentResolution, error) {
-	return ListThreatResolutionsByComponentID(productID)
-}

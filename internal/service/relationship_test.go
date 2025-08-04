@@ -27,7 +27,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add relationship between components
-		err = AddRelationshipConsumesApiOfComponents(component1.ID, component2.ID)
+		err = AddRelationshipConsumesApiOf(component1.ID, component2.ID)
 		require.NoError(t, err)
 
 		// Verify both relationships were created
@@ -66,7 +66,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add relationship between product components
-		err = AddRelationshipConsumesApiOfComponents(productComponent1.ID, productComponent2.ID)
+		err = AddRelationshipConsumesApiOf(productComponent1.ID, productComponent2.ID)
 		require.NoError(t, err)
 
 		// Verify both relationships were created
@@ -99,7 +99,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to create relationship between component and itself (should fail if validation exists)
-		err = AddRelationshipConsumesApiOfComponents(component1.ID, component1.ID)
+		err = AddRelationshipConsumesApiOf(component1.ID, component1.ID)
 		// Note: This may or may not error depending on business logic - adjust assertion as needed
 		if err != nil {
 			assert.Contains(t, err.Error(), "self")
@@ -110,7 +110,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		// Try to create relationship with invalid component IDs
 		nonExistentID1 := uuid.New()
 		nonExistentID2 := uuid.New()
-		err := AddRelationshipConsumesApiOfComponents(nonExistentID1, nonExistentID2)
+		err := AddRelationshipConsumesApiOf(nonExistentID1, nonExistentID2)
 		// This should error if validation exists for non-existent components
 		if err != nil {
 			assert.Contains(t, err.Error(), "component")
@@ -129,7 +129,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add relationship with vice versa
-		err = AddRelationshipComponents(component1.ID, component2.ID, "DEPENDS_ON", "DEPENDENCY_OF")
+		err = AddRelationship(component1.ID, component2.ID, "DEPENDS_ON", "DEPENDENCY_OF")
 		require.NoError(t, err)
 
 		// Verify both relationships were created
@@ -168,7 +168,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add relationship without vice versa
-		err = AddRelationshipComponents(productComponent1.ID, productComponent2.ID, "RELATED_TO", "")
+		err = AddRelationship(productComponent1.ID, productComponent2.ID, "RELATED_TO", "")
 		require.NoError(t, err)
 
 		// Verify only one relationship was created
@@ -188,7 +188,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test same component as from and to (self-relationship)
-		err = AddRelationshipComponents(component1.ID, component1.ID, "TEST", "")
+		err = AddRelationship(component1.ID, component1.ID, "TEST", "")
 		// This may or may not error depending on business logic
 		if err != nil {
 			assert.Contains(t, err.Error(), "self")
@@ -196,7 +196,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 
 		// Test invalid component IDs
 		nonExistentID := uuid.New()
-		err = AddRelationshipComponents(nonExistentID, component1.ID, "TEST", "")
+		err = AddRelationship(nonExistentID, component1.ID, "TEST", "")
 		// This should error if validation exists for non-existent components
 		if err != nil {
 			assert.Contains(t, err.Error(), "component")
@@ -215,7 +215,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create relationship
-		err = AddRelationshipComponents(component1.ID, component2.ID, "TEST_RELATIONSHIP", "")
+		err = AddRelationship(component1.ID, component2.ID, "TEST_RELATIONSHIP", "")
 		require.NoError(t, err)
 
 		// Get the relationship ID
@@ -254,7 +254,7 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create relationship
-		err = AddRelationshipComponents(component1.ID, component2.ID, "GET_TEST", "")
+		err = AddRelationship(component1.ID, component2.ID, "GET_TEST", "")
 		require.NoError(t, err)
 
 		// Get the relationship ID
@@ -295,13 +295,13 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create relationships from component1
-		err = AddRelationshipComponents(component1.ID, component2.ID, "REL_TYPE_1", "")
+		err = AddRelationship(component1.ID, component2.ID, "REL_TYPE_1", "")
 		require.NoError(t, err)
-		err = AddRelationshipComponents(component1.ID, component3.ID, "REL_TYPE_2", "")
+		err = AddRelationship(component1.ID, component3.ID, "REL_TYPE_2", "")
 		require.NoError(t, err)
 
 		// Create relationship from component2 (should not appear in our list)
-		err = AddRelationshipComponents(component2.ID, component3.ID, "REL_TYPE_3", "")
+		err = AddRelationship(component2.ID, component3.ID, "REL_TYPE_3", "")
 		require.NoError(t, err)
 
 		// List relationships from component1
@@ -329,13 +329,13 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create relationships from productComponent1
-		err = AddRelationshipComponents(productComponent1.ID, productComponent2.ID, "PROD_REL_1", "")
+		err = AddRelationship(productComponent1.ID, productComponent2.ID, "PROD_REL_1", "")
 		require.NoError(t, err)
-		err = AddRelationshipComponents(productComponent1.ID, productComponent3.ID, "PROD_REL_2", "")
+		err = AddRelationship(productComponent1.ID, productComponent3.ID, "PROD_REL_2", "")
 		require.NoError(t, err)
 
 		// Create relationship from productComponent2 (should not appear in our list)
-		err = AddRelationshipComponents(productComponent2.ID, productComponent3.ID, "PROD_REL_3", "")
+		err = AddRelationship(productComponent2.ID, productComponent3.ID, "PROD_REL_3", "")
 		require.NoError(t, err)
 
 		// List relationships from productComponent1
@@ -363,11 +363,11 @@ func TestRelationshipService_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create relationships of different types
-		err = AddRelationshipComponents(component1.ID, component2.ID, "TYPE_A", "")
+		err = AddRelationship(component1.ID, component2.ID, "TYPE_A", "")
 		require.NoError(t, err)
-		err = AddRelationshipComponents(component1.ID, component3.ID, "TYPE_A", "")
+		err = AddRelationship(component1.ID, component3.ID, "TYPE_A", "")
 		require.NoError(t, err)
-		err = AddRelationshipComponents(component2.ID, component3.ID, "TYPE_B", "")
+		err = AddRelationship(component2.ID, component3.ID, "TYPE_B", "")
 		require.NoError(t, err)
 
 		// List relationships of TYPE_A

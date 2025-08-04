@@ -152,8 +152,8 @@ func DeleteThreat(c *gin.Context) {
 }
 
 // ListThreatsByDomainWithUnresolvedCount handles GET /api/v1/threats/by-domain/:domainId/unresolved
-// @Summary List threats by domain with unresolved instance counts
-// @Description Get threats in a domain showing count of instances that haven't resolved each threat
+// @Summary List threats by domain with count of components that haven't resolved
+// @Description Get threats in a domain showing count of components that haven't resolved each threat
 // @Tags Threats
 // @Accept json
 // @Produce json
@@ -169,7 +169,7 @@ func ListThreatsByDomainWithUnresolvedCount(c *gin.Context) {
 		return
 	}
 
-	threats, err := service.ListByDomainWithUnresolvedByInstancesCount(domainID)
+	threats, err := service.ListByDomainWithUnresolvedByComponentsCount(domainID)
 	if err != nil {
 		InternalError(c, err, "Failed to retrieve threats by domain with unresolved counts")
 		return

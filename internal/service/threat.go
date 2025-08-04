@@ -118,11 +118,3 @@ func ListByDomainWithUnresolvedByComponentsCount(domainID uuid.UUID) ([]models.T
 
 	return threatRepository.ListByDomainWithUnresolvedByComponentsCount(nil, domainID)
 }
-
-// DEPRECATED FUNCTIONS - These redirect to component-based implementations for backward compatibility
-
-// ListByDomainWithUnresolvedByInstancesCount returns threats in a domain with count of unresolved instances.
-// DEPRECATED: Use ListByDomainWithUnresolvedByComponentsCount instead.
-func ListByDomainWithUnresolvedByInstancesCount(domainID uuid.UUID) ([]models.ThreatWithUnresolvedByComponentsCount, error) {
-	return ListByDomainWithUnresolvedByComponentsCount(domainID)
-}

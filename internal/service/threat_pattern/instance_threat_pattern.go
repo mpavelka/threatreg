@@ -303,18 +303,6 @@ func ListComponents() ([]models.Component, error) {
 	return service.ListComponents()
 }
 
-// GetProduct is a wrapper around the main service package function to retrieve a product by ID.
-// Returns the product if found, or an error if the product does not exist or database access fails.
-func GetProduct(productID uuid.UUID) (*models.Product, error) {
-	return service.GetProduct(productID)
-}
-
-// ListTagsByProductID is a wrapper around the main service package function to list tags by product.
-// Returns all tags assigned to the specified product or an error if database access fails.
-func ListTagsByProductID(productID uuid.UUID) ([]models.Tag, error) {
-	return service.ListTagsByProductID(productID)
-}
-
 // ListTagsByComponentID is a wrapper around the main service package function to list tags by component.
 // Returns all tags assigned to the specified component or an error if database access fails.
 func ListTagsByComponentID(componentID uuid.UUID) ([]models.Tag, error) {

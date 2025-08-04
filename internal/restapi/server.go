@@ -76,35 +76,10 @@ func (s *Server) setupRoutes() {
 	// API v1 group
 	v1 := s.router.Group("/api/v1")
 	{
-		// Products endpoints
-		products := v1.Group("/products")
-		{
-			products.GET("", handlers.ListProducts)
-			products.POST("", handlers.CreateProduct)
-			products.GET("/:id", handlers.GetProduct)
-			products.PUT("/:id", handlers.UpdateProduct)
-			products.DELETE("/:id", handlers.DeleteProduct)
-			products.POST("/:id/threats", handlers.AssignThreatToProduct)
-			products.GET("/:id/threats", handlers.ListThreatAssignmentsByProduct)
-			products.GET("/:id/threats/with-resolution/:instanceId", handlers.ListThreatAssignmentsByProductWithResolutionByInstance)
-		}
 
-		// Instances endpoints
-		instances := v1.Group("/instances")
 		// Components endpoints
 		components := v1.Group("/components")
 		{
-			instances.GET("", handlers.ListInstances)
-			instances.POST("", handlers.CreateInstance)
-			instances.GET("/by-product/:productId", handlers.ListInstancesByProduct)
-			instances.GET("/filter", handlers.FilterInstances)
-			instances.GET("/:id", handlers.GetInstance)
-			instances.GET("/:id/domains", handlers.GetDomainsByInstance)
-			instances.PUT("/:id", handlers.UpdateInstance)
-			instances.DELETE("/:id", handlers.DeleteInstance)
-			instances.POST("/:id/threats", handlers.AssignThreatToInstance)
-			instances.GET("/:id/threats", handlers.ListThreatAssignmentsByInstance)
-			instances.GET("/:id/threats/with-resolution/:resolutionInstanceId", handlers.ListThreatAssignmentsByInstanceWithResolutionByInstance)
 			components.GET("", handlers.ListComponents)
 			components.POST("", handlers.CreateComponent)
 			components.GET("/by-type/:type", handlers.ListComponentsByType)
@@ -144,10 +119,6 @@ func (s *Server) setupRoutes() {
 			domains.GET("", handlers.ListDomains)
 			domains.POST("", handlers.CreateDomain)
 			domains.GET("/:id", handlers.GetDomain)
-			domains.GET("/:id/instances", handlers.GetInstancesByDomain)
-			domains.GET("/:id/instances/with-threat-stats", handlers.GetInstancesByDomainWithThreatStats)
-			domains.POST("/:id/instances/:instanceId", handlers.AddInstanceToDomain)
-			domains.DELETE("/:id/instances/:instanceId", handlers.RemoveInstanceFromDomain)
 			domains.PUT("/:id", handlers.UpdateDomain)
 			domains.DELETE("/:id", handlers.DeleteDomain)
 		}
@@ -176,11 +147,6 @@ func (s *Server) setupRoutes() {
 			threatResolutions.PUT("/:id", handlers.UpdateThreatResolution)
 			threatResolutions.DELETE("/:id", handlers.DeleteThreatResolution)
 			threatResolutions.GET("/by-assignment/:assignmentId", handlers.GetThreatResolutionByThreatAssignmentID)
-			threatResolutions.GET("/instance/:instanceId/assignment/:assignmentId", handlers.GetInstanceLevelThreatResolution)
-			threatResolutions.GET("/instance/:instanceId/assignment/:assignmentId/with-delegation", handlers.GetInstanceLevelThreatResolutionWithDelegation)
-			threatResolutions.GET("/product/:productId/assignment/:assignmentId", handlers.GetProductLevelThreatResolution)
-			threatResolutions.GET("/by-product/:productId", handlers.ListThreatResolutionsByProductID)
-			threatResolutions.GET("/by-instance/:instanceId", handlers.ListThreatResolutionsByInstanceID)
 			threatResolutions.POST("/:id/delegate", handlers.DelegateResolution)
 			threatResolutions.GET("/:id/delegated-to", handlers.GetDelegatedToResolutionByDelegatedByID)
 		}

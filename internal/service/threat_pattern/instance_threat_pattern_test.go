@@ -13,7 +13,6 @@ import (
 
 func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
 		&models.Component{},
 		&models.Tag{},
 		&models.Threat{},
@@ -65,17 +64,17 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Assign tags to products
-		err = service.AssignTagToProduct(highSecurityTag.ID, dbProduct.ID)
+		err = service.AssignTagToComponent(highSecurityTag.ID, dbProduct.ID)
 		require.NoError(t, err)
 
 		// Create relationships
-		err = service.AddRelationship(&webServer.ID, nil, &database.ID, nil, "connects_to", "")
+		err = service.AddRelationship(webServer.ID, database.ID, "connects_to", "")
 		require.NoError(t, err)
 
-		err = service.AddRelationship(&adminPanel.ID, nil, &database.ID, nil, "reads_from", "")
+		err = service.AddRelationship(adminPanel.ID, database.ID, "reads_from", "")
 		require.NoError(t, err)
 
-		err = service.AddRelationship(&apiServer.ID, nil, &database.ID, nil, "connects_to", "")
+		err = service.AddRelationship(apiServer.ID, database.ID, "connects_to", "")
 		require.NoError(t, err)
 
 		// Create threats
@@ -314,7 +313,7 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create relationship between instance1 and instance2
-		err = service.AddRelationship(&instance1.ID, nil, &instance2.ID, nil, "depends_on", "")
+		err = service.AddRelationship(instance1.ID, instance2.ID, "depends_on", "")
 		require.NoError(t, err)
 
 		// Create threat and pattern that matches instances with depends_on relationship
@@ -352,7 +351,6 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 
 func TestGetComponentThreatsByThreatPattern(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
 		&models.Component{},
 		&models.Tag{},
 		&models.Threat{},
@@ -408,7 +406,6 @@ func TestGetComponentThreatsByThreatPattern(t *testing.T) {
 
 func TestGetComponentThreatsByExistingThreatPatterns(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
 		&models.Component{},
 		&models.Tag{},
 		&models.Threat{},

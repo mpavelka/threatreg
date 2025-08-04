@@ -122,6 +122,14 @@ func FilterComponents(componentName string) ([]models.Component, error) {
 	return componentRepository.Filter(nil, componentName)
 }
 
+func getThreatAssignmentRepository() (*models.ThreatAssignmentRepository, error) {
+	db, err := database.GetDBOrError()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database connection: %w", err)
+	}
+	return models.NewThreatAssignmentRepository(db), nil
+}
+
 // AssignThreatToComponent creates a threat assignment linking a threat to a specific component.
 // Returns the created threat assignment or an error if the assignment already exists or creation fails.
 func AssignThreatToComponent(componentID, threatID uuid.UUID) (*models.ThreatAssignment, error) {

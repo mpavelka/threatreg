@@ -165,35 +165,3 @@ func GetComponentsByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.Compon
 
 	return componentRepository.ListByDomainIdWithThreatStats(nil, domainID)
 }
-
-// DEPRECATED FUNCTIONS - These redirect to component-based implementations for backward compatibility
-
-// AddInstanceToDomain adds an instance (component) to a domain.
-// DEPRECATED: Use AddComponentToDomain instead.
-func AddInstanceToDomain(domainID, instanceID uuid.UUID) error {
-	return AddComponentToDomain(domainID, instanceID)
-}
-
-// GetInstancesByDomainId retrieves all instances (components) in a domain.
-// DEPRECATED: Use GetComponentsByDomainId instead.
-func GetInstancesByDomainId(domainID uuid.UUID) ([]models.Component, error) {
-	return GetComponentsByDomainId(domainID)
-}
-
-// GetInstancesByDomainIdWithThreatStats retrieves all instances (components) in a domain with threat stats.
-// DEPRECATED: Use GetComponentsByDomainIdWithThreatStats instead.
-func GetInstancesByDomainIdWithThreatStats(domainID uuid.UUID) ([]models.ComponentWithThreatStats, error) {
-	return GetComponentsByDomainIdWithThreatStats(domainID)
-}
-
-// RemoveInstanceFromDomain removes an instance (component) from a domain.
-// DEPRECATED: Use RemoveComponentFromDomain instead.
-func RemoveInstanceFromDomain(domainID, instanceID uuid.UUID) error {
-	return RemoveComponentFromDomain(domainID, instanceID)
-}
-
-// GetDomainsByInstance retrieves all domains that contain a specific instance (component).
-// DEPRECATED: Use GetDomainsByComponent instead.
-func GetDomainsByInstance(instanceID uuid.UUID) ([]models.Domain, error) {
-	return GetDomainsByComponent(instanceID)
-}
