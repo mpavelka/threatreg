@@ -91,6 +91,8 @@ func (s *Server) setupRoutes() {
 
 		// Instances endpoints
 		instances := v1.Group("/instances")
+		// Components endpoints
+		components := v1.Group("/components")
 		{
 			instances.GET("", handlers.ListInstances)
 			instances.POST("", handlers.CreateInstance)
@@ -103,6 +105,16 @@ func (s *Server) setupRoutes() {
 			instances.POST("/:id/threats", handlers.AssignThreatToInstance)
 			instances.GET("/:id/threats", handlers.ListThreatAssignmentsByInstance)
 			instances.GET("/:id/threats/with-resolution/:resolutionInstanceId", handlers.ListThreatAssignmentsByInstanceWithResolutionByInstance)
+			components.GET("", handlers.ListComponents)
+			components.POST("", handlers.CreateComponent)
+			components.GET("/by-type/:type", handlers.ListComponentsByType)
+			components.GET("/filter", handlers.FilterComponents)
+			components.GET("/:id", handlers.GetComponent)
+			components.PUT("/:id", handlers.UpdateComponent)
+			components.DELETE("/:id", handlers.DeleteComponent)
+			components.POST("/:id/threats", handlers.AssignThreatToComponent)
+			components.GET("/:id/threats", handlers.ListThreatAssignmentsByComponent)
+			components.GET("/:id/threats/with-resolution/:resolutionComponentId", handlers.ListThreatAssignmentsByComponentWithResolutionByComponent)
 		}
 
 		// Threats endpoints
