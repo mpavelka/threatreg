@@ -6,16 +6,12 @@ import (
 )
 
 type Relationship struct {
-	ID             uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique"`
-	Type           string     `gorm:"type:varchar(255);index"`
-	FromInstanceID *uuid.UUID `gorm:"type:uuid;index"`
-	FromProductID  *uuid.UUID `gorm:"type:uuid;index"`
-	ToInstanceID   *uuid.UUID `gorm:"type:uuid;index"`
-	ToProductID    *uuid.UUID `gorm:"type:uuid;index"`
-	FromInstance   *Instance  `gorm:"foreignKey:FromInstanceID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	FromProduct    *Product   `gorm:"foreignKey:FromProductID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	ToInstance     *Instance  `gorm:"foreignKey:ToInstanceID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
-	ToProduct      *Product   `gorm:"foreignKey:ToProductID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE"`
+	ID              uuid.UUID `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Type            string    `gorm:"type:varchar(255);index" json:"type"`
+	FromComponentID uuid.UUID `gorm:"type:uuid;index" json:"fromComponentId"`
+	ToComponentID   uuid.UUID `gorm:"type:uuid;index" json:"toComponentId"`
+	FromComponent   Component `gorm:"foreignKey:FromComponentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"fromComponent"`
+	ToComponent     Component `gorm:"foreignKey:ToComponentID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"toComponent"`
 }
 
 func (r *Relationship) BeforeCreate(tx *gorm.DB) error {
@@ -45,7 +41,7 @@ func (r *RelationshipRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*Relationsh
 		tx = r.db
 	}
 	var relationship Relationship
-	err := tx.Preload("FromInstance").Preload("FromProduct").Preload("ToInstance").Preload("ToProduct").First(&relationship, "id = ?", id).Error
+	err := tx.Preload("FromComponent").Preload("ToComponent").First(&relationship, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -72,33 +68,20 @@ func (r *RelationshipRepository) List(tx *gorm.DB) ([]Relationship, error) {
 	}
 
 	var relationships []Relationship
-	err := tx.Preload("FromInstance").Preload("FromProduct").Preload("ToInstance").Preload("ToProduct").Find(&relationships).Error
+	err := tx.Preload("FromComponent").Preload("ToComponent").Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
 	return relationships, nil
 }
 
-func (r *RelationshipRepository) ListByFromInstanceID(tx *gorm.DB, fromInstanceID uuid.UUID) ([]Relationship, error) {
+func (r *RelationshipRepository) ListByFromComponentID(tx *gorm.DB, fromComponentID uuid.UUID) ([]Relationship, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var relationships []Relationship
-	err := tx.Preload("FromInstance").Preload("FromProduct").Preload("ToInstance").Preload("ToProduct").Where("from_instance_id = ?", fromInstanceID).Find(&relationships).Error
-	if err != nil {
-		return nil, err
-	}
-	return relationships, nil
-}
-
-func (r *RelationshipRepository) ListByFromProductID(tx *gorm.DB, fromProductID uuid.UUID) ([]Relationship, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	var relationships []Relationship
-	err := tx.Preload("FromInstance").Preload("FromProduct").Preload("ToInstance").Preload("ToProduct").Where("from_product_id = ?", fromProductID).Find(&relationships).Error
+	err := tx.Preload("FromComponent").Preload("ToComponent").Where("from_component_id = ?", fromComponentID).Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +94,7 @@ func (r *RelationshipRepository) ListByType(tx *gorm.DB, relType string) ([]Rela
 	}
 
 	var relationships []Relationship
-	err := tx.Preload("FromInstance").Preload("FromProduct").Preload("ToInstance").Preload("ToProduct").Where("type = ?", relType).Find(&relationships).Error
+	err := tx.Preload("FromComponent").Preload("ToComponent").Where("type = ?", relType).Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}

@@ -6,12 +6,11 @@ import (
 )
 
 type Tag struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
-	Name        string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
-	Description string     `gorm:"type:text" json:"description"`
-	Color       string     `gorm:"type:varchar(7)" json:"color"` // Hex color code like #FF0000
-	Products    []Product  `gorm:"many2many:product_tags;" json:"products"`
-	Instances   []Instance `gorm:"many2many:instance_tags;" json:"instances"`
+	ID          uuid.UUID   `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Name        string      `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
+	Description string      `gorm:"type:text" json:"description"`
+	Color       string      `gorm:"type:varchar(7)" json:"color"` // Hex color code like #FF0000
+	Components  []Component `gorm:"many2many:component_tags;" json:"components"`
 }
 
 func (t *Tag) BeforeCreate(tx *gorm.DB) error {
@@ -41,7 +40,7 @@ func (r *TagRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*Tag, error) {
 		tx = r.db
 	}
 	var tag Tag
-	err := tx.Preload("Products").Preload("Instances").First(&tag, "id = ?", id).Error
+	err := tx.Preload("Components").First(&tag, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +52,7 @@ func (r *TagRepository) GetByName(tx *gorm.DB, name string) (*Tag, error) {
 		tx = r.db
 	}
 	var tag Tag
-	err := tx.Preload("Products").Preload("Instances").First(&tag, "name = ?", name).Error
+	err := tx.Preload("Components").First(&tag, "name = ?", name).Error
 	if err != nil {
 		return nil, err
 	}
@@ -80,22 +79,22 @@ func (r *TagRepository) List(tx *gorm.DB) ([]Tag, error) {
 	}
 
 	var tags []Tag
-	err := tx.Preload("Products").Preload("Instances").Find(&tags).Error
+	err := tx.Preload("Components").Find(&tags).Error
 	if err != nil {
 		return nil, err
 	}
 	return tags, nil
 }
 
-func (r *TagRepository) ListByProductID(tx *gorm.DB, productID uuid.UUID) ([]Tag, error) {
+func (r *TagRepository) ListByComponentID(tx *gorm.DB, componentID uuid.UUID) ([]Tag, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var tags []Tag
-	err := tx.Preload("Products").Preload("Instances").
-		Joins("JOIN product_tags ON tags.id = product_tags.tag_id").
-		Where("product_tags.product_id = ?", productID).
+	err := tx.Preload("Components").
+		Joins("JOIN component_tags ON tags.id = component_tags.tag_id").
+		Where("component_tags.component_id = ?", componentID).
 		Find(&tags).Error
 	if err != nil {
 		return nil, err
@@ -103,31 +102,15 @@ func (r *TagRepository) ListByProductID(tx *gorm.DB, productID uuid.UUID) ([]Tag
 	return tags, nil
 }
 
-func (r *TagRepository) ListByInstanceID(tx *gorm.DB, instanceID uuid.UUID) ([]Tag, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	var tags []Tag
-	err := tx.Preload("Products").Preload("Instances").
-		Joins("JOIN instance_tags ON tags.id = instance_tags.tag_id").
-		Where("instance_tags.instance_id = ?", instanceID).
-		Find(&tags).Error
-	if err != nil {
-		return nil, err
-	}
-	return tags, nil
-}
-
-func (r *TagRepository) AssignToProduct(tx *gorm.DB, tagID, productID uuid.UUID) error {
+func (r *TagRepository) AssignToComponent(tx *gorm.DB, tagID, componentID uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
 
 	// Check if association already exists
 	var count int64
-	err := tx.Table("product_tags").
-		Where("tag_id = ? AND product_id = ?", tagID, productID).
+	err := tx.Table("component_tags").
+		Where("tag_id = ? AND component_id = ?", tagID, componentID).
 		Count(&count).Error
 	if err != nil {
 		return err
@@ -137,71 +120,27 @@ func (r *TagRepository) AssignToProduct(tx *gorm.DB, tagID, productID uuid.UUID)
 	}
 
 	// Create association
-	return tx.Exec("INSERT INTO product_tags (tag_id, product_id) VALUES (?, ?)", tagID, productID).Error
+	return tx.Exec("INSERT INTO component_tags (tag_id, component_id) VALUES (?, ?)", tagID, componentID).Error
 }
 
-func (r *TagRepository) UnassignFromProduct(tx *gorm.DB, tagID, productID uuid.UUID) error {
+func (r *TagRepository) UnassignFromComponent(tx *gorm.DB, tagID, componentID uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
-	return tx.Exec("DELETE FROM product_tags WHERE tag_id = ? AND product_id = ?", tagID, productID).Error
+	return tx.Exec("DELETE FROM component_tags WHERE tag_id = ? AND component_id = ?", tagID, componentID).Error
 }
 
-func (r *TagRepository) AssignToInstance(tx *gorm.DB, tagID, instanceID uuid.UUID) error {
-	if tx == nil {
-		tx = r.db
-	}
-
-	// Check if association already exists
-	var count int64
-	err := tx.Table("instance_tags").
-		Where("tag_id = ? AND instance_id = ?", tagID, instanceID).
-		Count(&count).Error
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil // Association already exists
-	}
-
-	// Create association
-	return tx.Exec("INSERT INTO instance_tags (tag_id, instance_id) VALUES (?, ?)", tagID, instanceID).Error
-}
-
-func (r *TagRepository) UnassignFromInstance(tx *gorm.DB, tagID, instanceID uuid.UUID) error {
-	if tx == nil {
-		tx = r.db
-	}
-	return tx.Exec("DELETE FROM instance_tags WHERE tag_id = ? AND instance_id = ?", tagID, instanceID).Error
-}
-
-func (r *TagRepository) ListProductsByTagID(tx *gorm.DB, tagID uuid.UUID) ([]Product, error) {
+func (r *TagRepository) ListComponentsByTagID(tx *gorm.DB, tagID uuid.UUID) ([]Component, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	var products []Product
-	err := tx.Joins("JOIN product_tags ON products.id = product_tags.product_id").
-		Where("product_tags.tag_id = ?", tagID).
-		Find(&products).Error
+	var components []Component
+	err := tx.Joins("JOIN component_tags ON components.id = component_tags.component_id").
+		Where("component_tags.tag_id = ?", tagID).
+		Find(&components).Error
 	if err != nil {
 		return nil, err
 	}
-	return products, nil
-}
-
-func (r *TagRepository) ListInstancesByTagID(tx *gorm.DB, tagID uuid.UUID) ([]Instance, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	var instances []Instance
-	err := tx.Preload("Product").
-		Joins("JOIN instance_tags ON instances.id = instance_tags.instance_id").
-		Where("instance_tags.tag_id = ?", tagID).
-		Find(&instances).Error
-	if err != nil {
-		return nil, err
-	}
-	return instances, nil
+	return components, nil
 }

@@ -6,10 +6,10 @@ import (
 )
 
 type Domain struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
-	Name        string     `gorm:"type:varchar(255);index" json:"name"`
-	Description string     `gorm:"type:text" json:"description"`
-	Instances   []Instance `gorm:"many2many:domain_instances;" json:"instances"`
+	ID          uuid.UUID   `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
+	Name        string      `gorm:"type:varchar(255);index" json:"name"`
+	Description string      `gorm:"type:text" json:"description"`
+	Components  []Component `gorm:"many2many:domain_components;" json:"components"`
 }
 
 func (d *Domain) BeforeCreate(tx *gorm.DB) error {
@@ -73,7 +73,7 @@ func (r *DomainRepository) List(tx *gorm.DB) ([]Domain, error) {
 	return domains, nil
 }
 
-func (r *DomainRepository) AddInstance(tx *gorm.DB, domainID, instanceID uuid.UUID) error {
+func (r *DomainRepository) AddComponent(tx *gorm.DB, domainID, componentID uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
@@ -83,16 +83,16 @@ func (r *DomainRepository) AddInstance(tx *gorm.DB, domainID, instanceID uuid.UU
 		return err
 	}
 
-	var instance Instance
-	err = tx.First(&instance, "id = ?", instanceID).Error
+	var component Component
+	err = tx.First(&component, "id = ?", componentID).Error
 	if err != nil {
 		return err
 	}
 
-	return tx.Model(domain).Association("Instances").Append(&instance)
+	return tx.Model(domain).Association("Components").Append(&component)
 }
 
-func (r *DomainRepository) RemoveInstance(tx *gorm.DB, domainID, instanceID uuid.UUID) error {
+func (r *DomainRepository) RemoveComponent(tx *gorm.DB, domainID, componentID uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
@@ -102,37 +102,37 @@ func (r *DomainRepository) RemoveInstance(tx *gorm.DB, domainID, instanceID uuid
 		return err
 	}
 
-	var instance Instance
-	err = tx.First(&instance, "id = ?", instanceID).Error
+	var component Component
+	err = tx.First(&component, "id = ?", componentID).Error
 	if err != nil {
 		return err
 	}
 
-	return tx.Model(domain).Association("Instances").Delete(&instance)
+	return tx.Model(domain).Association("Components").Delete(&component)
 }
 
-func (r *DomainRepository) GetInstancesByDomainID(tx *gorm.DB, domainID uuid.UUID) ([]Instance, error) {
+func (r *DomainRepository) GetComponentsByDomainID(tx *gorm.DB, domainID uuid.UUID) ([]Component, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	var instances []Instance
-	err := tx.Joins("JOIN domain_instances ON instances.id = domain_instances.instance_id").
-		Where("domain_instances.domain_id = ?", domainID).
-		Find(&instances).Error
+	var components []Component
+	err := tx.Joins("JOIN domain_components ON components.id = domain_components.component_id").
+		Where("domain_components.domain_id = ?", domainID).
+		Find(&components).Error
 
-	return instances, err
+	return components, err
 }
 
-func (r *DomainRepository) GetDomainsByInstanceID(tx *gorm.DB, instanceID uuid.UUID) ([]Domain, error) {
+func (r *DomainRepository) GetDomainsByComponentID(tx *gorm.DB, componentID uuid.UUID) ([]Domain, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var domains []Domain
 	err := tx.
-		Joins("JOIN domain_instances ON domains.id = domain_instances.domain_id").
-		Where("domain_instances.instance_id = ?", instanceID).
+		Joins("JOIN domain_components ON domains.id = domain_components.domain_id").
+		Where("domain_components.component_id = ?", componentID).
 		Find(&domains).Error
 
 	return domains, err

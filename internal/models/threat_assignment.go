@@ -11,35 +11,26 @@ import (
 type ThreatAssignment struct {
 	ID                 int                 `gorm:"primaryKey;autoIncrement;not null;unique" json:"id"`
 	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"threatId"`
-	ProductID          uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"productId"`
-	InstanceID         uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"instanceId"`
+	ComponentID        uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"componentId"`
 	Threat             Threat              `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threat"`
-	Product            Product             `gorm:"foreignKey:ProductID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"product"`
-	Instance           Instance            `gorm:"foreignKey:InstanceID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"instance"`
+	Component          Component           `gorm:"foreignKey:ComponentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"component"`
 	ControlAssignments []ControlAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"controlAssignments"`
 }
 
-// BeforeCreate ensures exactly one of ProductID or InstanceID is set
+// BeforeCreate ensures ComponentID is set
 func (ta *ThreatAssignment) BeforeCreate(tx *gorm.DB) error {
 	return ta.validateAssignment()
 }
 
-// BeforeUpdate ensures exactly one of ProductID or InstanceID is set
+// BeforeUpdate ensures ComponentID is set
 func (ta *ThreatAssignment) BeforeUpdate(tx *gorm.DB) error {
 	return ta.validateAssignment()
 }
 
-// validateAssignment checks that exactly one of ProductID or InstanceID is not null/nil
+// validateAssignment checks that ComponentID is not null/nil
 func (ta *ThreatAssignment) validateAssignment() error {
-	productIsSet := ta.ProductID != uuid.Nil
-	instanceIsSet := ta.InstanceID != uuid.Nil
-
-	if productIsSet && instanceIsSet {
-		return errors.New("threat assignment cannot have both ProductID and InstanceID set")
-	}
-
-	if !productIsSet && !instanceIsSet {
-		return errors.New("threat assignment must have either ProductID or InstanceID set")
+	if ta.ComponentID == uuid.Nil {
+		return errors.New("threat assignment must have ComponentID set")
 	}
 
 	return nil
@@ -53,16 +44,15 @@ func NewThreatAssignmentRepository(db *gorm.DB) *ThreatAssignmentRepository {
 	return &ThreatAssignmentRepository{db: db}
 }
 
-func (r *ThreatAssignmentRepository) AssignThreatToProduct(tx *gorm.DB, threatID, productID uuid.UUID) (*ThreatAssignment, error) {
+func (r *ThreatAssignmentRepository) AssignThreatToComponent(tx *gorm.DB, threatID, componentID uuid.UUID) (*ThreatAssignment, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	// Create new assignment - explicitly set InstanceID to NULL-equivalent
+	// Create new assignment
 	assignment := &ThreatAssignment{
-		ThreatID:   threatID,
-		ProductID:  productID,
-		InstanceID: uuid.Nil, // Explicitly set to nil UUID
+		ThreatID:    threatID,
+		ComponentID: componentID,
 	}
 
 	err := tx.Create(assignment).Error
@@ -71,38 +61,7 @@ func (r *ThreatAssignmentRepository) AssignThreatToProduct(tx *gorm.DB, threatID
 		if isUniqueConstraintError(err) {
 			// Find and return the existing assignment
 			var existing ThreatAssignment
-			findErr := tx.Where("threat_id = ? AND product_id = ? AND (instance_id IS NULL OR instance_id = ?)", threatID, productID, uuid.Nil).First(&existing).Error
-			if findErr == nil {
-				return &existing, nil
-			}
-			// If we can't find the existing record, return the original error
-			return nil, err
-		}
-		return nil, err
-	}
-
-	return assignment, nil
-}
-
-func (r *ThreatAssignmentRepository) AssignThreatToInstance(tx *gorm.DB, threatID, instanceID uuid.UUID) (*ThreatAssignment, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	// Create new assignment - explicitly set ProductID to NULL-equivalent
-	assignment := &ThreatAssignment{
-		ThreatID:   threatID,
-		InstanceID: instanceID,
-		ProductID:  uuid.Nil, // Explicitly set to nil UUID
-	}
-
-	err := tx.Create(assignment).Error
-	if err != nil {
-		// Check if this is a unique constraint violation
-		if isUniqueConstraintError(err) {
-			// Find and return the existing assignment
-			var existing ThreatAssignment
-			findErr := tx.Where("threat_id = ? AND instance_id = ? AND (product_id IS NULL OR product_id = ?)", threatID, instanceID, uuid.Nil).First(&existing).Error
+			findErr := tx.Where("threat_id = ? AND component_id = ?", threatID, componentID).First(&existing).Error
 			if findErr == nil {
 				return &existing, nil
 			}
@@ -120,7 +79,7 @@ func (r *ThreatAssignmentRepository) GetByID(tx *gorm.DB, id int) (*ThreatAssign
 		tx = r.db
 	}
 	var assignment ThreatAssignment
-	err := tx.Preload("Threat").Preload("Product").Preload("Instance").First(&assignment, "id = ?", id).Error
+	err := tx.Preload("Threat").Preload("Component").First(&assignment, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -134,76 +93,31 @@ func (r *ThreatAssignmentRepository) Delete(tx *gorm.DB, id int) error {
 	return tx.Delete(&ThreatAssignment{}, "id = ?", id).Error
 }
 
-func (r *ThreatAssignmentRepository) ListByProductID(tx *gorm.DB, productID uuid.UUID) ([]ThreatAssignment, error) {
+func (r *ThreatAssignmentRepository) ListByComponentID(tx *gorm.DB, componentID uuid.UUID) ([]ThreatAssignment, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var assignments []ThreatAssignment
-	err := tx.Preload("Threat").Preload("Product").Preload("Instance").
-		Where("product_id = ?", productID).Find(&assignments).Error
+	err := tx.Preload("Threat").Preload("Component").
+		Where("component_id = ?", componentID).Find(&assignments).Error
 	if err != nil {
 		return nil, err
 	}
 	return assignments, nil
 }
 
-func (r *ThreatAssignmentRepository) ListByInstanceID(tx *gorm.DB, instanceID uuid.UUID) ([]ThreatAssignment, error) {
+// ListWithResolutionByComponentID retrieves threat assignments with resolution and delegation status for a component
+// The resolutionComponentID parameter filters which resolutions to include - only resolutions for that specific component will be shown
+func (r *ThreatAssignmentRepository) ListWithResolutionByComponentID(tx *gorm.DB, componentID, resolutionComponentID uuid.UUID) ([]ThreatAssignmentWithResolution, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
+	// First get the basic threat assignments for the component
 	var assignments []ThreatAssignment
-	err := tx.Preload("Threat").Preload("Product").Preload("Instance").
-		Where("instance_id = ?", instanceID).Find(&assignments).Error
-	if err != nil {
-		return nil, err
-	}
-	return assignments, nil
-}
-
-// ListWithResolutionByProductID retrieves threat assignments with resolution and delegation status for a product
-// The resolutionInstanceID parameter filters which resolutions to include - only resolutions for that specific instance will be shown
-func (r *ThreatAssignmentRepository) ListWithResolutionByProductID(tx *gorm.DB, productID, resolutionInstanceID uuid.UUID) ([]ThreatAssignmentWithResolution, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	var results []ThreatAssignmentWithResolution
-
-	// Use GORM to join with resolution and delegation tables, similar to ListByProductID
-	// Filter resolutions to only include those for the specified resolutionInstanceID
-	err := tx.Table("threat_assignments ta").
-		Select(`ta.*, 
-			tar.status as resolution_status,
-			CASE WHEN tard.id IS NOT NULL THEN 1 ELSE 0 END as is_delegated`).
-		Joins("LEFT JOIN threat_assignment_resolutions tar ON ta.id = tar.threat_assignment_id AND tar.instance_id = ?", resolutionInstanceID).
-		Joins("LEFT JOIN threat_assignment_resolution_delegations tard ON tar.id = tard.delegated_by").
-		Where("ta.product_id = ?", productID).
-		Preload("Threat").
-		Preload("Product").
-		Preload("Instance").
-		Preload("ControlAssignments").
-		Find(&results).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
-// ListWithResolutionByInstanceID retrieves threat assignments with resolution and delegation status for an instance
-// The resolutionInstanceID parameter filters which resolutions to include - only resolutions for that specific instance will be shown
-func (r *ThreatAssignmentRepository) ListWithResolutionByInstanceID(tx *gorm.DB, instanceID, resolutionInstanceID uuid.UUID) ([]ThreatAssignmentWithResolution, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	// First get the basic threat assignments for the instance
-	var assignments []ThreatAssignment
-	err := tx.Preload("Threat").Preload("Product").Preload("Instance").Preload("ControlAssignments").
-		Where("instance_id = ?", instanceID).Find(&assignments).Error
+	err := tx.Preload("Threat").Preload("Component").Preload("ControlAssignments").
+		Where("component_id = ?", componentID).Find(&assignments).Error
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +129,7 @@ func (r *ThreatAssignmentRepository) ListWithResolutionByInstanceID(tx *gorm.DB,
 			ThreatAssignment: assignment,
 		}
 
-		// Get resolution info for this assignment filtered by resolutionInstanceID
+		// Get resolution info for this assignment filtered by resolutionComponentID
 		var resolution struct {
 			Status      *string
 			IsDelegated bool
@@ -224,7 +138,7 @@ func (r *ThreatAssignmentRepository) ListWithResolutionByInstanceID(tx *gorm.DB,
 		err := tx.Table("threat_assignment_resolutions tar").
 			Select("tar.status, CASE WHEN tard.id IS NOT NULL THEN 1 ELSE 0 END as is_delegated").
 			Joins("LEFT JOIN threat_assignment_resolution_delegations tard ON tar.id = tard.delegated_by").
-			Where("tar.threat_assignment_id = ? AND tar.instance_id = ?", assignment.ID, resolutionInstanceID).
+			Where("tar.threat_assignment_id = ? AND tar.component_id = ?", assignment.ID, resolutionComponentID).
 			First(&resolution).Error
 
 		if err == nil && resolution.Status != nil {
