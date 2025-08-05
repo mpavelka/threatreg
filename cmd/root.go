@@ -30,8 +30,6 @@ func init() {
 	initRestapiCmd()
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(restapiCmd)
-	rootCmd.AddCommand(productCmd)
-	rootCmd.AddCommand(instanceCmd)
 	rootCmd.AddCommand(domainCmd)
 	rootCmd.AddCommand(threatCmd)
 	rootCmd.AddCommand(controlCmd)

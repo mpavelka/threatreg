@@ -14,8 +14,7 @@ import (
 
 func TestTagService_CreateTag(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -62,8 +61,7 @@ func TestTagService_CreateTag(t *testing.T) {
 
 func TestTagService_GetTag(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -102,8 +100,7 @@ func TestTagService_GetTag(t *testing.T) {
 
 func TestTagService_GetTagByName(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -141,8 +138,7 @@ func TestTagService_GetTagByName(t *testing.T) {
 
 func TestTagService_UpdateTag(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -224,8 +220,7 @@ func TestTagService_UpdateTag(t *testing.T) {
 
 func TestTagService_DeleteTag(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -264,8 +259,7 @@ func TestTagService_DeleteTag(t *testing.T) {
 
 func TestTagService_ListTags(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -315,8 +309,7 @@ func TestTagService_ListTags(t *testing.T) {
 
 func TestTagService_ListTags_Empty(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -333,8 +326,7 @@ func TestTagService_ListTags_Empty(t *testing.T) {
 
 func TestTagService_AssignTagToComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -416,8 +408,7 @@ func TestTagService_AssignTagToComponent(t *testing.T) {
 
 func TestTagService_UnassignTagFromComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -451,8 +442,7 @@ func TestTagService_UnassignTagFromComponent(t *testing.T) {
 
 func TestTagService_AssignTagToInstanceComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -510,8 +500,7 @@ func TestTagService_AssignTagToInstanceComponent(t *testing.T) {
 
 func TestTagService_UnassignTagFromInstanceComponent(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
@@ -545,8 +534,7 @@ func TestTagService_UnassignTagFromInstanceComponent(t *testing.T) {
 
 func TestTagService_AssignTagByName(t *testing.T) {
 	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Product{},
-		&models.Instance{},
+		&models.Component{},
 		&models.Tag{},
 	)
 	defer cleanup()
