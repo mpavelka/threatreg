@@ -375,6 +375,9 @@ func TestComponentRelationshipService_GetComponentTreePaths(t *testing.T) {
 		&models.ComponentRelationship{},
 	)
 	defer cleanup()
+	
+	// This test requires PostgreSQL for recursive CTE support
+	testutil.RequirePostgreSQL(t)
 
 	// Create a component hierarchy:
 	// Root -> Parent -> Child -> Grandchild

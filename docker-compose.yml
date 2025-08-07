@@ -22,9 +22,32 @@ services:
       start_period: 30s
     networks:
       - threatreg
+  postgres_test:
+    image: postgres:17-alpine
+    container_name: threatreg-postgres_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: threatreg_test
+      POSTGRES_USER: threatreg_test
+      POSTGRES_PASSWORD: threatreg_test_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U threatreg_test -d threatreg_test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - threatreg
 
 volumes:
   postgres_data:
+    driver: local
+  postgres_test_data:
     driver: local
 
 networks:
