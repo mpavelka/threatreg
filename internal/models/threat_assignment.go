@@ -9,7 +9,7 @@ import (
 )
 
 type ThreatAssignment struct {
-	ID                 int                 `gorm:"primaryKey;autoIncrement;not null;unique" json:"id"`
+	ID                 uuid.UUID           `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
 	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"threatId"`
 	ComponentID        uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"componentId"`
 	Threat             Threat              `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threat"`
@@ -17,8 +17,11 @@ type ThreatAssignment struct {
 	ControlAssignments []ControlAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"controlAssignments"`
 }
 
-// BeforeCreate ensures ComponentID is set
+// BeforeCreate ensures ComponentID is set and generates UUID
 func (ta *ThreatAssignment) BeforeCreate(tx *gorm.DB) error {
+	if ta.ID == uuid.Nil {
+		ta.ID = uuid.New()
+	}
 	return ta.validateAssignment()
 }
 
@@ -74,7 +77,7 @@ func (r *ThreatAssignmentRepository) AssignThreatToComponent(tx *gorm.DB, threat
 	return assignment, nil
 }
 
-func (r *ThreatAssignmentRepository) GetByID(tx *gorm.DB, id int) (*ThreatAssignment, error) {
+func (r *ThreatAssignmentRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*ThreatAssignment, error) {
 	if tx == nil {
 		tx = r.db
 	}
@@ -86,7 +89,7 @@ func (r *ThreatAssignmentRepository) GetByID(tx *gorm.DB, id int) (*ThreatAssign
 	return &assignment, nil
 }
 
-func (r *ThreatAssignmentRepository) Delete(tx *gorm.DB, id int) error {
+func (r *ThreatAssignmentRepository) Delete(tx *gorm.DB, id uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
