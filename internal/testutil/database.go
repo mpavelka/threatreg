@@ -25,6 +25,7 @@ func SetupTestDatabase(t *testing.T) func() {
 	return SetupTestDatabaseWithCustomModels(t,
 		&models.Component{},
 		&models.ComponentRelationship{},
+		&models.ComponentAttribute{},
 		&models.Domain{},
 		&models.Tag{},
 		&models.Threat{},
@@ -35,6 +36,8 @@ func SetupTestDatabase(t *testing.T) func() {
 		&models.ThreatAssignmentResolution{},
 		&models.ThreatAssignmentResolutionDelegation{},
 		&models.Relationship{},
+		&models.ThreatPattern{},
+		&models.PatternCondition{},
 	)
 }
 
@@ -74,18 +77,18 @@ func SetupTestDatabaseWithCustomModels(t *testing.T, models ...interface{}) func
 		require.NoError(t, err, "Failed to connect to SQLite test database")
 	}
 
-	// Run migrations for specified models only
+	// Clean up any existing test data BEFORE migrations to handle schema changes
 	db := database.GetDB()
 	require.NotNil(t, db, "Database connection should not be nil")
+	
+	if IsPostgreSQL() {
+		cleanupTestData(t, db)
+	}
 
+	// Run migrations for specified models only
 	if len(models) > 0 {
 		err = db.AutoMigrate(models...)
 		require.NoError(t, err, "Failed to run migrations")
-	}
-
-	// Clean up any existing test data to ensure test isolation
-	if IsPostgreSQL() {
-		cleanupTestData(t, db)
 	}
 
 	// Return cleanup function
@@ -114,18 +117,23 @@ func RequirePostgreSQL(t *testing.T) {
 	}
 }
 
-// cleanupTestData truncates all tables to ensure test isolation
+// cleanupTestData drops all tables to ensure fresh schema for UUID migration
 // This is only used for PostgreSQL since SQLite uses temporary databases
 func cleanupTestData(t *testing.T, db *gorm.DB) {
-	// List of tables that need to be cleaned up in dependency order
+	// List of tables that need to be dropped in dependency order
 	// (child tables first, then parent tables)
-	tablesToCleanup := []string{
+	tablesToDrop := []string{
 		"threat_assignment_resolution_delegations",
 		"control_assignments", 
 		"threat_assignment_resolutions",
 		"threat_assignments",
 		"component_relationships",
 		"threat_controls",
+		"pattern_conditions",    // threat pattern condition table
+		"threat_patterns",       // threat pattern table
+		"component_attributes",  // component attributes table
+		"component_tags",        // many2many join table
+		"domain_components",     // many2many join table
 		"controls",
 		"threats", 
 		"components",
@@ -135,13 +143,12 @@ func cleanupTestData(t *testing.T, db *gorm.DB) {
 		// Add any other tables as needed
 	}
 
-	for _, tableName := range tablesToCleanup {
-		// Use TRUNCATE with CASCADE to handle foreign key constraints
-		// RESTART IDENTITY resets auto-incrementing columns
-		result := db.Exec("TRUNCATE TABLE " + tableName + " RESTART IDENTITY CASCADE")
+	for _, tableName := range tablesToDrop {
+		// Drop tables completely to handle schema changes (like int -> UUID migration)
+		result := db.Exec("DROP TABLE IF EXISTS " + tableName + " CASCADE")
 		// Ignore errors for tables that might not exist in the specific test
 		if result.Error != nil {
-			t.Logf("Warning: Failed to truncate table %s: %v", tableName, result.Error)
+			t.Logf("Warning: Failed to drop table %s: %v", tableName, result.Error)
 		}
 	}
 }

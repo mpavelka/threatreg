@@ -17,7 +17,7 @@ const (
 
 type ThreatAssignmentResolution struct {
 	ID                 uuid.UUID                        `gorm:"type:uuid;primaryKey" json:"id"`
-	ThreatAssignmentID int                              `gorm:"not null;uniqueIndex:idx_threat_assignment_resolution" json:"threatAssignmentId"`
+	ThreatAssignmentID uuid.UUID                        `gorm:"type:uuid;not null;uniqueIndex:idx_threat_assignment_resolution" json:"threatAssignmentId"`
 	ComponentID        uuid.UUID                        `gorm:"type:uuid;uniqueIndex:idx_threat_assignment_resolution" json:"componentId"`
 	Status             ThreatAssignmentResolutionStatus `gorm:"type:varchar(20);not null" json:"status"`
 	Description        string                           `gorm:"type:text" json:"description"`
@@ -108,7 +108,7 @@ func (r *ThreatAssignmentResolutionRepository) Delete(tx *gorm.DB, id uuid.UUID)
 	return tx.Delete(&ThreatAssignmentResolution{}, "id = ?", id).Error
 }
 
-func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentID(tx *gorm.DB, threatAssignmentID int) (*ThreatAssignmentResolution, error) {
+func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentID(tx *gorm.DB, threatAssignmentID uuid.UUID) (*ThreatAssignmentResolution, error) {
 	if tx == nil {
 		tx = r.db
 	}
@@ -121,7 +121,7 @@ func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentID(tx *go
 	return &resolution, nil
 }
 
-func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentIDAndComponentID(tx *gorm.DB, threatAssignmentID int, componentID uuid.UUID) (*ThreatAssignmentResolution, error) {
+func (r *ThreatAssignmentResolutionRepository) GetOneByThreatAssignmentIDAndComponentID(tx *gorm.DB, threatAssignmentID uuid.UUID, componentID uuid.UUID) (*ThreatAssignmentResolution, error) {
 	if tx == nil {
 		tx = r.db
 	}

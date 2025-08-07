@@ -452,7 +452,7 @@ func TestComponentService_Integration(t *testing.T) {
 		assert.Len(t, assignments, 2)
 
 		// Check that we got the correct assignments
-		assignmentIDs := []int{assignments[0].ID, assignments[1].ID}
+		assignmentIDs := []uuid.UUID{assignments[0].ID, assignments[1].ID}
 		assert.Contains(t, assignmentIDs, assignment1.ID)
 		assert.Contains(t, assignmentIDs, assignment2.ID)
 

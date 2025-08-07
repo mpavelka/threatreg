@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"strconv"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
 
@@ -11,7 +10,7 @@ import (
 
 // CreateThreatResolutionRequest represents the request payload for creating a threat resolution
 type CreateThreatResolutionRequest struct {
-	ThreatAssignmentID int                                     `json:"threatAssignmentId" binding:"required"`
+	ThreatAssignmentID uuid.UUID                               `json:"threatAssignmentId" binding:"required"`
 	ComponentID        uuid.UUID                               `json:"instanceId"`
 	Status             models.ThreatAssignmentResolutionStatus `json:"status" binding:"required"`
 	Description        string                                  `json:"description" binding:"required"`
@@ -138,7 +137,7 @@ func GetThreatResolution(c *gin.Context) {
 // @Router /threat-resolutions/by-assignment/{assignmentId} [get]
 func GetThreatResolutionByThreatAssignmentID(c *gin.Context) {
 	assignmentIDStr := c.Param("assignmentId")
-	assignmentID, err := strconv.Atoi(assignmentIDStr)
+	assignmentID, err := uuid.Parse(assignmentIDStr)
 	if err != nil {
 		ValidationError(c, err)
 		return

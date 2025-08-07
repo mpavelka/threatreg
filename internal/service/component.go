@@ -166,7 +166,7 @@ func ListThreatAssignmentsByComponentIDWithResolutionByComponentID(componentID, 
 
 // GetThreatAssignmentById retrieves a threat assignment by its unique identifier.
 // Returns the threat assignment if found, or an error if it does not exist or database access fails.
-func GetThreatAssignmentById(id int) (*models.ThreatAssignment, error) {
+func GetThreatAssignmentById(id uuid.UUID) (*models.ThreatAssignment, error) {
 	threatAssignmentRepository, err := getThreatAssignmentRepository()
 	if err != nil {
 		return nil, err

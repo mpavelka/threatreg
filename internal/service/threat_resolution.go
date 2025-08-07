@@ -20,7 +20,7 @@ func getThreatAssignmentResolutionRepository() (*models.ThreatAssignmentResoluti
 // CreateThreatResolution creates a new threat resolution for a component.
 // Returns the created resolution or an error.
 func CreateThreatResolution(
-	threatAssignmentID int,
+	threatAssignmentID uuid.UUID,
 	componentID uuid.UUID,
 	status models.ThreatAssignmentResolutionStatus,
 	description string,
@@ -110,7 +110,7 @@ func GetThreatResolution(id uuid.UUID) (*models.ThreatAssignmentResolution, erro
 
 // GetThreatResolutionByThreatAssignmentID retrieves a threat resolution by its threat assignment ID.
 // Returns the resolution if found, or an error if the resolution does not exist or database access fails.
-func GetThreatResolutionByThreatAssignmentID(threatAssignmentID int) (*models.ThreatAssignmentResolution, error) {
+func GetThreatResolutionByThreatAssignmentID(threatAssignmentID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func GetThreatResolutionByThreatAssignmentID(threatAssignmentID int) (*models.Th
 
 // GetComponentLevelThreatResolution retrieves a threat resolution for a specific component and threat assignment.
 // Returns the component-level resolution if found, or an error if it does not exist or database access fails.
-func GetComponentLevelThreatResolution(threatAssignmentID int, componentID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
+func GetComponentLevelThreatResolution(threatAssignmentID uuid.UUID, componentID uuid.UUID) (*models.ThreatAssignmentResolution, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func GetComponentLevelThreatResolution(threatAssignmentID int, componentID uuid.
 
 // GetComponentLevelThreatResolutionWithDelegation retrieves a threat resolution with delegation information.
 // Returns the resolution with associated delegation data, or nil if no resolution exists.
-func GetComponentLevelThreatResolutionWithDelegation(threatAssignmentID int, componentID uuid.UUID) (*models.ThreatAssignmentResolutionWithDelegation, error) {
+func GetComponentLevelThreatResolutionWithDelegation(threatAssignmentID uuid.UUID, componentID uuid.UUID) (*models.ThreatAssignmentResolutionWithDelegation, error) {
 	resolutionRepository, err := getThreatAssignmentResolutionRepository()
 	if err != nil {
 		return nil, err
