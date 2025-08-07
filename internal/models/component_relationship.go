@@ -17,13 +17,13 @@ const (
 )
 
 // ComponentRelationship represents a parent-child relationship between components
-// 
+//
 // Database Performance Notes:
 // - Individual indexes on from_id and to_id are crucial for recursive CTE performance
 // - Composite index on (from_id, to_id, label) ensures uniqueness and fast lookups
 // - Consider additional indexes for heavy query patterns:
 //   - CREATE INDEX idx_component_rel_from_id ON component_relationships (from_id);
-//   - CREATE INDEX idx_component_rel_to_id ON component_relationships (to_id); 
+//   - CREATE INDEX idx_component_rel_to_id ON component_relationships (to_id);
 type ComponentRelationship struct {
 	ID     uuid.UUID `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
 	FromID uuid.UUID `gorm:"type:uuid;not null;index:idx_component_rel_from;uniqueIndex:idx_component_relationship_unique" json:"fromId"`
@@ -164,7 +164,7 @@ func (r *ComponentRelationshipRepository) DeleteByFromAndTo(tx *gorm.DB, fromID,
 //
 // PERFORMANCE OPTIMIZATION:
 // - Previous implementation: O(N) - loaded ALL relationships from database regardless of query scope
-// - New implementation: O(L×D) where L = local subtree size, D = max depth  
+// - New implementation: O(L×D) where L = local subtree size, D = max depth
 // - Uses PostgreSQL recursive CTEs with targeted traversal (ancestors + descendants)
 // - Expected improvement: 10x-1000x for large systems with localized queries
 // - Requires PostgreSQL - SQLite not supported for this advanced functionality
@@ -220,17 +220,17 @@ func (r *ComponentRelationshipRepository) GetTreePaths(tx *gorm.DB, componentID 
 		var componentIDStr string
 		var pathStr string
 		var depth int
-		
+
 		if err := rows.Scan(&componentIDStr, &pathStr, &depth); err != nil {
 			return nil, err
 		}
-		
+
 		// Parse component ID
 		compID, err := uuid.Parse(componentIDStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
 		pathStr = strings.Trim(pathStr, "{}")
 		var path []uuid.UUID
@@ -244,7 +244,7 @@ func (r *ComponentRelationshipRepository) GetTreePaths(tx *gorm.DB, componentID 
 				path = append(path, id)
 			}
 		}
-		
+
 		paths = append(paths, ComponentTreePath{
 			ComponentID: compID,
 			Path:        path,
@@ -253,71 +253,6 @@ func (r *ComponentRelationshipRepository) GetTreePaths(tx *gorm.DB, componentID 
 	}
 
 	return paths, nil
-}
-
-// getPathsIncludingComponent finds all tree paths that include the given component
-func (r *ComponentRelationshipRepository) getPathsIncludingComponent(componentID uuid.UUID, children map[uuid.UUID][]uuid.UUID, parents map[uuid.UUID][]uuid.UUID) []ComponentTreePath {
-	var paths []ComponentTreePath
-
-	// Find all root paths to this component
-	rootPaths := r.findPathsToRoot(componentID, parents)
-
-	// For each root path, extend it with all descendant paths
-	if len(rootPaths) == 0 {
-		// Component is a root itself
-		rootPaths = [][]uuid.UUID{{componentID}}
-	}
-
-	for _, rootPath := range rootPaths {
-		// Add paths from this component to all its descendants
-		r.extendPathsToDescendants(rootPath, componentID, children, &paths)
-	}
-
-	return paths
-}
-
-// findPathsToRoot finds all paths from the given component to its root ancestors
-func (r *ComponentRelationshipRepository) findPathsToRoot(componentID uuid.UUID, parents map[uuid.UUID][]uuid.UUID) [][]uuid.UUID {
-	var paths [][]uuid.UUID
-
-	// Base case: if no parents, this is a root
-	parentList, hasParents := parents[componentID]
-	if !hasParents {
-		return [][]uuid.UUID{{componentID}}
-	}
-
-	// Recursive case: get paths through each parent
-	for _, parentID := range parentList {
-		parentPaths := r.findPathsToRoot(parentID, parents)
-		for _, parentPath := range parentPaths {
-			// Extend parent path with current component
-			fullPath := append(parentPath, componentID)
-			paths = append(paths, fullPath)
-		}
-	}
-
-	return paths
-}
-
-// extendPathsToDescendants extends paths from the current component to all its descendants
-func (r *ComponentRelationshipRepository) extendPathsToDescendants(currentPath []uuid.UUID, currentComponent uuid.UUID, children map[uuid.UUID][]uuid.UUID, paths *[]ComponentTreePath) {
-	// Add current path
-	pathCopy := make([]uuid.UUID, len(currentPath))
-	copy(pathCopy, currentPath)
-
-	*paths = append(*paths, ComponentTreePath{
-		ComponentID: currentComponent,
-		Path:        pathCopy,
-		Depth:       len(pathCopy) - 1,
-	})
-
-	// Extend to children
-	if childList, hasChildren := children[currentComponent]; hasChildren {
-		for _, childID := range childList {
-			newPath := append(currentPath, childID)
-			r.extendPathsToDescendants(newPath, childID, children, paths)
-		}
-	}
 }
 
 // GetAllTreePaths gets tree paths for all components in the system
@@ -401,17 +336,17 @@ func (r *ComponentRelationshipRepository) GetAncestorsOfComponent(tx *gorm.DB, c
 		var componentIDStr string
 		var pathStr string
 		var depth int
-		
+
 		if err := rows.Scan(&componentIDStr, &pathStr, &depth); err != nil {
 			return nil, err
 		}
-		
+
 		// Parse component ID
 		compID, err := uuid.Parse(componentIDStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
 		pathStr = strings.Trim(pathStr, "{}")
 		var path []uuid.UUID
@@ -425,7 +360,7 @@ func (r *ComponentRelationshipRepository) GetAncestorsOfComponent(tx *gorm.DB, c
 				path = append(path, id)
 			}
 		}
-		
+
 		paths = append(paths, ComponentTreePath{
 			ComponentID: compID,
 			Path:        path,
@@ -479,17 +414,17 @@ func (r *ComponentRelationshipRepository) GetDescendantsOfComponent(tx *gorm.DB,
 		var componentIDStr string
 		var pathStr string
 		var depth int
-		
+
 		if err := rows.Scan(&componentIDStr, &pathStr, &depth); err != nil {
 			return nil, err
 		}
-		
+
 		// Parse component ID
 		compID, err := uuid.Parse(componentIDStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
 		pathStr = strings.Trim(pathStr, "{}")
 		var path []uuid.UUID
@@ -503,7 +438,7 @@ func (r *ComponentRelationshipRepository) GetDescendantsOfComponent(tx *gorm.DB,
 				path = append(path, id)
 			}
 		}
-		
+
 		paths = append(paths, ComponentTreePath{
 			ComponentID: compID,
 			Path:        path,
