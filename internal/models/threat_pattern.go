@@ -23,9 +23,9 @@ func (ct PatternConditionType) String() string {
 	case ConditionTypeRelationship:
 		return "RELATIONSHIP"
 	case ConditionTypeRelationshipTargetID:
-		return "RELATIONSHIP_TARGET_ID"
+		return "REL_TARGET_ID"
 	case ConditionTypeRelationshipTargetTag:
-		return "RELATIONSHIP_TARGET_TAG"
+		return "REL_TARGET_TAG"
 	default:
 		return ""
 	}
@@ -38,9 +38,9 @@ func ParsePatternConditionType(s string) (PatternConditionType, bool) {
 		return ConditionTypeTag, true
 	case "RELATIONSHIP":
 		return ConditionTypeRelationship, true
-	case "RELATIONSHIP_TARGET_ID":
+	case "REL_TARGET_ID":
 		return ConditionTypeRelationshipTargetID, true
-	case "RELATIONSHIP_TARGET_TAG":
+	case "REL_TARGET_TAG":
 		return ConditionTypeRelationshipTargetTag, true
 	default:
 		return 0, false
@@ -77,9 +77,9 @@ func (op PatternOperator) String() string {
 	case OperatorNotExists:
 		return "NOT_EXISTS"
 	case OperatorHasRelationshipWith:
-		return "HAS_RELATIONSHIP_WITH"
+		return "HAS_REL_WITH"
 	case OperatorNotHasRelationshipWith:
-		return "NOT_HAS_RELATIONSHIP_WITH"
+		return "NOT_HAS_REL_WITH"
 	default:
 		return ""
 	}
@@ -100,9 +100,9 @@ func ParsePatternOperator(s string) (PatternOperator, bool) {
 		return OperatorExists, true
 	case "NOT_EXISTS":
 		return OperatorNotExists, true
-	case "HAS_RELATIONSHIP_WITH":
+	case "HAS_REL_WITH":
 		return OperatorHasRelationshipWith, true
-	case "NOT_HAS_RELATIONSHIP_WITH":
+	case "NOT_HAS_REL_WITH":
 		return OperatorNotHasRelationshipWith, true
 	default:
 		return 0, false

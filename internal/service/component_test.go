@@ -398,11 +398,10 @@ func TestComponentService_Integration(t *testing.T) {
 		nonExistentThreatID := uuid.New()
 		assignment, err := AssignThreatToComponent(component.ID, nonExistentThreatID)
 
-		// Should succeed (foreign key constraint allows it, but relationship won't load)
-		require.NoError(t, err)
-		assert.NotNil(t, assignment)
-		assert.Equal(t, nonExistentThreatID, assignment.ThreatID)
-		assert.Equal(t, component.ID, assignment.ComponentID)
+		// Should fail due to foreign key constraint
+		assert.Error(t, err)
+		assert.Nil(t, assignment)
+		assert.Contains(t, err.Error(), "foreign key constraint")
 	})
 
 	t.Run("AssignThreatToComponent_InvalidComponentID", func(t *testing.T) {
@@ -414,11 +413,10 @@ func TestComponentService_Integration(t *testing.T) {
 		nonExistentComponentID := uuid.New()
 		assignment, err := AssignThreatToComponent(nonExistentComponentID, threat.ID)
 
-		// Should succeed (foreign key constraint allows it, but relationship won't load)
-		require.NoError(t, err)
-		assert.NotNil(t, assignment)
-		assert.Equal(t, threat.ID, assignment.ThreatID)
-		assert.Equal(t, nonExistentComponentID, assignment.ComponentID)
+		// Should fail due to foreign key constraint
+		assert.Error(t, err)
+		assert.Nil(t, assignment)
+		assert.Contains(t, err.Error(), "foreign key constraint")
 	})
 
 	t.Run("ListThreatAssignmentsByComponentID", func(t *testing.T) {
