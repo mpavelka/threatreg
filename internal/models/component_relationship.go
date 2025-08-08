@@ -449,6 +449,85 @@ func (r *ComponentRelationshipRepository) GetDescendantsOfComponent(tx *gorm.DB,
 	return paths, nil
 }
 
+// GetDescendantsOfComponentByLabel uses a recursive CTE to efficiently find descendants of a component
+// that are connected through relationships with a specific label
+func (r *ComponentRelationshipRepository) GetDescendantsOfComponentByLabel(tx *gorm.DB, componentID uuid.UUID, label string) ([]ComponentTreePath, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	// Use recursive CTE to find all descendant paths filtering by relationship label
+	query := `
+		WITH RECURSIVE descendant_paths AS (
+			-- Base case: the component itself
+			SELECT 
+				$1::uuid as component_id,
+				ARRAY[$1::uuid] as path,
+				0 as depth
+			
+			UNION ALL
+			
+			-- Recursive case: add children to the path, but only for relationships with the specified label
+			SELECT 
+				cr.from_id as component_id,
+				dp.path || cr.from_id as path,
+				dp.depth + 1 as depth
+			FROM descendant_paths dp
+			JOIN component_relationships cr ON cr.to_id = dp.component_id
+			WHERE cr.label = $2 AND dp.depth < 100  -- Filter by label and prevent infinite loops
+		)
+		SELECT component_id, path, depth 
+		FROM descendant_paths 
+		WHERE depth > 0
+		ORDER BY depth, component_id
+	`
+
+	rows, err := tx.Raw(query, componentID, label).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var paths []ComponentTreePath
+	for rows.Next() {
+		var componentIDStr string
+		var pathStr string
+		var depth int
+
+		if err := rows.Scan(&componentIDStr, &pathStr, &depth); err != nil {
+			return nil, err
+		}
+
+		// Parse component ID
+		compID, err := uuid.Parse(componentIDStr)
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
+		pathStr = strings.Trim(pathStr, "{}")
+		var path []uuid.UUID
+		if pathStr != "" {
+			pathParts := strings.Split(pathStr, ",")
+			for _, part := range pathParts {
+				id, err := uuid.Parse(strings.TrimSpace(part))
+				if err != nil {
+					return nil, err
+				}
+				path = append(path, id)
+			}
+		}
+
+		paths = append(paths, ComponentTreePath{
+			ComponentID: compID,
+			Path:        path,
+			Depth:       depth,
+		})
+	}
+
+	return paths, nil
+}
+
 // traverseFromRoot recursively traverses the tree from a root component
 func (r *ComponentRelationshipRepository) traverseFromRoot(componentID uuid.UUID, currentPath []uuid.UUID, depth int, children map[uuid.UUID][]uuid.UUID, paths *[]ComponentTreePath, visited map[uuid.UUID]bool) {
 	// Add current path

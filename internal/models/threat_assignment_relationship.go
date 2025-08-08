@@ -81,7 +81,7 @@ func (r *ThreatAssignmentRelationshipRepository) GetByID(tx *gorm.DB, id uuid.UU
 	}
 
 	var relationship ThreatAssignmentRelationship
-	err := tx.Preload("ChildThreatAssignment").Preload("ParentThreatAssignment").First(&relationship, "id = ?", id).Error
+	err := tx.Preload("From").Preload("To").First(&relationship, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (r *ThreatAssignmentRelationshipRepository) GetByChildAndParent(tx *gorm.DB
 	}
 
 	var relationship ThreatAssignmentRelationship
-	err := tx.Where("child_threat_assignment_id = ? AND parent_threat_assignment_id = ?", childID, parentID).First(&relationship).Error
+	err := tx.Where("from_id = ? AND to_id = ?", childID, parentID).First(&relationship).Error
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (r *ThreatAssignmentRelationshipRepository) ListByChild(tx *gorm.DB, childI
 	}
 
 	var relationships []ThreatAssignmentRelationship
-	err := tx.Preload("ParentThreatAssignment").Where("child_threat_assignment_id = ?", childID).Find(&relationships).Error
+	err := tx.Preload("To").Where("from_id = ?", childID).Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (r *ThreatAssignmentRelationshipRepository) ListByParent(tx *gorm.DB, paren
 	}
 
 	var relationships []ThreatAssignmentRelationship
-	err := tx.Preload("ChildThreatAssignment").Where("parent_threat_assignment_id = ?", parentID).Find(&relationships).Error
+	err := tx.Preload("From").Where("to_id = ?", parentID).Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,23 @@ func (r *ThreatAssignmentRelationshipRepository) DeleteByChildAndParent(tx *gorm
 	if tx == nil {
 		tx = r.db
 	}
-	return tx.Where("child_threat_assignment_id = ? AND parent_threat_assignment_id = ?", childID, parentID).Delete(&ThreatAssignmentRelationship{}).Error
+	return tx.Where("from_id = ? AND to_id = ?", childID, parentID).Delete(&ThreatAssignmentRelationship{}).Error
+}
+
+// ListByFromAndToAndLabel retrieves threat assignment relationships filtered by fromID, toID, and label
+func (r *ThreatAssignmentRelationshipRepository) ListByFromAndToAndLabel(tx *gorm.DB, fromID, toID uuid.UUID, label string) ([]ThreatAssignmentRelationship, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var relationships []ThreatAssignmentRelationship
+	err := tx.Preload("From").Preload("To").
+		Where("from_id = ? AND to_id = ? AND label = ?", fromID, toID, label).
+		Find(&relationships).Error
+	if err != nil {
+		return nil, err
+	}
+	return relationships, nil
 }
 
 // GetTreePaths retrieves all tree paths for a given threat assignment using optimized recursive CTE
