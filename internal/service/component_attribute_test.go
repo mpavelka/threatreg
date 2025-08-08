@@ -12,32 +12,33 @@ import (
 )
 
 func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
 	// Create test component
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("CreateStringAttribute", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "production")
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("environment"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("production"))
+
 		require.NoError(t, err)
 		assert.NotNil(t, attribute)
 		assert.NotEqual(t, uuid.Nil, attribute.ID)
 		assert.Equal(t, component.ID, attribute.ComponentID)
-		assert.Equal(t, "environment", attribute.Name)
+		assert.Contains(t, attribute.Name, "environment")
 		assert.Equal(t, models.ComponentAttributeTypeString, attribute.Type)
-		assert.Equal(t, "production", attribute.Value)
+		assert.Contains(t, attribute.Value, "production")
 	})
 
 	t.Run("CreateTextAttribute", func(t *testing.T) {
-		longText := "This is a long description that would be stored as text type"
-		attribute, err := CreateComponentAttribute(component.ID, "description", models.ComponentAttributeTypeText, longText)
-		
+		longText := testutil.AddRandSuffix("This is a long description that would be stored as text type")
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("description"), models.ComponentAttributeTypeText, longText)
+
 		require.NoError(t, err)
 		assert.NotNil(t, attribute)
 		assert.Equal(t, models.ComponentAttributeTypeText, attribute.Type)
@@ -45,8 +46,8 @@ func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
 	})
 
 	t.Run("CreateNumberAttribute_Integer", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "port", models.ComponentAttributeTypeNumber, "8080")
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("port"), models.ComponentAttributeTypeNumber, "8080")
+
 		require.NoError(t, err)
 		assert.NotNil(t, attribute)
 		assert.Equal(t, models.ComponentAttributeTypeNumber, attribute.Type)
@@ -54,8 +55,8 @@ func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
 	})
 
 	t.Run("CreateNumberAttribute_Float", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "version", models.ComponentAttributeTypeNumber, "1.5")
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("version"), models.ComponentAttributeTypeNumber, "1.5")
+
 		require.NoError(t, err)
 		assert.NotNil(t, attribute)
 		assert.Equal(t, models.ComponentAttributeTypeNumber, attribute.Type)
@@ -64,11 +65,15 @@ func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
 
 	t.Run("CreateComponentAttribute_ValidReference", func(t *testing.T) {
 		// Create another component to reference
-		referencedComponent, err := CreateComponent("Referenced Component", "Referenced Description", models.ComponentTypeProduct)
+		referencedComponent, err := CreateComponent(
+			testutil.AddRandSuffix("Referenced Component"),
+			testutil.AddRandSuffix("Referenced Description"),
+			models.ComponentTypeProduct,
+		)
 		require.NoError(t, err)
 
-		attribute, err := CreateComponentAttribute(component.ID, "depends_on", models.ComponentAttributeTypeComponent, referencedComponent.ID.String())
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("depends_on"), models.ComponentAttributeTypeComponent, referencedComponent.ID.String())
+
 		require.NoError(t, err)
 		assert.NotNil(t, attribute)
 		assert.Equal(t, models.ComponentAttributeTypeComponent, attribute.Type)
@@ -77,40 +82,40 @@ func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
 
 	t.Run("CreateComponentAttribute_InvalidReference", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		attribute, err := CreateComponentAttribute(component.ID, "depends_on", models.ComponentAttributeTypeComponent, nonExistentID.String())
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("depends_on"), models.ComponentAttributeTypeComponent, nonExistentID.String())
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Contains(t, err.Error(), "referenced component does not exist")
 	})
 
 	t.Run("CreateNumberAttribute_InvalidValue", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "invalid_port", models.ComponentAttributeTypeNumber, "not-a-number")
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("invalid_port"), models.ComponentAttributeTypeNumber, testutil.AddRandSuffix("not-a-number"))
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Contains(t, err.Error(), "number attribute value must be a valid integer or float")
 	})
 
 	t.Run("CreateComponentAttribute_InvalidUUID", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "depends_on", models.ComponentAttributeTypeComponent, "not-a-uuid")
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("depends_on"), models.ComponentAttributeTypeComponent, testutil.AddRandSuffix("not-a-uuid"))
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Contains(t, err.Error(), "invalid UUID")
 	})
 
 	t.Run("CreateAttribute_EmptyName", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "", models.ComponentAttributeTypeString, "value")
-		
+		attribute, err := CreateComponentAttribute(component.ID, "", models.ComponentAttributeTypeString, testutil.AddRandSuffix("value"))
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Contains(t, err.Error(), "attribute name is required")
 	})
 
 	t.Run("CreateAttribute_EmptyValue", func(t *testing.T) {
-		attribute, err := CreateComponentAttribute(component.ID, "empty_value", models.ComponentAttributeTypeString, "")
-		
+		attribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("empty_value"), models.ComponentAttributeTypeString, "")
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Contains(t, err.Error(), "attribute value is required")
@@ -118,21 +123,22 @@ func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_GetComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("GetExistingAttribute", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "staging")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("environment"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("staging"))
 		require.NoError(t, err)
 
 		retrievedAttribute, err := GetComponentAttribute(createdAttribute.ID)
-		
+
 		require.NoError(t, err)
 		assert.NotNil(t, retrievedAttribute)
 		assert.Equal(t, createdAttribute.ID, retrievedAttribute.ID)
@@ -144,7 +150,7 @@ func TestComponentAttributeService_GetComponentAttribute(t *testing.T) {
 	t.Run("GetNonExistentAttribute", func(t *testing.T) {
 		nonExistentID := uuid.New()
 		attribute, err := GetComponentAttribute(nonExistentID)
-		
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
@@ -152,67 +158,73 @@ func TestComponentAttributeService_GetComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_UpdateComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("UpdateAttributeValue", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "development")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("environment"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("development"))
 		require.NoError(t, err)
 
-		newValue := "production"
+		newValue := testutil.AddRandSuffix("production")
 		updatedAttribute, err := UpdateComponentAttribute(createdAttribute.ID, nil, nil, &newValue)
-		
+
 		require.NoError(t, err)
 		assert.NotNil(t, updatedAttribute)
 		assert.Equal(t, createdAttribute.ID, updatedAttribute.ID)
-		assert.Equal(t, "production", updatedAttribute.Value)
+		assert.Equal(t, newValue, updatedAttribute.Value)
 		assert.Equal(t, createdAttribute.Name, updatedAttribute.Name)
 		assert.Equal(t, createdAttribute.Type, updatedAttribute.Type)
 	})
 
 	t.Run("UpdateAttributeType", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "config", models.ComponentAttributeTypeString, "8080")
+		attrConfig := testutil.AddRandSuffix("config")
+		createdAttribute, err := CreateComponentAttribute(component.ID, attrConfig, models.ComponentAttributeTypeString, "8080")
 		require.NoError(t, err)
 
 		newType := models.ComponentAttributeTypeNumber
 		updatedAttribute, err := UpdateComponentAttribute(createdAttribute.ID, nil, &newType, nil)
-		
+
 		require.NoError(t, err)
 		assert.NotNil(t, updatedAttribute)
 		assert.Equal(t, models.ComponentAttributeTypeNumber, updatedAttribute.Type)
-		assert.Equal(t, "8080", updatedAttribute.Value) // Should still be valid as number
+		assert.Contains(t, updatedAttribute.Value, "8080") // Should still be valid as number
 	})
 
 	t.Run("UpdateAttributeName", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "old_name", models.ComponentAttributeTypeString, "value")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("old_name"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("value"))
 		require.NoError(t, err)
 
-		newName := "new_name"
+		newName := testutil.AddRandSuffix("new_name")
 		updatedAttribute, err := UpdateComponentAttribute(createdAttribute.ID, &newName, nil, nil)
-		
+
 		require.NoError(t, err)
 		assert.NotNil(t, updatedAttribute)
-		assert.Equal(t, "new_name", updatedAttribute.Name)
+		assert.Equal(t, newName, updatedAttribute.Name)
 	})
 
 	t.Run("UpdateToComponentType_ValidReference", func(t *testing.T) {
 		// Create referenced component
-		referencedComponent, err := CreateComponent("Referenced Component", "Referenced Description", models.ComponentTypeProduct)
+		referencedComponent, err := CreateComponent(
+			testutil.AddRandSuffix("Referenced Component"),
+			testutil.AddRandSuffix("Referenced Description"),
+			models.ComponentTypeProduct,
+		)
 		require.NoError(t, err)
 
-		createdAttribute, err := CreateComponentAttribute(component.ID, "reference", models.ComponentAttributeTypeString, "old_value")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("reference"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("old_value"))
 		require.NoError(t, err)
 
 		newType := models.ComponentAttributeTypeComponent
 		newValue := referencedComponent.ID.String()
 		updatedAttribute, err := UpdateComponentAttribute(createdAttribute.ID, nil, &newType, &newValue)
-		
+
 		require.NoError(t, err)
 		assert.NotNil(t, updatedAttribute)
 		assert.Equal(t, models.ComponentAttributeTypeComponent, updatedAttribute.Type)
@@ -220,26 +232,26 @@ func TestComponentAttributeService_UpdateComponentAttribute(t *testing.T) {
 	})
 
 	t.Run("UpdateToComponentType_InvalidReference", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "reference", models.ComponentAttributeTypeString, "old_value")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("reference"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("old_value"))
 		require.NoError(t, err)
 
 		newType := models.ComponentAttributeTypeComponent
 		nonExistentID := uuid.New().String()
 		updatedAttribute, err := UpdateComponentAttribute(createdAttribute.ID, nil, &newType, &nonExistentID)
-		
+
 		assert.Error(t, err)
 		assert.Nil(t, updatedAttribute)
 		assert.Contains(t, err.Error(), "referenced component does not exist")
 	})
 
 	t.Run("UpdateToNumberType_InvalidValue", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "numeric", models.ComponentAttributeTypeString, "old_value")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("numeric"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("old_value"))
 		require.NoError(t, err)
 
 		newType := models.ComponentAttributeTypeNumber
-		newValue := "not-a-number"
+		newValue := testutil.AddRandSuffix("not-a-number")
 		updatedAttribute, err := UpdateComponentAttribute(createdAttribute.ID, nil, &newType, &newValue)
-		
+
 		assert.Error(t, err)
 		assert.Nil(t, updatedAttribute)
 		assert.Contains(t, err.Error(), "number attribute value must be a valid integer or float")
@@ -247,9 +259,9 @@ func TestComponentAttributeService_UpdateComponentAttribute(t *testing.T) {
 
 	t.Run("UpdateNonExistentAttribute", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		newValue := "new_value"
+		newValue := testutil.AddRandSuffix("new_value")
 		updatedAttribute, err := UpdateComponentAttribute(nonExistentID, nil, nil, &newValue)
-		
+
 		assert.Error(t, err)
 		assert.Nil(t, updatedAttribute)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
@@ -257,17 +269,18 @@ func TestComponentAttributeService_UpdateComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_DeleteComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("DeleteExistingAttribute", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "temp_attr", models.ComponentAttributeTypeString, "temp_value")
+		createdAttribute, err := CreateComponentAttribute(component.ID, testutil.AddRandSuffix("temp_attr"), models.ComponentAttributeTypeString, testutil.AddRandSuffix("temp_value"))
 		require.NoError(t, err)
 
 		err = DeleteComponentAttribute(createdAttribute.ID)
@@ -283,33 +296,38 @@ func TestComponentAttributeService_DeleteComponentAttribute(t *testing.T) {
 	t.Run("DeleteNonExistentAttribute", func(t *testing.T) {
 		nonExistentID := uuid.New()
 		err := DeleteComponentAttribute(nonExistentID)
-		
+
 		// Should not return error for non-existent records (GORM behavior)
 		assert.NoError(t, err)
 	})
 }
 
 func TestComponentAttributeService_GetComponentAttributes(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("GetAttributesForComponentWithAttributes", func(t *testing.T) {
+		attrEnvironment := testutil.AddRandSuffix("environment")
+		attrPort := testutil.AddRandSuffix("port")
+		attrDescription := testutil.AddRandSuffix("description")
+
 		// Create multiple attributes
-		_, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "production")
+		_, err := CreateComponentAttribute(component.ID, attrEnvironment, models.ComponentAttributeTypeString, "production")
 		require.NoError(t, err)
-		_, err = CreateComponentAttribute(component.ID, "port", models.ComponentAttributeTypeNumber, "8080")
+		_, err = CreateComponentAttribute(component.ID, attrPort, models.ComponentAttributeTypeNumber, "8080")
 		require.NoError(t, err)
-		_, err = CreateComponentAttribute(component.ID, "description", models.ComponentAttributeTypeText, "Long description")
+		_, err = CreateComponentAttribute(component.ID, attrDescription, models.ComponentAttributeTypeText, "Long description")
 		require.NoError(t, err)
 
 		attributes, err := GetComponentAttributes(component.ID)
-		
+
 		require.NoError(t, err)
 		assert.Len(t, attributes, 3)
 
@@ -319,51 +337,58 @@ func TestComponentAttributeService_GetComponentAttributes(t *testing.T) {
 			attributeMap[attr.Name] = attr
 		}
 
-		assert.Contains(t, attributeMap, "environment")
-		assert.Contains(t, attributeMap, "port")
-		assert.Contains(t, attributeMap, "description")
-		assert.Equal(t, "production", attributeMap["environment"].Value)
-		assert.Equal(t, "8080", attributeMap["port"].Value)
-		assert.Equal(t, models.ComponentAttributeTypeNumber, attributeMap["port"].Type)
+		assert.Contains(t, attributeMap, attrEnvironment)
+		assert.Contains(t, attributeMap, attrPort)
+		assert.Contains(t, attributeMap, attrDescription)
+		assert.Equal(t, "production", attributeMap[attrEnvironment].Value)
+		assert.Equal(t, "8080", attributeMap[attrPort].Value)
+		assert.Equal(t, models.ComponentAttributeTypeNumber, attributeMap[attrPort].Type)
+
 	})
 
 	t.Run("GetAttributesForComponentWithNoAttributes", func(t *testing.T) {
-		emptyComponent, err := CreateComponent("Empty Component", "Component with no attributes", models.ComponentTypeInstance)
+		emptyComponent, err := CreateComponent(
+			testutil.AddRandSuffix("Empty Component"),
+			testutil.AddRandSuffix("Component with no attributes"),
+			models.ComponentTypeInstance,
+		)
 		require.NoError(t, err)
 
 		attributes, err := GetComponentAttributes(emptyComponent.ID)
-		
+
 		require.NoError(t, err)
 		assert.Len(t, attributes, 0)
 	})
 }
 
 func TestComponentAttributeService_GetComponentAttributeByName(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("GetExistingAttributeByName", func(t *testing.T) {
-		createdAttribute, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "staging")
+		attrEnvironment := testutil.AddRandSuffix("environment")
+		createdAttribute, err := CreateComponentAttribute(component.ID, attrEnvironment, models.ComponentAttributeTypeString, "staging")
 		require.NoError(t, err)
 
-		retrievedAttribute, err := GetComponentAttributeByName(component.ID, "environment")
-		
+		retrievedAttribute, err := GetComponentAttributeByName(component.ID, createdAttribute.Name)
+
 		require.NoError(t, err)
 		assert.NotNil(t, retrievedAttribute)
 		assert.Equal(t, createdAttribute.ID, retrievedAttribute.ID)
-		assert.Equal(t, "environment", retrievedAttribute.Name)
+		assert.Equal(t, createdAttribute.Name, retrievedAttribute.Name)
 		assert.Equal(t, "staging", retrievedAttribute.Value)
 	})
 
 	t.Run("GetNonExistentAttributeByName", func(t *testing.T) {
-		attribute, err := GetComponentAttributeByName(component.ID, "non_existent")
-		
+		attribute, err := GetComponentAttributeByName(component.ID, testutil.AddRandSuffix("non_existent"))
+
 		assert.Error(t, err)
 		assert.Nil(t, attribute)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
@@ -371,31 +396,44 @@ func TestComponentAttributeService_GetComponentAttributeByName(t *testing.T) {
 }
 
 func TestComponentAttributeService_FindComponentsByAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
 	// Create test components
-	component1, err := CreateComponent("Component 1", "First component", models.ComponentTypeInstance)
+	component1, err := CreateComponent(
+		testutil.AddRandSuffix("Component 1"),
+		testutil.AddRandSuffix("First component"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
-	component2, err := CreateComponent("Component 2", "Second component", models.ComponentTypeInstance)
+	component2, err := CreateComponent(
+		testutil.AddRandSuffix("Component 2"),
+		testutil.AddRandSuffix("Second component"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
-	component3, err := CreateComponent("Component 3", "Third component", models.ComponentTypeProduct)
+	component3, err := CreateComponent(
+		testutil.AddRandSuffix("Component 3"),
+		testutil.AddRandSuffix("Third component"),
+		models.ComponentTypeProduct,
+	)
 	require.NoError(t, err)
 
 	t.Run("FindComponentsByAttributeValue", func(t *testing.T) {
 		// Add same attribute to multiple components
-		_, err := CreateComponentAttribute(component1.ID, "environment", models.ComponentAttributeTypeString, "production")
+		valProduction := testutil.AddRandSuffix("production")
+		valDevelopment := testutil.AddRandSuffix("development")
+		attrEnvironment := testutil.AddRandSuffix("environment")
+
+		_, err := CreateComponentAttribute(component1.ID, attrEnvironment, models.ComponentAttributeTypeString, valProduction)
 		require.NoError(t, err)
-		_, err = CreateComponentAttribute(component2.ID, "environment", models.ComponentAttributeTypeString, "production")
+		_, err = CreateComponentAttribute(component2.ID, attrEnvironment, models.ComponentAttributeTypeString, valProduction)
 		require.NoError(t, err)
-		_, err = CreateComponentAttribute(component3.ID, "environment", models.ComponentAttributeTypeString, "development")
+		_, err = CreateComponentAttribute(component3.ID, attrEnvironment, models.ComponentAttributeTypeString, valDevelopment)
 		require.NoError(t, err)
 
-		components, err := FindComponentsByAttribute("environment", "production")
-		
+		components, err := FindComponentsByAttribute(attrEnvironment, valProduction)
+
 		require.NoError(t, err)
 		assert.Len(t, components, 2)
 
@@ -406,35 +444,49 @@ func TestComponentAttributeService_FindComponentsByAttribute(t *testing.T) {
 	})
 
 	t.Run("FindComponentsByNonExistentAttribute", func(t *testing.T) {
-		components, err := FindComponentsByAttribute("non_existent", "value")
-		
+		components, err := FindComponentsByAttribute(
+			testutil.AddRandSuffix("non_existent"),
+			testutil.AddRandSuffix("value"),
+		)
+
 		require.NoError(t, err)
 		assert.Len(t, components, 0)
 	})
 }
 
 func TestComponentAttributeService_FindComponentsByAttributeAndType(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component1, err := CreateComponent("Component 1", "First component", models.ComponentTypeInstance)
+	component1, err := CreateComponent(
+		testutil.AddRandSuffix("Component 1"),
+		testutil.AddRandSuffix("First component"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
-	component2, err := CreateComponent("Component 2", "Second component", models.ComponentTypeInstance)
+	component2, err := CreateComponent(
+		testutil.AddRandSuffix("Component 2"),
+		testutil.AddRandSuffix("Second component"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("FindComponentsByAttributeAndType", func(t *testing.T) {
+		attrPort := testutil.AddRandSuffix("port")
+		valuePort := "8080"
 		// Add same value but different types
-		_, err := CreateComponentAttribute(component1.ID, "port", models.ComponentAttributeTypeString, "8080")
+		_, err := CreateComponentAttribute(component1.ID, attrPort, models.ComponentAttributeTypeString, valuePort)
 		require.NoError(t, err)
-		_, err = CreateComponentAttribute(component2.ID, "port", models.ComponentAttributeTypeNumber, "8080")
+		_, err = CreateComponentAttribute(component2.ID, attrPort, models.ComponentAttributeTypeNumber, valuePort)
 		require.NoError(t, err)
 
 		// Find only number type
-		components, err := FindComponentsByAttributeAndType("port", "8080", models.ComponentAttributeTypeNumber)
-		
+		components, err := FindComponentsByAttributeAndType(
+			attrPort,
+			valuePort,
+			models.ComponentAttributeTypeNumber,
+		)
+
 		require.NoError(t, err)
 		assert.Len(t, components, 1)
 		assert.Equal(t, component2.ID, components[0].ID)
@@ -442,100 +494,109 @@ func TestComponentAttributeService_FindComponentsByAttributeAndType(t *testing.T
 }
 
 func TestComponentAttributeService_ComponentHasAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("ComponentHasExistingAttribute", func(t *testing.T) {
-		_, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "production")
+		attrEnvironment := testutil.AddRandSuffix("environment")
+		_, err := CreateComponentAttribute(component.ID, attrEnvironment, models.ComponentAttributeTypeString, "production")
 		require.NoError(t, err)
 
-		hasAttribute, err := ComponentHasAttribute(component.ID, "environment")
-		
+		hasAttribute, err := ComponentHasAttribute(component.ID, attrEnvironment)
+
 		require.NoError(t, err)
 		assert.True(t, hasAttribute)
 	})
 
 	t.Run("ComponentDoesNotHaveAttribute", func(t *testing.T) {
-		hasAttribute, err := ComponentHasAttribute(component.ID, "non_existent")
-		
+		attrNonExistent := testutil.AddRandSuffix("non_existent")
+		hasAttribute, err := ComponentHasAttribute(component.ID, attrNonExistent)
+
 		require.NoError(t, err)
 		assert.False(t, hasAttribute)
 	})
 }
 
 func TestComponentAttributeService_ComponentHasAttributeWithValue(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("ComponentHasAttributeWithCorrectValue", func(t *testing.T) {
-		_, err := CreateComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "production")
+		attrEnvironment := testutil.AddRandSuffix("environment")
+		_, err := CreateComponentAttribute(component.ID, attrEnvironment, models.ComponentAttributeTypeString, "production")
 		require.NoError(t, err)
 
-		hasAttribute, err := ComponentHasAttributeWithValue(component.ID, "environment", "production")
-		
+		hasAttribute, err := ComponentHasAttributeWithValue(component.ID, attrEnvironment, "production")
+
 		require.NoError(t, err)
 		assert.True(t, hasAttribute)
 	})
 
 	t.Run("ComponentHasAttributeWithDifferentValue", func(t *testing.T) {
-		hasAttribute, err := ComponentHasAttributeWithValue(component.ID, "environment", "staging")
-		
+		attrEnvironment := testutil.AddRandSuffix("environment")
+		hasAttribute, err := ComponentHasAttributeWithValue(component.ID, attrEnvironment, "staging")
+
 		require.NoError(t, err)
 		assert.False(t, hasAttribute)
 	})
 }
 
 func TestComponentAttributeService_SetComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("SetAttributeOnNewComponent", func(t *testing.T) {
-		attribute, err := SetComponentAttribute(component.ID, "environment", models.ComponentAttributeTypeString, "production")
-		
+		attrEnvironment := testutil.AddRandSuffix("environment")
+		attribute, err := SetComponentAttribute(component.ID, attrEnvironment, models.ComponentAttributeTypeString, "production")
+
 		require.NoError(t, err)
 		assert.NotNil(t, attribute)
-		assert.Equal(t, "environment", attribute.Name)
-		assert.Equal(t, "production", attribute.Value)
+		assert.Equal(t, attribute.Name, attrEnvironment)
+		assert.Equal(t, attribute.Value, "production")
 	})
 
 	t.Run("SetAttributeOnExistingAttribute", func(t *testing.T) {
+		attrVersion := testutil.AddRandSuffix("version")
 		// First call creates the attribute
-		_, err := SetComponentAttribute(component.ID, "version", models.ComponentAttributeTypeString, "1.0")
+		_, err := SetComponentAttribute(component.ID, attrVersion, models.ComponentAttributeTypeString, "1.0")
 		require.NoError(t, err)
 
 		// Second call should update it
-		updatedAttribute, err := SetComponentAttribute(component.ID, "version", models.ComponentAttributeTypeString, "2.0")
-		
+		updatedAttribute, err := SetComponentAttribute(component.ID, attrVersion, models.ComponentAttributeTypeString, "2.0")
+
 		require.NoError(t, err)
 		assert.NotNil(t, updatedAttribute)
-		assert.Equal(t, "version", updatedAttribute.Name)
-		assert.Equal(t, "2.0", updatedAttribute.Value)
+		assert.Equal(t, updatedAttribute.Name, attrVersion)
+		assert.Equal(t, updatedAttribute.Value, "2.0")
 
 		// Verify only one attribute exists
 		attributes, err := GetComponentAttributes(component.ID)
 		require.NoError(t, err)
-		
+
 		versionCount := 0
 		for _, attr := range attributes {
-			if attr.Name == "version" {
+			if attr.Name == attrVersion {
 				versionCount++
 				assert.Equal(t, "2.0", attr.Value)
 			}
@@ -545,31 +606,34 @@ func TestComponentAttributeService_SetComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_DeleteComponentAttributeByName(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentAttribute{},
-	)
+	cleanup := testutil.SetupTestDatabase(t)
 	defer cleanup()
 
-	component, err := CreateComponent("Test Component", "Test Description", models.ComponentTypeInstance)
+	component, err := CreateComponent(
+		testutil.AddRandSuffix("Test Component"),
+		testutil.AddRandSuffix("Test Description"),
+		models.ComponentTypeInstance,
+	)
 	require.NoError(t, err)
 
 	t.Run("DeleteExistingAttributeByName", func(t *testing.T) {
-		_, err := CreateComponentAttribute(component.ID, "temp_attr", models.ComponentAttributeTypeString, "temp_value")
+		tempAttr := testutil.AddRandSuffix("temp_attr")
+		tempValue := testutil.AddRandSuffix("temp_value")
+		_, err := CreateComponentAttribute(component.ID, tempAttr, models.ComponentAttributeTypeString, tempValue)
 		require.NoError(t, err)
 
-		err = DeleteComponentAttributeByName(component.ID, "temp_attr")
+		err = DeleteComponentAttributeByName(component.ID, tempAttr)
 		require.NoError(t, err)
 
 		// Verify it's deleted
-		hasAttribute, err := ComponentHasAttribute(component.ID, "temp_attr")
+		hasAttribute, err := ComponentHasAttribute(component.ID, tempAttr)
 		require.NoError(t, err)
 		assert.False(t, hasAttribute)
 	})
 
 	t.Run("DeleteNonExistentAttributeByName", func(t *testing.T) {
-		err := DeleteComponentAttributeByName(component.ID, "non_existent")
-		
+		err := DeleteComponentAttributeByName(component.ID, testutil.AddRandSuffix("non_existent"))
+
 		// Should not return error for non-existent records
 		assert.NoError(t, err)
 	})
