@@ -16,25 +16,25 @@ const (
 	ReservedInheritsFrom ReservedThreatAssignmentRelationshipLabels = "__inherits_from"
 )
 
-// ThreatAssignmentInheritance represents a parent-child relationship between threat assignments
-type ThreatAssignmentInheritance struct {
+// ThreatAssignmentRelationship represents a parent-child relationship between threat assignments
+type ThreatAssignmentRelationship struct {
 	ID     uuid.UUID        `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
-	FromID uuid.UUID        `gorm:"type:uuid;not null;index;uniqueIndex:idx_threat_assignment_inheritance_unique" json:"fromId"`
-	ToID   uuid.UUID        `gorm:"type:uuid;not null;index;uniqueIndex:idx_threat_assignment_inheritance_unique" json:"toId"`
+	FromID uuid.UUID        `gorm:"type:uuid;not null;index;uniqueIndex:idx_threat_assignment_relationship_unique" json:"fromId"`
+	ToID   uuid.UUID        `gorm:"type:uuid;not null;index;uniqueIndex:idx_threat_assignment_relationship_unique" json:"toId"`
 	From   ThreatAssignment `gorm:"foreignKey:FromID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"from,omitempty"`
 	To     ThreatAssignment `gorm:"foreignKey:ToID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"to,omitempty"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID
-func (tai *ThreatAssignmentInheritance) BeforeCreate(tx *gorm.DB) error {
+func (tai *ThreatAssignmentRelationship) BeforeCreate(tx *gorm.DB) error {
 	if tai.ID == uuid.Nil {
 		tai.ID = uuid.New()
 	}
 	return nil
 }
 
-// Validate validates the threat assignment inheritance relationship
-func (tai *ThreatAssignmentInheritance) Validate() error {
+// Validate validates the threat assignment relationship relationship
+func (tai *ThreatAssignmentRelationship) Validate() error {
 	if tai.FromID == uuid.Nil {
 		return fmt.Errorf("child threat assignment ID is required")
 	}
@@ -54,90 +54,90 @@ type ThreatAssignmentTreePath struct {
 	Depth              int         `json:"depth"`
 }
 
-type ThreatAssignmentInheritanceRepository struct {
+type ThreatAssignmentRelationshipRepository struct {
 	db *gorm.DB
 }
 
-func NewThreatAssignmentInheritanceRepository(db *gorm.DB) *ThreatAssignmentInheritanceRepository {
-	return &ThreatAssignmentInheritanceRepository{db: db}
+func NewThreatAssignmentRelationshipRepository(db *gorm.DB) *ThreatAssignmentRelationshipRepository {
+	return &ThreatAssignmentRelationshipRepository{db: db}
 }
 
-func (r *ThreatAssignmentInheritanceRepository) Create(tx *gorm.DB, inheritance *ThreatAssignmentInheritance) error {
+func (r *ThreatAssignmentRelationshipRepository) Create(tx *gorm.DB, relationship *ThreatAssignmentRelationship) error {
 	if tx == nil {
 		tx = r.db
 	}
 
-	if err := inheritance.Validate(); err != nil {
+	if err := relationship.Validate(); err != nil {
 		return err
 	}
 
-	return tx.Create(inheritance).Error
+	return tx.Create(relationship).Error
 }
 
-func (r *ThreatAssignmentInheritanceRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*ThreatAssignmentInheritance, error) {
+func (r *ThreatAssignmentRelationshipRepository) GetByID(tx *gorm.DB, id uuid.UUID) (*ThreatAssignmentRelationship, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	var inheritance ThreatAssignmentInheritance
-	err := tx.Preload("ChildThreatAssignment").Preload("ParentThreatAssignment").First(&inheritance, "id = ?", id).Error
+	var relationship ThreatAssignmentRelationship
+	err := tx.Preload("ChildThreatAssignment").Preload("ParentThreatAssignment").First(&relationship, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &inheritance, nil
+	return &relationship, nil
 }
 
-func (r *ThreatAssignmentInheritanceRepository) Delete(tx *gorm.DB, id uuid.UUID) error {
+func (r *ThreatAssignmentRelationshipRepository) Delete(tx *gorm.DB, id uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
-	return tx.Delete(&ThreatAssignmentInheritance{}, "id = ?", id).Error
+	return tx.Delete(&ThreatAssignmentRelationship{}, "id = ?", id).Error
 }
 
-func (r *ThreatAssignmentInheritanceRepository) GetByChildAndParent(tx *gorm.DB, childID, parentID uuid.UUID) (*ThreatAssignmentInheritance, error) {
+func (r *ThreatAssignmentRelationshipRepository) GetByChildAndParent(tx *gorm.DB, childID, parentID uuid.UUID) (*ThreatAssignmentRelationship, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	var inheritance ThreatAssignmentInheritance
-	err := tx.Where("child_threat_assignment_id = ? AND parent_threat_assignment_id = ?", childID, parentID).First(&inheritance).Error
+	var relationship ThreatAssignmentRelationship
+	err := tx.Where("child_threat_assignment_id = ? AND parent_threat_assignment_id = ?", childID, parentID).First(&relationship).Error
 	if err != nil {
 		return nil, err
 	}
-	return &inheritance, nil
+	return &relationship, nil
 }
 
-func (r *ThreatAssignmentInheritanceRepository) ListByChild(tx *gorm.DB, childID uuid.UUID) ([]ThreatAssignmentInheritance, error) {
+func (r *ThreatAssignmentRelationshipRepository) ListByChild(tx *gorm.DB, childID uuid.UUID) ([]ThreatAssignmentRelationship, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	var inheritances []ThreatAssignmentInheritance
-	err := tx.Preload("ParentThreatAssignment").Where("child_threat_assignment_id = ?", childID).Find(&inheritances).Error
+	var relationships []ThreatAssignmentRelationship
+	err := tx.Preload("ParentThreatAssignment").Where("child_threat_assignment_id = ?", childID).Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
-	return inheritances, nil
+	return relationships, nil
 }
 
-func (r *ThreatAssignmentInheritanceRepository) ListByParent(tx *gorm.DB, parentID uuid.UUID) ([]ThreatAssignmentInheritance, error) {
+func (r *ThreatAssignmentRelationshipRepository) ListByParent(tx *gorm.DB, parentID uuid.UUID) ([]ThreatAssignmentRelationship, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	var inheritances []ThreatAssignmentInheritance
-	err := tx.Preload("ChildThreatAssignment").Where("parent_threat_assignment_id = ?", parentID).Find(&inheritances).Error
+	var relationships []ThreatAssignmentRelationship
+	err := tx.Preload("ChildThreatAssignment").Where("parent_threat_assignment_id = ?", parentID).Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
-	return inheritances, nil
+	return relationships, nil
 }
 
-func (r *ThreatAssignmentInheritanceRepository) DeleteByChildAndParent(tx *gorm.DB, childID, parentID uuid.UUID) error {
+func (r *ThreatAssignmentRelationshipRepository) DeleteByChildAndParent(tx *gorm.DB, childID, parentID uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}
-	return tx.Where("child_threat_assignment_id = ? AND parent_threat_assignment_id = ?", childID, parentID).Delete(&ThreatAssignmentInheritance{}).Error
+	return tx.Where("child_threat_assignment_id = ? AND parent_threat_assignment_id = ?", childID, parentID).Delete(&ThreatAssignmentRelationship{}).Error
 }
 
 // GetTreePaths retrieves all tree paths for a given threat assignment using optimized recursive CTE
@@ -145,11 +145,11 @@ func (r *ThreatAssignmentInheritanceRepository) DeleteByChildAndParent(tx *gorm.
 //
 // PERFORMANCE OPTIMIZATION:
 // - Previous implementation: O(N) - loaded ALL relationships from database regardless of query scope
-// - New implementation: O(L×D) where L = local subtree size, D = max depth  
+// - New implementation: O(L×D) where L = local subtree size, D = max depth
 // - Uses PostgreSQL recursive CTEs with targeted traversal (ancestors + descendants)
 // - Expected improvement: 10x-1000x for large systems with localized queries
 // - Requires PostgreSQL - SQLite not supported for this advanced functionality
-func (r *ThreatAssignmentInheritanceRepository) GetTreePaths(tx *gorm.DB, threatAssignmentID uuid.UUID) ([]ThreatAssignmentTreePath, error) {
+func (r *ThreatAssignmentRelationshipRepository) GetTreePaths(tx *gorm.DB, threatAssignmentID uuid.UUID) ([]ThreatAssignmentTreePath, error) {
 	if tx == nil {
 		tx = r.db
 	}
@@ -167,7 +167,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetTreePaths(tx *gorm.DB, threat
 				CASE WHEN ta.id = $1::uuid THEN true ELSE false END as includes_target
 			FROM threat_assignments ta
 			WHERE NOT EXISTS (
-				SELECT 1 FROM threat_assignment_inheritances tai 
+				SELECT 1 FROM threat_assignment_relationships tai 
 				WHERE tai.from_id = ta.id
 			)
 			
@@ -181,7 +181,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetTreePaths(tx *gorm.DB, threat
 				tp.depth + 1 as depth,
 				(tp.includes_target OR tai.from_id = $1::uuid) as includes_target
 			FROM tree_paths tp
-			JOIN threat_assignment_inheritances tai ON tai.to_id = tp.current_assignment
+			JOIN threat_assignment_relationships tai ON tai.to_id = tp.current_assignment
 			WHERE tp.depth < 100
 		)
 		SELECT current_assignment, path, depth 
@@ -201,17 +201,17 @@ func (r *ThreatAssignmentInheritanceRepository) GetTreePaths(tx *gorm.DB, threat
 		var assignmentIDStr string
 		var pathStr string
 		var depth int
-		
+
 		if err := rows.Scan(&assignmentIDStr, &pathStr, &depth); err != nil {
 			return nil, err
 		}
-		
+
 		// Parse assignment ID
 		assignmentID, err := uuid.Parse(assignmentIDStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
 		pathStr = strings.Trim(pathStr, "{}")
 		var path []uuid.UUID
@@ -225,7 +225,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetTreePaths(tx *gorm.DB, threat
 				path = append(path, id)
 			}
 		}
-		
+
 		paths = append(paths, ThreatAssignmentTreePath{
 			ThreatAssignmentID: assignmentID,
 			Path:               path,
@@ -237,7 +237,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetTreePaths(tx *gorm.DB, threat
 }
 
 // GetAncestorsOfThreatAssignment uses a recursive CTE to efficiently find all ancestors of a threat assignment
-func (r *ThreatAssignmentInheritanceRepository) GetAncestorsOfThreatAssignment(tx *gorm.DB, threatAssignmentID uuid.UUID) ([]ThreatAssignmentTreePath, error) {
+func (r *ThreatAssignmentRelationshipRepository) GetAncestorsOfThreatAssignment(tx *gorm.DB, threatAssignmentID uuid.UUID) ([]ThreatAssignmentTreePath, error) {
 	if tx == nil {
 		tx = r.db
 	}
@@ -259,7 +259,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetAncestorsOfThreatAssignment(t
 				ARRAY[tai.to_id] || ap.path as path,
 				ap.depth + 1 as depth
 			FROM ancestor_paths ap
-			JOIN threat_assignment_inheritances tai ON tai.from_id = ap.assignment_id
+			JOIN threat_assignment_relationships tai ON tai.from_id = ap.assignment_id
 			WHERE ap.depth < 100  -- Prevent infinite loops in case of cycles
 		)
 		SELECT assignment_id, path, depth 
@@ -279,17 +279,17 @@ func (r *ThreatAssignmentInheritanceRepository) GetAncestorsOfThreatAssignment(t
 		var assignmentIDStr string
 		var pathStr string
 		var depth int
-		
+
 		if err := rows.Scan(&assignmentIDStr, &pathStr, &depth); err != nil {
 			return nil, err
 		}
-		
+
 		// Parse assignment ID
 		assignmentID, err := uuid.Parse(assignmentIDStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
 		pathStr = strings.Trim(pathStr, "{}")
 		var path []uuid.UUID
@@ -303,7 +303,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetAncestorsOfThreatAssignment(t
 				path = append(path, id)
 			}
 		}
-		
+
 		paths = append(paths, ThreatAssignmentTreePath{
 			ThreatAssignmentID: assignmentID,
 			Path:               path,
@@ -315,7 +315,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetAncestorsOfThreatAssignment(t
 }
 
 // GetDescendantsOfThreatAssignment uses a recursive CTE to efficiently find all descendants of a threat assignment
-func (r *ThreatAssignmentInheritanceRepository) GetDescendantsOfThreatAssignment(tx *gorm.DB, threatAssignmentID uuid.UUID) ([]ThreatAssignmentTreePath, error) {
+func (r *ThreatAssignmentRelationshipRepository) GetDescendantsOfThreatAssignment(tx *gorm.DB, threatAssignmentID uuid.UUID) ([]ThreatAssignmentTreePath, error) {
 	if tx == nil {
 		tx = r.db
 	}
@@ -337,7 +337,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetDescendantsOfThreatAssignment
 				dp.path || ARRAY[tai.from_id] as path,
 				dp.depth + 1 as depth
 			FROM descendant_paths dp
-			JOIN threat_assignment_inheritances tai ON tai.to_id = dp.assignment_id
+			JOIN threat_assignment_relationships tai ON tai.to_id = dp.assignment_id
 			WHERE dp.depth < 100  -- Prevent infinite loops in case of cycles
 		)
 		SELECT assignment_id, path, depth 
@@ -357,17 +357,17 @@ func (r *ThreatAssignmentInheritanceRepository) GetDescendantsOfThreatAssignment
 		var assignmentIDStr string
 		var pathStr string
 		var depth int
-		
+
 		if err := rows.Scan(&assignmentIDStr, &pathStr, &depth); err != nil {
 			return nil, err
 		}
-		
+
 		// Parse assignment ID
 		assignmentID, err := uuid.Parse(assignmentIDStr)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Parse path array - PostgreSQL returns arrays as "{uuid1,uuid2,uuid3}"
 		pathStr = strings.Trim(pathStr, "{}")
 		var path []uuid.UUID
@@ -381,7 +381,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetDescendantsOfThreatAssignment
 				path = append(path, id)
 			}
 		}
-		
+
 		paths = append(paths, ThreatAssignmentTreePath{
 			ThreatAssignmentID: assignmentID,
 			Path:               path,
@@ -392,16 +392,15 @@ func (r *ThreatAssignmentInheritanceRepository) GetDescendantsOfThreatAssignment
 	return paths, nil
 }
 
-
 // GetAllTreePaths gets tree paths for all threat assignments in the system
-func (r *ThreatAssignmentInheritanceRepository) GetAllTreePaths(tx *gorm.DB) ([]ThreatAssignmentTreePath, error) {
+func (r *ThreatAssignmentRelationshipRepository) GetAllTreePaths(tx *gorm.DB) ([]ThreatAssignmentTreePath, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
-	// Get all inheritance relationships
-	var inheritances []ThreatAssignmentInheritance
-	err := tx.Find(&inheritances).Error
+	// Get all relationship relationships
+	var relationships []ThreatAssignmentRelationship
+	err := tx.Find(&relationships).Error
 	if err != nil {
 		return nil, err
 	}
@@ -411,11 +410,11 @@ func (r *ThreatAssignmentInheritanceRepository) GetAllTreePaths(tx *gorm.DB) ([]
 	parents := make(map[uuid.UUID][]uuid.UUID)
 	allAssignments := make(map[uuid.UUID]bool)
 
-	for _, inheritance := range inheritances {
-		children[inheritance.ToID] = append(children[inheritance.ToID], inheritance.FromID)
-		parents[inheritance.FromID] = append(parents[inheritance.FromID], inheritance.ToID)
-		allAssignments[inheritance.ToID] = true
-		allAssignments[inheritance.FromID] = true
+	for _, relationship := range relationships {
+		children[relationship.ToID] = append(children[relationship.ToID], relationship.FromID)
+		parents[relationship.FromID] = append(parents[relationship.FromID], relationship.ToID)
+		allAssignments[relationship.ToID] = true
+		allAssignments[relationship.FromID] = true
 	}
 
 	var paths []ThreatAssignmentTreePath
@@ -432,7 +431,7 @@ func (r *ThreatAssignmentInheritanceRepository) GetAllTreePaths(tx *gorm.DB) ([]
 }
 
 // traverseFromRoot recursively traverses the tree from a root threat assignment
-func (r *ThreatAssignmentInheritanceRepository) traverseFromRoot(assignmentID uuid.UUID, currentPath []uuid.UUID, depth int, children map[uuid.UUID][]uuid.UUID, paths *[]ThreatAssignmentTreePath, visited map[uuid.UUID]bool) {
+func (r *ThreatAssignmentRelationshipRepository) traverseFromRoot(assignmentID uuid.UUID, currentPath []uuid.UUID, depth int, children map[uuid.UUID][]uuid.UUID, paths *[]ThreatAssignmentTreePath, visited map[uuid.UUID]bool) {
 	// Add current path
 	pathCopy := make([]uuid.UUID, len(currentPath))
 	copy(pathCopy, currentPath)
