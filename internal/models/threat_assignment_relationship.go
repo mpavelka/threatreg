@@ -21,6 +21,7 @@ type ThreatAssignmentRelationship struct {
 	ID     uuid.UUID        `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
 	FromID uuid.UUID        `gorm:"type:uuid;not null;index;uniqueIndex:idx_threat_assignment_relationship_unique" json:"fromId"`
 	ToID   uuid.UUID        `gorm:"type:uuid;not null;index;uniqueIndex:idx_threat_assignment_relationship_unique" json:"toId"`
+	Label  string           `gorm:"type:varchar(255);not null;uniqueIndex:idx_threat_assignment_relationship_unique" json:"label"`
 	From   ThreatAssignment `gorm:"foreignKey:FromID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"from,omitempty"`
 	To     ThreatAssignment `gorm:"foreignKey:ToID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"to,omitempty"`
 }
