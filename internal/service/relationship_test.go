@@ -4,7 +4,6 @@ import (
 	"testing"
 	"threatreg/internal/database"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -13,11 +12,6 @@ import (
 )
 
 func TestRelationshipService_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Relationship{},
-	)
-	defer cleanup()
 
 	t.Run("AddRelationshipConsumesApiOf_ComponentToComponent", func(t *testing.T) {
 		// Create test components

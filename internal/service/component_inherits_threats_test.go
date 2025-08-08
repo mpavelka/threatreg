@@ -3,7 +3,6 @@ package service
 import (
 	"testing"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -11,8 +10,6 @@ import (
 )
 
 func TestCreateInheritsThreatsRelationship_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("CreateValidRelationship", func(t *testing.T) {
 		// Create test components
@@ -96,8 +93,6 @@ func TestCreateInheritsThreatsRelationship_Integration(t *testing.T) {
 }
 
 func TestRemoveInheritsThreatsRelationship_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("RemoveExistingRelationship", func(t *testing.T) {
 		// Create test components
@@ -149,8 +144,6 @@ func TestRemoveInheritsThreatsRelationship_Integration(t *testing.T) {
 }
 
 func TestCreateAndRemoveInheritsThreatsRelationship_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("CreateThenRemoveRelationship", func(t *testing.T) {
 		// Create test components

@@ -4,7 +4,6 @@ import (
 	"testing"
 	"threatreg/internal/database"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -13,8 +12,6 @@ import (
 )
 
 func TestComponentService_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("CreateComponent_Product", func(t *testing.T) {
 		// Test data
@@ -488,8 +485,6 @@ func TestComponentService_Integration(t *testing.T) {
 }
 
 func TestListThreatAssignmentsByComponentIDWithResolutionByComponentID(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("Happy Flow", func(t *testing.T) {
 		// Create component1 and component2

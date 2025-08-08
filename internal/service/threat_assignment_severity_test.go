@@ -3,7 +3,6 @@ package service
 import (
 	"testing"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -11,8 +10,6 @@ import (
 )
 
 func TestSetThreatAssignmentSeverity_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("SetValidSeverity", func(t *testing.T) {
 		// Create test data
@@ -135,8 +132,6 @@ func TestSetThreatAssignmentSeverity_Integration(t *testing.T) {
 }
 
 func TestSetThreatAssignmentResidualSeverity_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("SetValidResidualSeverity", func(t *testing.T) {
 		// Create test data
@@ -240,8 +235,6 @@ func TestSetThreatAssignmentResidualSeverity_Integration(t *testing.T) {
 }
 
 func TestSeverityComparisons_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	// Create test data
 	component1, err := CreateComponent("Comparison Test Component 1", "Test component 1 for comparisons", models.ComponentTypeProduct)

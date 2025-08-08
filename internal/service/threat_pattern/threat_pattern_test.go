@@ -5,7 +5,6 @@ import (
 	"threatreg/internal/database"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,12 +13,6 @@ import (
 )
 
 func TestThreatPatternService_CreateThreatPattern(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create a threat first
@@ -64,12 +57,6 @@ func TestThreatPatternService_CreateThreatPattern(t *testing.T) {
 }
 
 func TestThreatPatternService_GetThreatPattern(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -104,12 +91,6 @@ func TestThreatPatternService_GetThreatPattern(t *testing.T) {
 }
 
 func TestThreatPatternService_UpdateThreatPattern(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("FullUpdate", func(t *testing.T) {
 		// Create test data
@@ -198,12 +179,6 @@ func TestThreatPatternService_UpdateThreatPattern(t *testing.T) {
 }
 
 func TestThreatPatternService_DeleteThreatPattern(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -236,12 +211,6 @@ func TestThreatPatternService_DeleteThreatPattern(t *testing.T) {
 }
 
 func TestThreatPatternService_ListThreatPatterns(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("WithPatterns", func(t *testing.T) {
 		// Create test data
@@ -320,12 +289,6 @@ func TestThreatPatternService_ListThreatPatterns(t *testing.T) {
 }
 
 func TestThreatPatternService_CreateThreatPatternWithConditions(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create a threat first

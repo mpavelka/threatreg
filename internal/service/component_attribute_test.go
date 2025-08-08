@@ -12,8 +12,6 @@ import (
 )
 
 func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	// Create test component
 	component, err := CreateComponent(
@@ -123,8 +121,6 @@ func TestComponentAttributeService_CreateComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_GetComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -158,8 +154,6 @@ func TestComponentAttributeService_GetComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_UpdateComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -269,8 +263,6 @@ func TestComponentAttributeService_UpdateComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_DeleteComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -303,8 +295,6 @@ func TestComponentAttributeService_DeleteComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_GetComponentAttributes(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -362,8 +352,6 @@ func TestComponentAttributeService_GetComponentAttributes(t *testing.T) {
 }
 
 func TestComponentAttributeService_GetComponentAttributeByName(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -396,8 +384,6 @@ func TestComponentAttributeService_GetComponentAttributeByName(t *testing.T) {
 }
 
 func TestComponentAttributeService_FindComponentsByAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	// Create test components
 	component1, err := CreateComponent(
@@ -455,8 +441,6 @@ func TestComponentAttributeService_FindComponentsByAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_FindComponentsByAttributeAndType(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component1, err := CreateComponent(
 		testutil.AddRandSuffix("Component 1"),
@@ -494,8 +478,6 @@ func TestComponentAttributeService_FindComponentsByAttributeAndType(t *testing.T
 }
 
 func TestComponentAttributeService_ComponentHasAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -525,8 +507,6 @@ func TestComponentAttributeService_ComponentHasAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_ComponentHasAttributeWithValue(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -556,8 +536,6 @@ func TestComponentAttributeService_ComponentHasAttributeWithValue(t *testing.T) 
 }
 
 func TestComponentAttributeService_SetComponentAttribute(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),
@@ -606,8 +584,6 @@ func TestComponentAttributeService_SetComponentAttribute(t *testing.T) {
 }
 
 func TestComponentAttributeService_DeleteComponentAttributeByName(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	component, err := CreateComponent(
 		testutil.AddRandSuffix("Test Component"),

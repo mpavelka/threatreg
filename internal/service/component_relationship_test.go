@@ -13,11 +13,6 @@ import (
 )
 
 func TestComponentRelationshipService_CreateComponentRelationship(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	// Create test components
 	parent, err := CreateComponent("Parent Component", "Parent Description", models.ComponentTypeProduct)
@@ -115,11 +110,6 @@ func TestComponentRelationshipService_CreateComponentRelationship(t *testing.T) 
 }
 
 func TestComponentRelationshipService_GetComponentRelationship(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	parent, err := CreateComponent("Parent Component", "Parent Description", models.ComponentTypeProduct)
 	require.NoError(t, err)
@@ -153,11 +143,6 @@ func TestComponentRelationshipService_GetComponentRelationship(t *testing.T) {
 }
 
 func TestComponentRelationshipService_DeleteComponentRelationship(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	parent, err := CreateComponent("Parent Component", "Parent Description", models.ComponentTypeProduct)
 	require.NoError(t, err)
@@ -188,11 +173,6 @@ func TestComponentRelationshipService_DeleteComponentRelationship(t *testing.T) 
 }
 
 func TestComponentRelationshipService_GetComponentRelationshipByChildAndParent(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	parent, err := CreateComponent("Parent Component", "Parent Description", models.ComponentTypeProduct)
 	require.NoError(t, err)
@@ -225,11 +205,6 @@ func TestComponentRelationshipService_GetComponentRelationshipByChildAndParent(t
 }
 
 func TestComponentRelationshipService_ListComponentParents(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	// Create test components
 	parent1, err := CreateComponent("Parent 1", "First Parent", models.ComponentTypeProduct)
@@ -279,11 +254,6 @@ func TestComponentRelationshipService_ListComponentParents(t *testing.T) {
 }
 
 func TestComponentRelationshipService_ListComponentChildren(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	// Create test components
 	parent, err := CreateComponent("Parent Component", "Parent with multiple children", models.ComponentTypeProduct)
@@ -333,11 +303,6 @@ func TestComponentRelationshipService_ListComponentChildren(t *testing.T) {
 }
 
 func TestComponentRelationshipService_DeleteComponentRelationshipByChildAndParent(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	parent, err := CreateComponent("Parent Component", "Parent Description", models.ComponentTypeProduct)
 	require.NoError(t, err)
@@ -370,11 +335,6 @@ func TestComponentRelationshipService_DeleteComponentRelationshipByChildAndParen
 }
 
 func TestComponentRelationshipService_GetComponentTreePaths(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 	
 	// This test requires PostgreSQL for recursive CTE support
 	testutil.RequirePostgreSQL(t)
@@ -473,11 +433,6 @@ func TestComponentRelationshipService_GetComponentTreePaths(t *testing.T) {
 }
 
 func TestComponentRelationshipService_GetAllComponentTreePaths(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	// Create multiple component hierarchies
 	// Hierarchy 1: Root1 -> Child1
@@ -549,11 +504,6 @@ func TestComponentRelationshipService_GetAllComponentTreePaths(t *testing.T) {
 }
 
 func TestComponentRelationshipService_ComplexHierarchy(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.ComponentRelationship{},
-	)
-	defer cleanup()
 
 	// Create a complex hierarchy with multiple relationship:
 	//     Root

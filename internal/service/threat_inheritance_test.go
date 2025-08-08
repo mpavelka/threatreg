@@ -3,7 +3,6 @@ package service
 import (
 	"testing"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -11,8 +10,6 @@ import (
 )
 
 func TestThreatInheritance_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("BasicInheritance", func(t *testing.T) {
 		// Create test components: Parent -> Child

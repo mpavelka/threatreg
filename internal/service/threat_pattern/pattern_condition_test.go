@@ -5,7 +5,6 @@ import (
 	"threatreg/internal/database"
 	"threatreg/internal/models"
 	"threatreg/internal/service"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,12 +13,6 @@ import (
 )
 
 func TestThreatPatternService_CreatePatternCondition(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -101,12 +94,6 @@ func TestThreatPatternService_CreatePatternCondition(t *testing.T) {
 }
 
 func TestThreatPatternService_GetPatternCondition(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -145,12 +132,6 @@ func TestThreatPatternService_GetPatternCondition(t *testing.T) {
 }
 
 func TestThreatPatternService_UpdatePatternCondition(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		t.Skip("Skipping failing test during refactoring")
@@ -194,12 +175,6 @@ func TestThreatPatternService_UpdatePatternCondition(t *testing.T) {
 }
 
 func TestThreatPatternService_DeletePatternCondition(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -226,12 +201,6 @@ func TestThreatPatternService_DeletePatternCondition(t *testing.T) {
 }
 
 func TestThreatPatternService_ListPatternConditions(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -298,12 +267,6 @@ func TestThreatPatternService_ListPatternConditions(t *testing.T) {
 }
 
 func TestThreatPatternService_ListAllPatternConditions(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
@@ -344,12 +307,6 @@ func TestThreatPatternService_ListAllPatternConditions(t *testing.T) {
 }
 
 func TestThreatPatternService_DeletePatternConditionsByPatternID(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data

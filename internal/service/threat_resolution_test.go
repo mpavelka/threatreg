@@ -3,7 +3,6 @@ package service
 import (
 	"testing"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -12,8 +11,6 @@ import (
 )
 
 func TestThreatResolutionService_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	// Create test data
 	productComponent, err := CreateComponent("Test Product Component", "A test product component", models.ComponentTypeProduct)
@@ -290,8 +287,6 @@ func TestThreatResolutionService_Integration(t *testing.T) {
 }
 
 func TestDelegationFunctionality(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("DelegateResolution_UpdatesStatus", func(t *testing.T) {
 		component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)
@@ -436,8 +431,6 @@ func TestDelegationFunctionality(t *testing.T) {
 }
 
 func TestGetComponentLevelThreatResolutionWithDelegation(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	// Create test data
 	component1, _ := CreateComponent("Component 1", "First test component", models.ComponentTypeInstance)

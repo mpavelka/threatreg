@@ -12,15 +12,6 @@ import (
 )
 
 func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-		&models.Relationship{},
-	)
-	defer cleanup()
 
 	t.Run("ComplexPatternMatching", func(t *testing.T) {
 		t.Skip("Skipping failing test during refactoring")
@@ -42,16 +33,16 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create tags
-		internetFacingTag, err := service.CreateTag("internet-facing", "Internet facing component", "#FF0000")
+		internetFacingTag, err := service.CreateTag(testutil.AddRandSuffix("internet-facing"), "Internet facing component", "#FF0000")
 		require.NoError(t, err)
 
-		databaseTag, err := service.CreateTag("database", "Database component", "#00FF00")
+		databaseTag, err := service.CreateTag(testutil.AddRandSuffix("database"), "Database component", "#00FF00")
 		require.NoError(t, err)
 
-		privilegedTag, err := service.CreateTag("privileged", "Privileged component", "#0000FF")
+		privilegedTag, err := service.CreateTag(testutil.AddRandSuffix("privileged"), "Privileged component", "#0000FF")
 		require.NoError(t, err)
 
-		highSecurityTag, err := service.CreateTag("high-security", "High security component", "#FFA500")
+		highSecurityTag, err := service.CreateTag(testutil.AddRandSuffix("high-security"), "High security component", "#FFA500")
 		require.NoError(t, err)
 
 		// Assign tags to instances
@@ -97,12 +88,12 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 				{
 					ConditionType: models.ConditionTypeTag.String(),
 					Operator:      models.OperatorContains.String(),
-					Value:         "internet-facing",
+					Value:         internetFacingTag.Name,
 				},
 				{
 					ConditionType:    models.ConditionTypeRelationshipTargetTag.String(),
 					Operator:         models.OperatorHasRelationshipWith.String(),
-					Value:            "database",
+					Value:            databaseTag.Name,
 					RelationshipType: "connects_to",
 				},
 			},
@@ -119,7 +110,7 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 				{
 					ConditionType: models.ConditionTypeTag.String(),
 					Operator:      models.OperatorContains.String(),
-					Value:         "privileged",
+					Value:         privilegedTag.Name,
 				},
 			},
 		)
@@ -222,7 +213,7 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create a tag and assign it to the instance
-		testTag, err := service.CreateTag("test-tag", "Test tag", "#FFFFFF")
+		testTag, err := service.CreateTag(testutil.AddRandSuffix("test-tag"), "Test tag", "#FFFFFF")
 		require.NoError(t, err)
 
 		err = service.AssignTagToComponent(testTag.ID, testComponent.ID)
@@ -241,7 +232,7 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 				{
 					ConditionType: models.ConditionTypeTag.String(),
 					Operator:      models.OperatorContains.String(),
-					Value:         "test-tag",
+					Value:         testTag.Name,
 				},
 			},
 		)
@@ -265,7 +256,7 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create and assign a tag to one instance
-		tag, err := service.CreateTag("any-tag", "Any tag", "#000000")
+		tag, err := service.CreateTag(testutil.AddRandSuffix("any-tag"), "Any tag", "#000000")
 		require.NoError(t, err)
 
 		err = service.AssignTagToComponent(tag.ID, taggedComponent.ID)
@@ -351,14 +342,6 @@ func TestThreatPatternService_GetComponentThreatsByThreatPattern(t *testing.T) {
 }
 
 func TestGetComponentThreatsByThreatPattern(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("ComponentMatchesPattern", func(t *testing.T) {
 
@@ -366,7 +349,7 @@ func TestGetComponentThreatsByThreatPattern(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create a tag and assign it to the instance
-		tag, err := service.CreateTag("internet-facing", "Internet facing component", "#FF0000")
+		tag, err := service.CreateTag(testutil.AddRandSuffix("internet-facing"), "Internet facing component", "#FF0000")
 		require.NoError(t, err)
 
 		err = service.AssignTagToComponent(tag.ID, instance.ID)
@@ -386,7 +369,7 @@ func TestGetComponentThreatsByThreatPattern(t *testing.T) {
 				{
 					ConditionType: models.ConditionTypeTag.String(),
 					Operator:      models.OperatorContains.String(),
-					Value:         "internet-facing",
+					Value:         tag.Name,
 				},
 			},
 		)
@@ -406,14 +389,6 @@ func TestGetComponentThreatsByThreatPattern(t *testing.T) {
 }
 
 func TestGetComponentThreatsByExistingThreatPatterns(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-		&models.Threat{},
-		&models.ThreatPattern{},
-		&models.PatternCondition{},
-	)
-	defer cleanup()
 
 	t.Run("ComponentMatchesMultiplePatterns", func(t *testing.T) {
 		// Create a product and instance
@@ -421,10 +396,10 @@ func TestGetComponentThreatsByExistingThreatPatterns(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create tags and assign them to the instance
-		criticalTag, err := service.CreateTag("critical", "Critical component", "#FF0000")
+		criticalTag, err := service.CreateTag(testutil.AddRandSuffix("critical"), "Critical component", "#FF0000")
 		require.NoError(t, err)
 
-		databaseTag, err := service.CreateTag("database", "Database component", "#00FF00")
+		databaseTag, err := service.CreateTag(testutil.AddRandSuffix("database"), "Database component", "#00FF00")
 		require.NoError(t, err)
 
 		err = service.AssignTagToComponent(criticalTag.ID, instance.ID)
@@ -450,7 +425,7 @@ func TestGetComponentThreatsByExistingThreatPatterns(t *testing.T) {
 				{
 					ConditionType: models.ConditionTypeTag.String(),
 					Operator:      models.OperatorContains.String(),
-					Value:         "critical",
+					Value:         criticalTag.Name,
 				},
 			},
 		)
@@ -465,7 +440,7 @@ func TestGetComponentThreatsByExistingThreatPatterns(t *testing.T) {
 				{
 					ConditionType: models.ConditionTypeTag.String(),
 					Operator:      models.OperatorContains.String(),
-					Value:         "database",
+					Value:         databaseTag.Name,
 				},
 			},
 		)

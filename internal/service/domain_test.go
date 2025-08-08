@@ -5,7 +5,6 @@ import (
 	"testing"
 	"threatreg/internal/database"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,8 +13,6 @@ import (
 )
 
 func TestDomainService_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("CreateDomain", func(t *testing.T) {
 		name := "Test Domain"
@@ -334,8 +331,6 @@ func TestDomainService_Integration(t *testing.T) {
 func TestGetComponentsByDomainIdWithThreatStats(t *testing.T) {
 
 	// Create shared test entities at top level
-	cleanupShared := testutil.SetupTestDatabase(t)
-	defer cleanupShared()
 
 	var domain *models.Domain
 	var component1, component2, component3 *models.Component

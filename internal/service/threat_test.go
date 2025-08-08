@@ -4,7 +4,6 @@ import (
 	"testing"
 	"threatreg/internal/database"
 	"threatreg/internal/models"
-	"threatreg/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -13,8 +12,6 @@ import (
 )
 
 func TestThreatService_Integration(t *testing.T) {
-	cleanup := testutil.SetupTestDatabase(t)
-	defer cleanup()
 
 	t.Run("CreateThreat", func(t *testing.T) {
 		// Test data

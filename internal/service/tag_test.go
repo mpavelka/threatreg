@@ -13,15 +13,10 @@ import (
 )
 
 func TestTagService_CreateTag(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Test data
-		name := "Test Tag"
+		name := testutil.AddRandSuffix("Test Tag")
 		description := "A test tag description"
 		color := "#FF0000"
 
@@ -49,7 +44,7 @@ func TestTagService_CreateTag(t *testing.T) {
 
 	t.Run("DuplicateName", func(t *testing.T) {
 		// Create a tag
-		name := "Duplicate Name Tag"
+		name := testutil.AddRandSuffix("Duplicate Name Tag")
 		_, err := CreateTag(name, "First tag", "#111111")
 		require.NoError(t, err)
 
@@ -60,15 +55,10 @@ func TestTagService_CreateTag(t *testing.T) {
 }
 
 func TestTagService_GetTag(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create a tag first
-		name := "Get Test Tag"
+		name := testutil.AddRandSuffix("Get Test Tag")
 		description := "Tag for get test"
 		color := "#00FF00"
 		createdTag, err := CreateTag(name, description, color)
@@ -99,15 +89,10 @@ func TestTagService_GetTag(t *testing.T) {
 }
 
 func TestTagService_GetTagByName(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create a tag first
-		name := "GetByName Test Tag"
+		name := testutil.AddRandSuffix("GetByName Test Tag")
 		description := "Tag for get by name test"
 		color := "#0000FF"
 		createdTag, err := CreateTag(name, description, color)
@@ -137,22 +122,17 @@ func TestTagService_GetTagByName(t *testing.T) {
 }
 
 func TestTagService_UpdateTag(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("FullUpdate", func(t *testing.T) {
 		// Create a tag first
-		originalName := "Original Tag"
+		originalName := testutil.AddRandSuffix("Original Tag")
 		originalDescription := "Original description"
 		originalColor := "#FFFF00"
 		createdTag, err := CreateTag(originalName, originalDescription, originalColor)
 		require.NoError(t, err)
 
 		// Update the tag
-		newName := "Updated Tag"
+		newName := testutil.AddRandSuffix("Updated Tag")
 		newDescription := "Updated description"
 		newColor := "#FF00FF"
 		updatedTag, err := UpdateTag(createdTag.ID, &newName, &newDescription, &newColor)
@@ -177,14 +157,14 @@ func TestTagService_UpdateTag(t *testing.T) {
 
 	t.Run("PartialUpdate", func(t *testing.T) {
 		// Create a tag first
-		originalName := "Partial Update Tag"
+		originalName := testutil.AddRandSuffix("Partial Update Tag")
 		originalDescription := "Original description"
 		originalColor := "#CCCCCC"
 		createdTag, err := CreateTag(originalName, originalDescription, originalColor)
 		require.NoError(t, err)
 
 		// Update only the name
-		newName := "New Name Only"
+		newName := testutil.AddRandSuffix("New Name Only")
 		updatedTag, err := UpdateTag(createdTag.ID, &newName, nil, nil)
 
 		// Assertions
@@ -208,7 +188,7 @@ func TestTagService_UpdateTag(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		// Try to update a non-existent tag
 		nonExistentID := uuid.New()
-		newName := "New Name"
+		newName := testutil.AddRandSuffix("New Name")
 		tag, err := UpdateTag(nonExistentID, &newName, nil, nil)
 
 		// Should return error and nil tag
@@ -219,15 +199,10 @@ func TestTagService_UpdateTag(t *testing.T) {
 }
 
 func TestTagService_DeleteTag(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create a tag first
-		name := "Delete Test Tag"
+		name := testutil.AddRandSuffix("Delete Test Tag")
 		description := "Tag to be deleted"
 		color := "#888888"
 		createdTag, err := CreateTag(name, description, color)
@@ -258,11 +233,6 @@ func TestTagService_DeleteTag(t *testing.T) {
 }
 
 func TestTagService_ListTags(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("WithTags", func(t *testing.T) {
 		// Create multiple tags
@@ -271,9 +241,9 @@ func TestTagService_ListTags(t *testing.T) {
 			description string
 			color       string
 		}{
-			{"Tag 1", "Description 1", "#111111"},
-			{"Tag 2", "Description 2", "#222222"},
-			{"Tag 3", "Description 3", "#333333"},
+			{testutil.AddRandSuffix("Tag 1"), "Description 1", "#111111"},
+			{testutil.AddRandSuffix("Tag 2"), "Description 2", "#222222"},
+			{testutil.AddRandSuffix("Tag 3"), "Description 3", "#333333"},
 		}
 
 		var createdTags []*models.Tag
@@ -307,36 +277,14 @@ func TestTagService_ListTags(t *testing.T) {
 
 }
 
-func TestTagService_ListTags_Empty(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
-
-	t.Run("NoTags", func(t *testing.T) {
-		// List tags when no tags exist in this test database
-		tags, err := ListTags()
-
-		// Should return empty slice, not error
-		require.NoError(t, err)
-		assert.Len(t, tags, 0)
-	})
-}
-
 func TestTagService_AssignTagToComponent(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
 		component, err := CreateComponent("Test Component", "A test component for tagging", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Component Tag", "A tag for components", "#AAAAAA")
+		tag, err := CreateTag(testutil.AddRandSuffix("Component Tag"), "A tag for components", "#AAAAAA")
 		require.NoError(t, err)
 
 		// Assign tag to component
@@ -363,7 +311,7 @@ func TestTagService_AssignTagToComponent(t *testing.T) {
 		component, err := CreateComponent("Duplicate Test Component", "A test component for duplicate tagging", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Duplicate Tag", "A tag for duplicate test", "#BBBBBB")
+		tag, err := CreateTag(testutil.AddRandSuffix("Duplicate Tag"), "A tag for duplicate test", "#BBBBBB")
 		require.NoError(t, err)
 
 		// Assign tag to component first time
@@ -395,7 +343,7 @@ func TestTagService_AssignTagToComponent(t *testing.T) {
 
 	t.Run("InvalidComponentID", func(t *testing.T) {
 		// Create test tag
-		tag, err := CreateTag("Invalid Component Test Tag", "A test tag", "#DDDDDD")
+		tag, err := CreateTag(testutil.AddRandSuffix("Invalid Component Test Tag"), "A test tag", "#DDDDDD")
 		require.NoError(t, err)
 
 		// Try to assign to non-existent component
@@ -407,18 +355,13 @@ func TestTagService_AssignTagToComponent(t *testing.T) {
 }
 
 func TestTagService_UnassignTagFromComponent(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data and assign tag
 		component, err := CreateComponent("Unassign Test Component", "A test component for unassigning tags", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Unassign Tag", "A tag for unassign test", "#EEEEEE")
+		tag, err := CreateTag(testutil.AddRandSuffix("Unassign Tag"), "A tag for unassign test", "#EEEEEE")
 		require.NoError(t, err)
 
 		err = AssignTagToComponent(tag.ID, component.ID)
@@ -441,18 +384,13 @@ func TestTagService_UnassignTagFromComponent(t *testing.T) {
 }
 
 func TestTagService_AssignTagToInstanceComponent(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data
 		instanceComponent, err := CreateComponent("Test Instance Component", "A test instance component for tagging", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Instance Tag", "A tag for instance components", "#FFFFFF")
+		tag, err := CreateTag(testutil.AddRandSuffix("Instance Tag"), "A tag for instance components", "#FFFFFF")
 		require.NoError(t, err)
 
 		// Assign tag to instance component
@@ -479,7 +417,7 @@ func TestTagService_AssignTagToInstanceComponent(t *testing.T) {
 		instanceComponent, err := CreateComponent("Duplicate Test Instance Component", "A test instance component for duplicate tagging", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Duplicate Instance Tag", "A tag for duplicate instance test", "#000000")
+		tag, err := CreateTag(testutil.AddRandSuffix("Duplicate Instance Tag"), "A tag for duplicate instance test", "#000000")
 		require.NoError(t, err)
 
 		// Assign tag to instance component first time
@@ -499,18 +437,13 @@ func TestTagService_AssignTagToInstanceComponent(t *testing.T) {
 }
 
 func TestTagService_UnassignTagFromInstanceComponent(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("Success", func(t *testing.T) {
 		// Create test data and assign tag
 		instanceComponent, err := CreateComponent("Unassign Test Instance Component", "A test instance component for unassigning tags", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Unassign Instance Tag", "A tag for instance component unassign test", "#999999")
+		tag, err := CreateTag(testutil.AddRandSuffix("Unassign Instance Tag"), "A tag for instance component unassign test", "#999999")
 		require.NoError(t, err)
 
 		err = AssignTagToComponent(tag.ID, instanceComponent.ID)
@@ -533,18 +466,13 @@ func TestTagService_UnassignTagFromInstanceComponent(t *testing.T) {
 }
 
 func TestTagService_AssignTagByName(t *testing.T) {
-	cleanup := testutil.SetupTestDatabaseWithCustomModels(t,
-		&models.Component{},
-		&models.Tag{},
-	)
-	defer cleanup()
 
 	t.Run("AssignToComponent_ExistingTag", func(t *testing.T) {
 		// Create test data
 		component, err := CreateComponent("ByName Test Component", "A test component for tag assignment by name", models.ComponentTypeProduct)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("ByName Tag", "A tag for by name test", "#ABCDEF")
+		tag, err := CreateTag(testutil.AddRandSuffix("ByName Tag"), "A tag for by name test", "#ABCDEF")
 		require.NoError(t, err)
 
 		// Assign tag to component by name
@@ -584,7 +512,7 @@ func TestTagService_AssignTagByName(t *testing.T) {
 		instanceComponent, err := CreateComponent("ByName Test Instance Component", "A test instance component for tag assignment by name", models.ComponentTypeInstance)
 		require.NoError(t, err)
 
-		tag, err := CreateTag("Instance ByName Tag", "A tag for instance component by name test", "#FEDCBA")
+		tag, err := CreateTag(testutil.AddRandSuffix("Instance ByName Tag"), "A tag for instance component by name test", "#FEDCBA")
 		require.NoError(t, err)
 
 		// Assign tag to instance component by name

@@ -81,10 +81,12 @@ func SetupTestDatabaseWithCustomModels(t *testing.T, models ...interface{}) func
 	// Clean up any existing test data BEFORE migrations to handle schema changes
 	db := database.GetDB()
 	require.NotNil(t, db, "Database connection should not be nil")
-	
-	if IsPostgreSQL() {
-		cleanupTestData(t, db)
-	}
+
+	// Skip cleanup in PostgreSQL to avoid parallel test conflicts
+	// Each test should create all tables via AutoMigrate
+	// if IsPostgreSQL() {
+	//     cleanupTestData(t, db)
+	// }
 
 	// Run migrations for specified models only
 	if len(models) > 0 {
@@ -125,19 +127,19 @@ func cleanupTestData(t *testing.T, db *gorm.DB) {
 	// (child tables first, then parent tables)
 	tablesToDrop := []string{
 		"threat_assignment_resolution_delegations",
-		"control_assignments", 
+		"control_assignments",
 		"threat_assignment_resolutions",
 		"threat_assignment_relationships",
 		"threat_assignments",
 		"component_relationships",
 		"threat_controls",
-		"pattern_conditions",    // threat pattern condition table
-		"threat_patterns",       // threat pattern table
-		"component_attributes",  // component attributes table
-		"component_tags",        // many2many join table
-		"domain_components",     // many2many join table
+		"pattern_conditions",   // threat pattern condition table
+		"threat_patterns",      // threat pattern table
+		"component_attributes", // component attributes table
+		"component_tags",       // many2many join table
+		"domain_components",    // many2many join table
 		"controls",
-		"threats", 
+		"threats",
 		"components",
 		"domains",
 		"tags",
