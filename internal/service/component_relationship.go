@@ -19,14 +19,22 @@ func getComponentRelationshipRepository() (*models.ComponentRelationshipReposito
 // CreateComponentRelationship creates a new relationship between components.
 // Validates that both components exist and that the label is valid before creating the relationship.
 func CreateComponentRelationship(fromComponentID, toComponentID uuid.UUID, label string) (*models.ComponentRelationship, error) {
+	return createComponentRelationship(fromComponentID, toComponentID, label, false)
+}
+
+// createComponentRelationship creates a new relationship between components with optional reserved label support.
+// When allowReservedLabel is true, reserved labels (starting with "__") are permitted.
+func createComponentRelationship(fromComponentID, toComponentID uuid.UUID, label string, allowReservedLabel bool) (*models.ComponentRelationship, error) {
 	relationshipRepository, err := getComponentRelationshipRepository()
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate label first
-	if err := models.ValidateLabel(label); err != nil {
-		return nil, err
+	// Validate label first (unless reserved labels are explicitly allowed)
+	if !allowReservedLabel {
+		if err := models.ValidateLabel(label); err != nil {
+			return nil, err
+		}
 	}
 
 	// Validate that both components exist

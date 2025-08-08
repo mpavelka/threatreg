@@ -196,3 +196,16 @@ func SetThreatAssignmentResidualSeverity(id uuid.UUID, residualSeverity *models.
 
 	return threatAssignmentRepository.SetResidualSeverity(nil, id, residualSeverity)
 }
+
+
+// CreateInheritsThreatsRelationship creates a reserved relationship ReservedLabelInheritsThreatsFrom
+// from childComponentId to parentComponentId.
+func CreateInheritsThreatsRelationship(childComponentID, parentComponentID uuid.UUID) (*models.ComponentRelationship, error) {
+	return createComponentRelationship(childComponentID, parentComponentID, string(models.ReservedLabelInheritsThreatsFrom), true)
+}
+
+// RemoveInheritsThreatsRelationship removes the reserved relationship ReservedLabelInheritsThreatsFrom
+// from childComponentId to parentComponentId.
+func RemoveInheritsThreatsRelationship(childComponentID, parentComponentID uuid.UUID) error {
+	return DeleteComponentRelationshipByChildAndParent(childComponentID, parentComponentID)
+}
