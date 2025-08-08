@@ -174,3 +174,25 @@ func GetThreatAssignmentById(id uuid.UUID) (*models.ThreatAssignment, error) {
 
 	return threatAssignmentRepository.GetByID(nil, id)
 }
+
+// SetThreatAssignmentSeverity updates the severity of a threat assignment.
+// Returns an error if the assignment is not found, the severity is invalid, or database update fails.
+func SetThreatAssignmentSeverity(id uuid.UUID, severity *models.ThreatSeverity) error {
+	threatAssignmentRepository, err := getThreatAssignmentRepository()
+	if err != nil {
+		return fmt.Errorf("error getting threat assignment repository: %w", err)
+	}
+
+	return threatAssignmentRepository.SetSeverity(nil, id, severity)
+}
+
+// SetThreatAssignmentResidualSeverity updates the residual severity of a threat assignment.
+// Returns an error if the assignment is not found, the severity is invalid, or database update fails.
+func SetThreatAssignmentResidualSeverity(id uuid.UUID, residualSeverity *models.ThreatSeverity) error {
+	threatAssignmentRepository, err := getThreatAssignmentRepository()
+	if err != nil {
+		return fmt.Errorf("error getting threat assignment repository: %w", err)
+	}
+
+	return threatAssignmentRepository.SetResidualSeverity(nil, id, residualSeverity)
+}

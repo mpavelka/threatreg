@@ -12,6 +12,8 @@ type ThreatAssignment struct {
 	ID                 uuid.UUID           `gorm:"type:uuid;primaryKey;not null;unique" json:"id"`
 	ThreatID           uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"threatId"`
 	ComponentID        uuid.UUID           `gorm:"type:uuid;uniqueIndex:idx_threat_assignment" json:"componentId"`
+	Severity           *ThreatSeverity     `gorm:"type:varchar(20)" json:"severity,omitempty"`
+	ResidualSeverity   *ThreatSeverity     `gorm:"type:varchar(20)" json:"residualSeverity,omitempty"`
 	Threat             Threat              `gorm:"foreignKey:ThreatID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"threat"`
 	Component          Component           `gorm:"foreignKey:ComponentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"component"`
 	ControlAssignments []ControlAssignment `gorm:"foreignKey:ThreatAssignmentID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE" json:"controlAssignments"`
@@ -30,10 +32,20 @@ func (ta *ThreatAssignment) BeforeUpdate(tx *gorm.DB) error {
 	return ta.validateAssignment()
 }
 
-// validateAssignment checks that ComponentID is not null/nil
+// validateAssignment checks that ComponentID is not null/nil and validates severity values
 func (ta *ThreatAssignment) validateAssignment() error {
 	if ta.ComponentID == uuid.Nil {
 		return errors.New("threat assignment must have ComponentID set")
+	}
+
+	// Validate Severity if it's set
+	if ta.Severity != nil && !ta.Severity.IsValid() {
+		return errors.New("invalid severity value: must be one of none, low, medium, high, critical")
+	}
+
+	// Validate ResidualSeverity if it's set
+	if ta.ResidualSeverity != nil && !ta.ResidualSeverity.IsValid() {
+		return errors.New("invalid residual severity value: must be one of none, low, medium, high, critical")
 	}
 
 	return nil
@@ -154,6 +166,36 @@ func (r *ThreatAssignmentRepository) ListWithResolutionByComponentID(tx *gorm.DB
 	}
 
 	return results, nil
+}
+
+// SetSeverity updates the severity of a threat assignment
+func (r *ThreatAssignmentRepository) SetSeverity(tx *gorm.DB, id uuid.UUID, severity *ThreatSeverity) error {
+	if tx == nil {
+		tx = r.db
+	}
+
+	// Validate severity if provided
+	if severity != nil && !severity.IsValid() {
+		return errors.New("invalid severity value: must be one of none, low, medium, high, critical")
+	}
+
+	// Use direct column update to avoid triggering BeforeUpdate hook on empty struct
+	return tx.Model(&ThreatAssignment{}).Where("id = ?", id).UpdateColumn("severity", severity).Error
+}
+
+// SetResidualSeverity updates the residual severity of a threat assignment
+func (r *ThreatAssignmentRepository) SetResidualSeverity(tx *gorm.DB, id uuid.UUID, residualSeverity *ThreatSeverity) error {
+	if tx == nil {
+		tx = r.db
+	}
+
+	// Validate residual severity if provided
+	if residualSeverity != nil && !residualSeverity.IsValid() {
+		return errors.New("invalid residual severity value: must be one of none, low, medium, high, critical")
+	}
+
+	// Use direct column update to avoid triggering BeforeUpdate hook on empty struct
+	return tx.Model(&ThreatAssignment{}).Where("id = ?", id).UpdateColumn("residual_severity", residualSeverity).Error
 }
 
 // isUniqueConstraintError checks if the error is a unique constraint violation
